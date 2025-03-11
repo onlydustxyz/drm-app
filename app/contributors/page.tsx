@@ -4,542 +4,578 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Contributor, getContributors } from "@/lib/contributors-service";
-import { ContributorSublist, getContributorSublists, updateContributorSublist } from "@/lib/contributor-sublists-service";
-import { formatDate } from "@/lib/utils";
-import { Check, ChevronDown, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, PlusCircle, Search, SlidersHorizontal, X, Users } from "lucide-react";
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
+import {
+	ContributorSublist,
+	createContributorSublist,
+	getContributorSublists,
+	updateContributorSublist,
+} from "@/lib/contributor-sublists-service";
+import { Contributor, getContributors } from "@/lib/contributors-service";
+import { formatDate } from "@/lib/utils";
+import {
+	ChevronDown,
+	GitBranch,
+	GitCommit,
+	GitPullRequest,
+	GitPullRequestClosed,
+	MessageSquare,
+	PlusCircle,
+	Search,
+	SlidersHorizontal,
+	Users,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 
 export default function ContributorsPage() {
-  const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [sortConfig, setSortConfig] = useState<{
-    key: keyof Contributor | null;
-    direction: 'ascending' | 'descending';
-  }>({ key: null, direction: 'descending' });
-  
-  // Filter states
-  const [minPRs, setMinPRs] = useState<number | "">("");
-  const [minCommits, setMinCommits] = useState<number | "">("");
-  const [showActiveOnly, setShowActiveOnly] = useState(false);
-  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+	const [contributors, setContributors] = useState<Contributor[]>([]);
+	const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [isLoading, setIsLoading] = useState(true);
+	const [sortConfig, setSortConfig] = useState<{
+		key: keyof Contributor | null;
+		direction: "ascending" | "descending";
+	}>({ key: null, direction: "descending" });
 
-  // Selection states
-  const [selectedContributors, setSelectedContributors] = useState<string[]>([]);
-  const [sublists, setSublists] = useState<ContributorSublist[]>([]);
-  const [isAddToListDialogOpen, setIsAddToListDialogOpen] = useState(false);
-  const [newListName, setNewListName] = useState("");
-  const [newListDescription, setNewListDescription] = useState("");
-  const [isCreatingNewList, setIsCreatingNewList] = useState(false);
+	// Filter states
+	const [minPRs, setMinPRs] = useState<number | "">("");
+	const [minCommits, setMinCommits] = useState<number | "">("");
+	const [showActiveOnly, setShowActiveOnly] = useState(false);
+	const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
-  // Fetch contributors data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [data, sublistsData] = await Promise.all([
-          getContributors(),
-          getContributorSublists()
-        ]);
-        setContributors(data);
-        setFilteredContributors(data);
-        setSublists(sublistsData);
-      } catch (error) {
-        console.error("Error fetching contributors:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+	// Selection states
+	const [selectedContributors, setSelectedContributors] = useState<string[]>([]);
+	const [sublists, setSublists] = useState<ContributorSublist[]>([]);
+	const [isAddToListDialogOpen, setIsAddToListDialogOpen] = useState(false);
+	const [newListName, setNewListName] = useState("");
+	const [newListDescription, setNewListDescription] = useState("");
+	const [isCreatingNewList, setIsCreatingNewList] = useState(false);
 
-    fetchData();
-  }, []);
+	// Fetch contributors data
+	useEffect(() => {
+		const fetchData = async () => {
+			try {
+				setIsLoading(true);
+				const [data, sublistsData] = await Promise.all([getContributors(), getContributorSublists()]);
+				setContributors(data);
+				setFilteredContributors(data);
+				setSublists(sublistsData);
+			} catch (error) {
+				console.error("Error fetching contributors:", error);
+			} finally {
+				setIsLoading(false);
+			}
+		};
 
-  // Apply all filters
-  useEffect(() => {
-    let filtered = [...contributors];
-    let activeFilters = 0;
+		fetchData();
+	}, []);
 
-    // Apply search filter
-    if (searchQuery.trim() !== "") {
-      const lowercaseQuery = searchQuery.toLowerCase();
-      filtered = filtered.filter((contributor) =>
-        contributor.name.toLowerCase().includes(lowercaseQuery)
-      );
-    }
+	// Apply all filters
+	useEffect(() => {
+		let filtered = [...contributors];
+		let activeFilters = 0;
 
-    // Apply minimum PRs filter
-    if (minPRs !== "") {
-      filtered = filtered.filter(
-        (contributor) => contributor.prMerged + contributor.prOpened >= Number(minPRs)
-      );
-      activeFilters++;
-    }
+		// Apply search filter
+		if (searchQuery.trim() !== "") {
+			const lowercaseQuery = searchQuery.toLowerCase();
+			filtered = filtered.filter((contributor) => contributor.name.toLowerCase().includes(lowercaseQuery));
+		}
 
-    // Apply minimum commits filter
-    if (minCommits !== "") {
-      filtered = filtered.filter(
-        (contributor) => contributor.commits >= Number(minCommits)
-      );
-      activeFilters++;
-    }
+		// Apply minimum PRs filter
+		if (minPRs !== "") {
+			filtered = filtered.filter((contributor) => contributor.prMerged + contributor.prOpened >= Number(minPRs));
+			activeFilters++;
+		}
 
-    // Apply active only filter
-    if (showActiveOnly) {
-      // Consider contributors active if they have activity in the last 30 days
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      filtered = filtered.filter((contributor) => {
-        const lastActiveDate = new Date(contributor.lastActive);
-        return lastActiveDate >= thirtyDaysAgo;
-      });
-      activeFilters++;
-    }
+		// Apply minimum commits filter
+		if (minCommits !== "") {
+			filtered = filtered.filter((contributor) => contributor.commits >= Number(minCommits));
+			activeFilters++;
+		}
 
-    setActiveFiltersCount(activeFilters);
-    setFilteredContributors(filtered);
-  }, [searchQuery, contributors, minPRs, minCommits, showActiveOnly]);
+		// Apply active only filter
+		if (showActiveOnly) {
+			// Consider contributors active if they have activity in the last 30 days
+			const thirtyDaysAgo = new Date();
+			thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  // Handle sorting
-  const requestSort = (key: keyof Contributor) => {
-    let direction: 'ascending' | 'descending' = 'ascending';
-    
-    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-      direction = 'descending';
-    }
-    
-    setSortConfig({ key, direction });
-    
-    const sortedData = [...filteredContributors].sort((a, b) => {
-      if (a[key] < b[key]) {
-        return direction === 'ascending' ? -1 : 1;
-      }
-      if (a[key] > b[key]) {
-        return direction === 'ascending' ? 1 : -1;
-      }
-      return 0;
-    });
-    
-    setFilteredContributors(sortedData);
-  };
+			filtered = filtered.filter((contributor) => {
+				const lastActiveDate = new Date(contributor.lastActive);
+				return lastActiveDate >= thirtyDaysAgo;
+			});
+			activeFilters++;
+		}
 
-  // Get sort direction indicator
-  const getSortDirectionIndicator = (key: keyof Contributor) => {
-    if (sortConfig.key !== key) return null;
-    return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
-  };
+		setActiveFiltersCount(activeFilters);
+		setFilteredContributors(filtered);
+	}, [searchQuery, contributors, minPRs, minCommits, showActiveOnly]);
 
-  // Reset all filters
-  const resetFilters = () => {
-    setMinPRs("");
-    setMinCommits("");
-    setShowActiveOnly(false);
-  };
+	// Handle sorting
+	const requestSort = (key: keyof Contributor) => {
+		let direction: "ascending" | "descending" = "ascending";
 
-  // Handle contributor selection
-  const toggleContributorSelection = (contributorId: string) => {
-    setSelectedContributors(prev => 
-      prev.includes(contributorId)
-        ? prev.filter(id => id !== contributorId)
-        : [...prev, contributorId]
-    );
-  };
+		if (sortConfig.key === key && sortConfig.direction === "ascending") {
+			direction = "descending";
+		}
 
-  // Handle select all contributors
-  const toggleSelectAll = () => {
-    if (selectedContributors.length === filteredContributors.length) {
-      setSelectedContributors([]);
-    } else {
-      setSelectedContributors(filteredContributors.map(c => c.id));
-    }
-  };
+		setSortConfig({ key, direction });
 
-  // Add selected contributors to an existing list
-  const addToExistingList = async (sublistId: string) => {
-    try {
-      const sublist = sublists.find(s => s.id === sublistId);
-      if (!sublist) return;
+		const sortedData = [...filteredContributors].sort((a, b) => {
+			if (a[key] < b[key]) {
+				return direction === "ascending" ? -1 : 1;
+			}
+			if (a[key] > b[key]) {
+				return direction === "ascending" ? 1 : -1;
+			}
+			return 0;
+		});
 
-      // Create a new set to avoid duplicates
-      const updatedContributorIds = Array.from(
-        new Set([...sublist.contributorIds, ...selectedContributors])
-      );
+		setFilteredContributors(sortedData);
+	};
 
-      const updatedSublist = await updateContributorSublist(sublistId, {
-        contributorIds: updatedContributorIds
-      });
+	// Get sort direction indicator
+	const getSortDirectionIndicator = (key: keyof Contributor) => {
+		if (sortConfig.key !== key) return null;
+		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
+	};
 
-      if (updatedSublist) {
-        // Update the local state
-        setSublists(prev => 
-          prev.map(s => s.id === sublistId ? updatedSublist : s)
-        );
+	// Reset all filters
+	const resetFilters = () => {
+		setMinPRs("");
+		setMinCommits("");
+		setShowActiveOnly(false);
+	};
 
-        toast({
-          title: "Contributors added",
-          description: `${selectedContributors.length} contributors added to "${sublist.name}"`,
-        });
+	// Handle contributor selection
+	const toggleContributorSelection = (contributorId: string) => {
+		setSelectedContributors((prev) =>
+			prev.includes(contributorId) ? prev.filter((id) => id !== contributorId) : [...prev, contributorId]
+		);
+	};
 
-        // Clear selection
-        setSelectedContributors([]);
-      }
-    } catch (error) {
-      console.error("Error adding contributors to list:", error);
-      toast({
-        title: "Error",
-        description: "Failed to add contributors to list",
-        variant: "destructive",
-      });
-    }
-  };
+	// Handle select all contributors
+	const toggleSelectAll = () => {
+		if (selectedContributors.length === filteredContributors.length) {
+			setSelectedContributors([]);
+		} else {
+			setSelectedContributors(filteredContributors.map((c) => c.id));
+		}
+	};
 
-  // Create a new list with selected contributors
-  const createNewList = async () => {
-    // This will be implemented in the dialog
-    setIsAddToListDialogOpen(true);
-    setIsCreatingNewList(true);
-  };
+	// Add selected contributors to an existing list
+	const addToExistingList = async (sublistId: string) => {
+		try {
+			const sublist = sublists.find((s) => s.id === sublistId);
+			if (!sublist) return;
 
-  return (
-    <div className="w-full max-w-full py-6">
-      <div className="flex justify-between items-center mb-6 w-full">
-        <div>
-          <h1 className="text-3xl font-bold">Contributors</h1>
-          <p className="text-muted-foreground">Overview of all contributors and their activity metrics.</p>
-        </div>
-        <div className="flex space-x-2">
-          {selectedContributors.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="default">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add to List
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Add to List</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {sublists.length > 0 ? (
-                  <>
-                    <DropdownMenuGroup>
-                      {sublists.map((sublist) => (
-                        <DropdownMenuItem 
-                          key={sublist.id}
-                          onClick={() => addToExistingList(sublist.id)}
-                        >
-                          {sublist.name}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuGroup>
-                    <DropdownMenuSeparator />
-                  </>
-                ) : null}
-                <DropdownMenuItem onClick={createNewList}>
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create New List
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-          <Link href="/contributors/sublists">
-            <Button variant="outline">
-              <Users className="mr-2 h-4 w-4" />
-              Manage Sublists
-            </Button>
-          </Link>
-        </div>
-      </div>
-      <Separator className="mb-6" />
-      
-      <Card className="w-full max-w-full">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <CardTitle>Contributors Activity</CardTitle>
-              <CardDescription>
-                Detailed metrics for all contributors including PRs, issues, and commits.
-              </CardDescription>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-              <div className="relative w-full md:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search contributors..."
-                  className="pl-8"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="icon" className="shrink-0 relative">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    {activeFiltersCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                        {activeFiltersCount}
-                      </span>
-                    )}
-                    <span className="sr-only">Filters</span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Filters</h4>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={resetFilters}
-                        disabled={!minPRs && !minCommits && !showActiveOnly}
-                      >
-                        Reset
-                      </Button>
-                    </div>
-                    <Separator />
-                    <div className="space-y-2">
-                      <Label htmlFor="min-prs">Minimum PRs (opened + merged)</Label>
-                      <Input
-                        id="min-prs"
-                        type="number"
-                        min="0"
-                        placeholder="Enter minimum PRs"
-                        value={minPRs}
-                        onChange={(e) => setMinPRs(e.target.value ? Number(e.target.value) : "")}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="min-commits">Minimum Commits</Label>
-                      <Input
-                        id="min-commits"
-                        type="number"
-                        min="0"
-                        placeholder="Enter minimum commits"
-                        value={minCommits}
-                        onChange={(e) => setMinCommits(e.target.value ? Number(e.target.value) : "")}
-                      />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox 
-                        id="active-only" 
-                        checked={showActiveOnly}
-                        onCheckedChange={(checked) => setShowActiveOnly(checked === true)}
-                      />
-                      <Label htmlFor="active-only">Show active contributors only (last 30 days)</Label>
-                    </div>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-40">
-              <p>Loading contributors data...</p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">
-                      <Checkbox 
-                        checked={selectedContributors.length === filteredContributors.length && filteredContributors.length > 0}
-                        onCheckedChange={toggleSelectAll}
-                        aria-label="Select all"
-                      />
-                    </TableHead>
-                    <TableHead>
-                      <button 
-                        className="flex items-center font-medium text-left"
-                        onClick={() => requestSort('name')}
-                      >
-                        Contributor{getSortDirectionIndicator('name')}
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('prMerged')}
-                      >
-                        <GitPullRequestClosed className="h-4 w-4" />
-                        <span>PRs Merged{getSortDirectionIndicator('prMerged')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('prOpened')}
-                      >
-                        <GitPullRequest className="h-4 w-4" />
-                        <span>PRs Opened{getSortDirectionIndicator('prOpened')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('issuesOpened')}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        <span>Issues Opened{getSortDirectionIndicator('issuesOpened')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('issuesClosed')}
-                      >
-                        <GitBranch className="h-4 w-4" />
-                        <span>Issues Closed{getSortDirectionIndicator('issuesClosed')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('commits')}
-                      >
-                        <GitCommit className="h-4 w-4" />
-                        <span>Commits{getSortDirectionIndicator('commits')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <button 
-                        className="flex items-center justify-end w-full"
-                        onClick={() => requestSort('lastActive')}
-                      >
-                        Last Active{getSortDirectionIndicator('lastActive')}
-                      </button>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredContributors.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center">
-                        No contributors found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredContributors.map((contributor) => (
-                      <TableRow key={contributor.id} className={selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""}>
-                        <TableCell>
-                          <Checkbox 
-                            checked={selectedContributors.includes(contributor.id)}
-                            onCheckedChange={() => toggleContributorSelection(contributor.id)}
-                            aria-label={`Select ${contributor.name}`}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <img src={contributor.avatar} alt={contributor.name} />
-                            </Avatar>
-                            <span className="font-medium">{contributor.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">{contributor.prMerged}</TableCell>
-                        <TableCell className="text-center">{contributor.prOpened}</TableCell>
-                        <TableCell className="text-center">{contributor.issuesOpened}</TableCell>
-                        <TableCell className="text-center">{contributor.issuesClosed}</TableCell>
-                        <TableCell className="text-center">{contributor.commits}</TableCell>
-                        <TableCell className="text-right">{formatDate(contributor.lastActive)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+			// Create a new set to avoid duplicates
+			const updatedContributorIds = Array.from(new Set([...sublist.contributorIds, ...selectedContributors]));
 
-      {/* Dialog for creating a new list */}
-      <Dialog open={isAddToListDialogOpen} onOpenChange={setIsAddToListDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Create New List</DialogTitle>
-            <DialogDescription>
-              Create a new list with the selected contributors.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="list-name">List Name</Label>
-              <Input
-                id="list-name"
-                placeholder="Enter list name"
-                value={newListName}
-                onChange={(e) => setNewListName(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="list-description">Description (optional)</Label>
-              <Input
-                id="list-description"
-                placeholder="Enter description"
-                value={newListDescription}
-                onChange={(e) => setNewListDescription(e.target.value)}
-              />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">
-                {selectedContributors.length} contributors will be added to this list.
-              </p>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddToListDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={async () => {
-                if (!newListName.trim()) return;
-                
-                try {
-                  const newSublist = await createContributorSublist({
-                    name: newListName,
-                    description: newListDescription,
-                    contributorIds: selectedContributors
-                  });
-                  
-                  setSublists([...sublists, newSublist]);
-                  setNewListName("");
-                  setNewListDescription("");
-                  setSelectedContributors([]);
-                  setIsAddToListDialogOpen(false);
-                  
-                  toast({
-                    title: "List created",
-                    description: `New list "${newListName}" created with ${selectedContributors.length} contributors`,
-                  });
-                } catch (error) {
-                  console.error("Error creating list:", error);
-                  toast({
-                    title: "Error",
-                    description: "Failed to create list",
-                    variant: "destructive",
-                  });
-                }
-              }}
-              disabled={!newListName.trim()}
-            >
-              Create List
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
-} 
+			const updatedSublist = await updateContributorSublist(sublistId, {
+				contributorIds: updatedContributorIds,
+			});
+
+			if (updatedSublist) {
+				// Update the local state
+				setSublists((prev) => prev.map((s) => (s.id === sublistId ? updatedSublist : s)));
+
+				toast({
+					title: "Contributors added",
+					description: `${selectedContributors.length} contributors added to "${sublist.name}"`,
+				});
+
+				// Clear selection
+				setSelectedContributors([]);
+			}
+		} catch (error) {
+			console.error("Error adding contributors to list:", error);
+			toast({
+				title: "Error",
+				description: "Failed to add contributors to list",
+				variant: "destructive",
+			});
+		}
+	};
+
+	// Create a new list with selected contributors
+	const createNewList = async () => {
+		// This will be implemented in the dialog
+		setIsAddToListDialogOpen(true);
+		setIsCreatingNewList(true);
+	};
+
+	return (
+		<div className="w-full max-w-full py-6">
+			<div className="flex justify-between items-center mb-6 w-full">
+				<div>
+					<h1 className="text-3xl font-bold">Contributors</h1>
+					<p className="text-muted-foreground">Overview of all contributors and their activity metrics.</p>
+				</div>
+				<div className="flex space-x-2">
+					{selectedContributors.length > 0 && (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="default">
+									<PlusCircle className="mr-2 h-4 w-4" />
+									Add to List
+									<ChevronDown className="ml-2 h-4 w-4" />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="end" className="w-56">
+								<DropdownMenuLabel>Add to List</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								{sublists.length > 0 ? (
+									<>
+										<DropdownMenuGroup>
+											{sublists.map((sublist) => (
+												<DropdownMenuItem
+													key={sublist.id}
+													onClick={() => addToExistingList(sublist.id)}
+												>
+													{sublist.name}
+												</DropdownMenuItem>
+											))}
+										</DropdownMenuGroup>
+										<DropdownMenuSeparator />
+									</>
+								) : null}
+								<DropdownMenuItem onClick={createNewList}>
+									<PlusCircle className="mr-2 h-4 w-4" />
+									Create New List
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					)}
+					<Link href="/contributors/sublists">
+						<Button variant="outline">
+							<Users className="mr-2 h-4 w-4" />
+							Manage Sublists
+						</Button>
+					</Link>
+				</div>
+			</div>
+			<Separator className="mb-6" />
+
+			<Card className="w-full max-w-full">
+				<CardHeader>
+					<div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+						<div>
+							<CardTitle>Contributors Activity</CardTitle>
+							<CardDescription>
+								Detailed metrics for all contributors including PRs, issues, and commits.
+							</CardDescription>
+						</div>
+						<div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+							<div className="relative w-full md:w-64">
+								<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+								<Input
+									placeholder="Search contributors..."
+									className="pl-8"
+									value={searchQuery}
+									onChange={(e) => setSearchQuery(e.target.value)}
+								/>
+							</div>
+							<Popover>
+								<PopoverTrigger asChild>
+									<Button variant="outline" size="icon" className="shrink-0 relative">
+										<SlidersHorizontal className="h-4 w-4" />
+										{activeFiltersCount > 0 && (
+											<span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+												{activeFiltersCount}
+											</span>
+										)}
+										<span className="sr-only">Filters</span>
+									</Button>
+								</PopoverTrigger>
+								<PopoverContent className="w-80">
+									<div className="space-y-4">
+										<div className="flex items-center justify-between">
+											<h4 className="font-medium">Filters</h4>
+											<Button
+												variant="ghost"
+												size="sm"
+												onClick={resetFilters}
+												disabled={!minPRs && !minCommits && !showActiveOnly}
+											>
+												Reset
+											</Button>
+										</div>
+										<Separator />
+										<div className="space-y-2">
+											<Label htmlFor="min-prs">Minimum PRs (opened + merged)</Label>
+											<Input
+												id="min-prs"
+												type="number"
+												min="0"
+												placeholder="Enter minimum PRs"
+												value={minPRs}
+												onChange={(e) =>
+													setMinPRs(e.target.value ? Number(e.target.value) : "")
+												}
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="min-commits">Minimum Commits</Label>
+											<Input
+												id="min-commits"
+												type="number"
+												min="0"
+												placeholder="Enter minimum commits"
+												value={minCommits}
+												onChange={(e) =>
+													setMinCommits(e.target.value ? Number(e.target.value) : "")
+												}
+											/>
+										</div>
+										<div className="flex items-center space-x-2">
+											<Checkbox
+												id="active-only"
+												checked={showActiveOnly}
+												onCheckedChange={(checked) => setShowActiveOnly(checked === true)}
+											/>
+											<Label htmlFor="active-only">
+												Show active contributors only (last 30 days)
+											</Label>
+										</div>
+									</div>
+								</PopoverContent>
+							</Popover>
+						</div>
+					</div>
+				</CardHeader>
+				<CardContent>
+					{isLoading ? (
+						<div className="flex justify-center items-center h-40">
+							<p>Loading contributors data...</p>
+						</div>
+					) : (
+						<div className="rounded-md border">
+							<Table>
+								<TableHeader>
+									<TableRow>
+										<TableHead className="w-[50px]">
+											<Checkbox
+												checked={
+													selectedContributors.length === filteredContributors.length &&
+													filteredContributors.length > 0
+												}
+												onCheckedChange={toggleSelectAll}
+												aria-label="Select all"
+											/>
+										</TableHead>
+										<TableHead>
+											<button
+												className="flex items-center font-medium text-left"
+												onClick={() => requestSort("name")}
+											>
+												Contributor{getSortDirectionIndicator("name")}
+											</button>
+										</TableHead>
+										<TableHead className="text-center">
+											<button
+												className="flex items-center justify-center gap-1 w-full"
+												onClick={() => requestSort("prMerged")}
+											>
+												<GitPullRequestClosed className="h-4 w-4" />
+												<span>PRs Merged{getSortDirectionIndicator("prMerged")}</span>
+											</button>
+										</TableHead>
+										<TableHead className="text-center">
+											<button
+												className="flex items-center justify-center gap-1 w-full"
+												onClick={() => requestSort("prOpened")}
+											>
+												<GitPullRequest className="h-4 w-4" />
+												<span>PRs Opened{getSortDirectionIndicator("prOpened")}</span>
+											</button>
+										</TableHead>
+										<TableHead className="text-center">
+											<button
+												className="flex items-center justify-center gap-1 w-full"
+												onClick={() => requestSort("issuesOpened")}
+											>
+												<MessageSquare className="h-4 w-4" />
+												<span>Issues Opened{getSortDirectionIndicator("issuesOpened")}</span>
+											</button>
+										</TableHead>
+										<TableHead className="text-center">
+											<button
+												className="flex items-center justify-center gap-1 w-full"
+												onClick={() => requestSort("issuesClosed")}
+											>
+												<GitBranch className="h-4 w-4" />
+												<span>Issues Closed{getSortDirectionIndicator("issuesClosed")}</span>
+											</button>
+										</TableHead>
+										<TableHead className="text-center">
+											<button
+												className="flex items-center justify-center gap-1 w-full"
+												onClick={() => requestSort("commits")}
+											>
+												<GitCommit className="h-4 w-4" />
+												<span>Commits{getSortDirectionIndicator("commits")}</span>
+											</button>
+										</TableHead>
+										<TableHead className="text-right">
+											<button
+												className="flex items-center justify-end w-full"
+												onClick={() => requestSort("lastActive")}
+											>
+												Last Active{getSortDirectionIndicator("lastActive")}
+											</button>
+										</TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									{filteredContributors.length === 0 ? (
+										<TableRow>
+											<TableCell colSpan={8} className="h-24 text-center">
+												No contributors found.
+											</TableCell>
+										</TableRow>
+									) : (
+										filteredContributors.map((contributor) => (
+											<TableRow
+												key={contributor.id}
+												className={
+													selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""
+												}
+											>
+												<TableCell>
+													<Checkbox
+														checked={selectedContributors.includes(contributor.id)}
+														onCheckedChange={() =>
+															toggleContributorSelection(contributor.id)
+														}
+														aria-label={`Select ${contributor.name}`}
+													/>
+												</TableCell>
+												<TableCell>
+													<div className="flex items-center gap-2">
+														<Avatar className="h-8 w-8">
+															<img src={contributor.avatar} alt={contributor.name} />
+														</Avatar>
+														<span className="font-medium">{contributor.name}</span>
+													</div>
+												</TableCell>
+												<TableCell className="text-center">{contributor.prMerged}</TableCell>
+												<TableCell className="text-center">{contributor.prOpened}</TableCell>
+												<TableCell className="text-center">
+													{contributor.issuesOpened}
+												</TableCell>
+												<TableCell className="text-center">
+													{contributor.issuesClosed}
+												</TableCell>
+												<TableCell className="text-center">{contributor.commits}</TableCell>
+												<TableCell className="text-right">
+													{formatDate(contributor.lastActive)}
+												</TableCell>
+											</TableRow>
+										))
+									)}
+								</TableBody>
+							</Table>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Dialog for creating a new list */}
+			<Dialog open={isAddToListDialogOpen} onOpenChange={setIsAddToListDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create New List</DialogTitle>
+						<DialogDescription>Create a new list with the selected contributors.</DialogDescription>
+					</DialogHeader>
+					<div className="space-y-4 py-4">
+						<div className="space-y-2">
+							<Label htmlFor="list-name">List Name</Label>
+							<Input
+								id="list-name"
+								placeholder="Enter list name"
+								value={newListName}
+								onChange={(e) => setNewListName(e.target.value)}
+							/>
+						</div>
+						<div className="space-y-2">
+							<Label htmlFor="list-description">Description (optional)</Label>
+							<Input
+								id="list-description"
+								placeholder="Enter description"
+								value={newListDescription}
+								onChange={(e) => setNewListDescription(e.target.value)}
+							/>
+						</div>
+						<div>
+							<p className="text-sm text-muted-foreground">
+								{selectedContributors.length} contributors will be added to this list.
+							</p>
+						</div>
+					</div>
+					<DialogFooter>
+						<Button variant="outline" onClick={() => setIsAddToListDialogOpen(false)}>
+							Cancel
+						</Button>
+						<Button
+							onClick={async () => {
+								if (!newListName.trim()) return;
+
+								try {
+									const newSublist = await createContributorSublist({
+										name: newListName,
+										description: newListDescription,
+										contributorIds: selectedContributors,
+									});
+
+									setSublists([...sublists, newSublist]);
+									setNewListName("");
+									setNewListDescription("");
+									setSelectedContributors([]);
+									setIsAddToListDialogOpen(false);
+
+									toast({
+										title: "List created",
+										description: `New list "${newListName}" created with ${selectedContributors.length} contributors`,
+									});
+								} catch (error) {
+									console.error("Error creating list:", error);
+									toast({
+										title: "Error",
+										description: "Failed to create list",
+										variant: "destructive",
+									});
+								}
+							}}
+							disabled={!newListName.trim()}
+						>
+							Create List
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+		</div>
+	);
+}

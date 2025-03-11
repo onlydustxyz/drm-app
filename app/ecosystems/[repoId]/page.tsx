@@ -126,8 +126,8 @@ const repositories = [
 	},
 ];
 
-export default function RepositoryOverviewPage({ params }: { params: { repoId: string } }) {
-	const repoIdString = params.repoId;
+export default async function RepositoryOverviewPage({ params }: { params: Promise<{ repoId: string }> }) {
+	const { repoId: repoIdString } = await params;
 	const repoId = parseInt(repoIdString);
 	const repository = repositories.find((repo) => repo.id === repoId);
 

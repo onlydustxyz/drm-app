@@ -137,9 +137,9 @@ function getContributorRoleColor(role: string) {
 	}
 }
 
-export default function ContributorsPage({ params }: { params: { repoId: string } }) {
-	const repoId = params.repoId;
-	
+export default async function ContributorsPage({ params }: { params: Promise<{ repoId: string }> }) {
+	const { repoId } = await params;
+
 	return (
 		<div className="space-y-6">
 			<div className="flex justify-between items-center">

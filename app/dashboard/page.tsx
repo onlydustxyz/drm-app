@@ -2,8 +2,8 @@ import { ActiveDevsChart } from "@/components/charts/dashboard-charts";
 import { WorldMapWrapper } from "@/components/charts/world-map-wrapper";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { CalendarClock, DollarSign, Users } from "lucide-react";
 import { getDashboardKPIs, getDeveloperActivity, getDevelopersByCountry } from "@/lib/dashboard-service";
+import { CalendarClock, DollarSign, Users } from "lucide-react";
 import { Suspense } from "react";
 
 export default async function DashboardPage() {
@@ -39,7 +39,9 @@ export default async function DashboardPage() {
 						</CardHeader>
 						<CardContent>
 							<div className="text-2xl font-bold">{kpis.monthlyActiveDevs}</div>
-							<p className="text-xs text-muted-foreground">+{kpis.monthlyActiveDevsGrowth}% from last month</p>
+							<p className="text-xs text-muted-foreground">
+								+{kpis.monthlyActiveDevsGrowth}% from last month
+							</p>
 						</CardContent>
 					</Card>
 					<Card>
@@ -76,7 +78,7 @@ export default async function DashboardPage() {
 							</Suspense>
 						</CardContent>
 					</Card>
-					
+
 					<Card className="w-full">
 						<CardHeader>
 							<CardTitle>Global Developer Distribution</CardTitle>
