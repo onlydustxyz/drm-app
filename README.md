@@ -4,7 +4,7 @@ A Next.js application with Supabase authentication.
 
 ## Features
 
--   Next.js 14 with App Router
+-   Next.js 15.2.1 with App Router
 -   TypeScript
 -   Tailwind CSS for styling
 -   Supabase Authentication
