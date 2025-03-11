@@ -21,31 +21,6 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 			icon: PanelLeft,
 		},
 		{
-			name: "Contacts",
-			href: "/contacts",
-			icon: ContactIcon,
-		},
-		{
-			name: "Companies",
-			href: "/companies",
-			icon: Building2,
-		},
-		{
-			name: "Deals",
-			href: "/deals",
-			icon: Users,
-		},
-		{
-			name: "Calendar",
-			href: "/calendar",
-			icon: CalendarDays,
-		},
-		{
-			name: "Reports",
-			href: "/reports",
-			icon: BarChart3,
-		},
-		{
 			name: "Contributors",
 			href: "/contributors",
 			icon: GitPullRequest,
