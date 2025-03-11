@@ -133,7 +133,7 @@ export default function ContributorsPage() {
   };
 
   return (
-    <div className="w-full py-6">
+    <div className="w-full max-w-full py-6">
       <div className="flex justify-between items-center mb-6 w-full">
         <div>
           <h1 className="text-3xl font-bold">Contributors</h1>
@@ -150,7 +150,7 @@ export default function ContributorsPage() {
       </div>
       <Separator className="mb-6" />
       
-      <Card className="w-full">
+      <Card className="w-full max-w-full">
         <CardHeader>
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>

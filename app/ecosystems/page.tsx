@@ -152,14 +152,14 @@ export default function EcosystemRepositoriesPage() {
 	};
 
 	return (
-		<div className="space-y-6 w-full">
+		<div className="space-y-6 w-full max-w-full">
 			<div>
 				<h1 className="text-3xl font-bold tracking-tight">Ecosystem Repositories</h1>
 				<p className="text-muted-foreground">View and manage repositories associated with this ecosystem.</p>
 			</div>
 			<Separator />
 
-			<div className="space-y-6 w-full">
+			<div className="space-y-6 w-full max-w-full">
 				<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 w-full">
 					<div className="relative w-full sm:w-64">
 						<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -252,7 +252,7 @@ export default function EcosystemRepositoriesPage() {
 					</Popover>
 				</div>
 
-				<Card className="w-full">
+				<Card className="w-full max-w-full">
 					<CardHeader>
 						<CardTitle>Repository Activity</CardTitle>
 						<CardDescription>

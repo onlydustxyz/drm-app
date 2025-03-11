@@ -40,17 +40,17 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
 	// For desktop: use regular sidebar layout
 	return (
 		<SidebarProvider>
-			<div className="flex min-h-screen">
+			<div className="flex min-h-screen w-full">
 				<Sidebar className="hidden border-r lg:block">
 					<CrmSidebar />
 				</Sidebar>
-				<div className="flex w-full flex-col">
+				<div className="flex flex-col flex-1 w-full max-w-full">
 					<header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 w-full">
 						<div className="flex-1">
 							<h1 className="text-xl font-semibold">CRM Dashboard</h1>
 						</div>
 					</header>
-					<main className="flex-1 p-6 w-full">{children}</main>
+					<main className="flex-1 p-6 w-full max-w-full">{children}</main>
 				</div>
 			</div>
 		</SidebarProvider>
