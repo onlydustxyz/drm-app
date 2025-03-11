@@ -127,7 +127,8 @@ const repositories = [
 ];
 
 export default function RepositoryOverviewPage({ params }: { params: { repoId: string } }) {
-	const repoId = parseInt(params.repoId);
+	const repoIdString = params.repoId;
+	const repoId = parseInt(repoIdString);
 	const repository = repositories.find((repo) => repo.id === repoId);
 
 	if (!repository) {
@@ -209,7 +210,7 @@ export default function RepositoryOverviewPage({ params }: { params: { repoId: s
 						<Eye className="h-5 w-5 text-blue-500" />
 						<span className="font-medium">{repository.watchers}</span>
 					</div>
-					<Link href={`/ecosystems/${params.repoId}/contributors`}>
+					<Link href={`/ecosystems/${repoIdString}/contributors`}>
 						<Button className="ml-4">View Contributors</Button>
 					</Link>
 				</div>

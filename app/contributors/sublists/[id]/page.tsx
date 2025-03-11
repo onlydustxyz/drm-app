@@ -22,6 +22,7 @@ import Link from "next/link";
 
 export default function SublistDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
+  const sublistId = params.id;
   const [sublist, setSublist] = useState<ContributorSublist | null>(null);
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
@@ -42,10 +43,9 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const id = params.id;
         
         // Fetch sublist data
-        const sublistData = await getContributorSublist(id);
+        const sublistData = await getContributorSublist(sublistId);
         if (!sublistData) {
           // Sublist not found, redirect to sublists page
           router.push("/contributors/sublists");
@@ -74,7 +74,7 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
     };
 
     fetchData();
-  }, [params.id, router]);
+  }, [sublistId, router]);
 
   const handleUpdateSublist = async () => {
     if (!sublist || !newSublistName.trim()) return;
