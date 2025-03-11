@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { BarChart3, Building2, CalendarDays, ContactIcon, Code2, LogOut, PanelLeft, Settings, Users, GitPullRequest } from "lucide-react";
+import { BarChart3, Building2, CalendarDays, ContactIcon, Code2, LogOut, PanelLeft, Settings, Users, GitPullRequest, ListFilter } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -24,6 +24,13 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 			name: "Contributors",
 			href: "/contributors",
 			icon: GitPullRequest,
+			subItems: [
+				{
+					name: "Contributor Sublists",
+					href: "/contributors/sublists",
+					icon: ListFilter,
+				}
+			]
 		},
 		{
 			name: "Ecosystem Repos",
@@ -44,21 +51,44 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 				<h2 className="mb-2 px-4 text-xl font-semibold tracking-tight">DRM CRM</h2>
 				<div className="space-y-1">
 					{navItems.map((item) => (
-						<Button
-							key={item.href}
-							variant={pathname === item.href ? "secondary" : "ghost"}
-							className={cn(
-								"w-full justify-start",
-								pathname === item.href ? "bg-secondary" : "hover:bg-secondary/20"
+						<div key={item.href} className="space-y-1">
+							<Button
+								variant={pathname === item.href ? "secondary" : "ghost"}
+								className={cn(
+									"w-full justify-start",
+									pathname === item.href ? "bg-secondary" : "hover:bg-secondary/20"
+								)}
+								asChild
+								onClick={handleClick}
+							>
+								<Link href={item.href}>
+									<item.icon className="mr-2 h-4 w-4" />
+									{item.name}
+								</Link>
+							</Button>
+							
+							{item.subItems && item.subItems.length > 0 && (
+								<div className="ml-6 space-y-1">
+									{item.subItems.map((subItem) => (
+										<Button
+											key={subItem.href}
+											variant={pathname === subItem.href ? "secondary" : "ghost"}
+											className={cn(
+												"w-full justify-start",
+												pathname === subItem.href ? "bg-secondary" : "hover:bg-secondary/20"
+											)}
+											asChild
+											onClick={handleClick}
+										>
+											<Link href={subItem.href}>
+												<subItem.icon className="mr-2 h-4 w-4" />
+												{subItem.name}
+											</Link>
+										</Button>
+									))}
+								</div>
 							)}
-							asChild
-							onClick={handleClick}
-						>
-							<Link href={item.href}>
-								<item.icon className="mr-2 h-4 w-4" />
-								{item.name}
-							</Link>
-						</Button>
+						</div>
 					))}
 				</div>
 			</div>
