@@ -120,7 +120,7 @@ export default function ContributorSublistsPage() {
     // For this mock implementation, we'll just match by name
     // In a real implementation, you would match by GitHub username
     const matchedContributors: Contributor[] = [];
-    const unmatchedHandles: string[] = [];
+    const newContributors: Contributor[] = [];
     
     handles.forEach(handle => {
       // Remove @ prefix if present
@@ -134,26 +134,44 @@ export default function ContributorSublistsPage() {
       if (contributor) {
         matchedContributors.push(contributor);
       } else {
-        unmatchedHandles.push(cleanHandle);
+        // Create a new contributor for unmatched handle
+        const newContributor: Contributor = {
+          id: `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // Generate a unique ID
+          name: cleanHandle,
+          avatar: `https://github.com/${cleanHandle}.png`,
+          prMerged: 0,
+          prOpened: 0,
+          issuesOpened: 0,
+          issuesClosed: 0,
+          commits: 0,
+          lastActive: new Date().toISOString().split('T')[0]
+        };
+        newContributors.push(newContributor);
       }
     });
+    
+    // Add new contributors to the contributors list
+    if (newContributors.length > 0) {
+      setContributors(prevContributors => [...prevContributors, ...newContributors]);
+    }
     
     // Update selected contributor IDs
     const newSelectedIds = [
       ...selectedContributorIds,
-      ...matchedContributors.map(c => c.id)
+      ...matchedContributors.map(c => c.id),
+      ...newContributors.map(c => c.id)
     ];
     
     // Remove duplicates
     setSelectedContributorIds([...new Set(newSelectedIds)]);
     
     // Show results
-    if (matchedContributors.length > 0) {
-      setImportSuccess(`Successfully matched ${matchedContributors.length} contributor${matchedContributors.length === 1 ? '' : 's'}`);
-    }
-    
-    if (unmatchedHandles.length > 0) {
-      setImportError(`Could not find contributors for: ${unmatchedHandles.join(', ')}`);
+    const totalAdded = matchedContributors.length + newContributors.length;
+    if (totalAdded > 0) {
+      setImportSuccess(`Successfully added ${totalAdded} contributor${totalAdded === 1 ? '' : 's'}`);
+      if (newContributors.length > 0) {
+        setImportSuccess(prev => `${prev} (${newContributors.length} new)`);
+      }
     }
   };
 
