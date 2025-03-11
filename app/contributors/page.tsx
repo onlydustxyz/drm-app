@@ -4,18 +4,12 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getContributors } from "@/lib/contributors-service";
 import { formatDate } from "@/lib/utils";
-import { GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, Users } from "lucide-react";
+import { GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare } from "lucide-react";
 import { Suspense } from "react";
 
 export default async function ContributorsPage() {
   // Fetch contributors data
   const contributors = await getContributors();
-  
-  // Calculate summary metrics
-  const totalContributors = contributors.length;
-  const totalPRsMerged = contributors.reduce((sum, contributor) => sum + contributor.prMerged, 0);
-  const totalPRsOpened = contributors.reduce((sum, contributor) => sum + contributor.prOpened, 0);
-  const totalCommits = contributors.reduce((sum, contributor) => sum + contributor.commits, 0);
 
   return (
     <div className="space-y-6">
@@ -26,49 +20,6 @@ export default async function ContributorsPage() {
       <Separator />
 
       <div className="space-y-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Contributors</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalContributors}</div>
-              <p className="text-xs text-muted-foreground">Active contributors in the ecosystem</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">PRs Merged</CardTitle>
-              <GitPullRequestClosed className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalPRsMerged}</div>
-              <p className="text-xs text-muted-foreground">Total pull requests merged</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">PRs Opened</CardTitle>
-              <GitPullRequest className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalPRsOpened}</div>
-              <p className="text-xs text-muted-foreground">Total pull requests opened</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Commits</CardTitle>
-              <GitCommit className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalCommits.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">Total commits across all repositories</p>
-            </CardContent>
-          </Card>
-        </div>
-
         <div className="grid gap-4 grid-cols-1">
           <Card>
             <CardHeader>
