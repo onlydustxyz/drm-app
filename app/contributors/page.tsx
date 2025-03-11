@@ -11,10 +11,13 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Contributor, getContributors } from "@/lib/contributors-service";
+import { ContributorSublist, getContributorSublists, updateContributorSublist } from "@/lib/contributor-sublists-service";
 import { formatDate } from "@/lib/utils";
-import { Check, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, Search, SlidersHorizontal, X, Users } from "lucide-react";
+import { Check, ChevronDown, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, PlusCircle, Search, SlidersHorizontal, X, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "@/components/ui/use-toast";
 
 export default function ContributorsPage() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
@@ -32,14 +35,26 @@ export default function ContributorsPage() {
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
+  // Selection states
+  const [selectedContributors, setSelectedContributors] = useState<string[]>([]);
+  const [sublists, setSublists] = useState<ContributorSublist[]>([]);
+  const [isAddToListDialogOpen, setIsAddToListDialogOpen] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [newListDescription, setNewListDescription] = useState("");
+  const [isCreatingNewList, setIsCreatingNewList] = useState(false);
+
   // Fetch contributors data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const data = await getContributors();
+        const [data, sublistsData] = await Promise.all([
+          getContributors(),
+          getContributorSublists()
+        ]);
         setContributors(data);
         setFilteredContributors(data);
+        setSublists(sublistsData);
       } catch (error) {
         console.error("Error fetching contributors:", error);
       } finally {
@@ -132,6 +147,70 @@ export default function ContributorsPage() {
     setShowActiveOnly(false);
   };
 
+  // Handle contributor selection
+  const toggleContributorSelection = (contributorId: string) => {
+    setSelectedContributors(prev => 
+      prev.includes(contributorId)
+        ? prev.filter(id => id !== contributorId)
+        : [...prev, contributorId]
+    );
+  };
+
+  // Handle select all contributors
+  const toggleSelectAll = () => {
+    if (selectedContributors.length === filteredContributors.length) {
+      setSelectedContributors([]);
+    } else {
+      setSelectedContributors(filteredContributors.map(c => c.id));
+    }
+  };
+
+  // Add selected contributors to an existing list
+  const addToExistingList = async (sublistId: string) => {
+    try {
+      const sublist = sublists.find(s => s.id === sublistId);
+      if (!sublist) return;
+
+      // Create a new set to avoid duplicates
+      const updatedContributorIds = Array.from(
+        new Set([...sublist.contributorIds, ...selectedContributors])
+      );
+
+      const updatedSublist = await updateContributorSublist(sublistId, {
+        contributorIds: updatedContributorIds
+      });
+
+      if (updatedSublist) {
+        // Update the local state
+        setSublists(prev => 
+          prev.map(s => s.id === sublistId ? updatedSublist : s)
+        );
+
+        toast({
+          title: "Contributors added",
+          description: `${selectedContributors.length} contributors added to "${sublist.name}"`,
+        });
+
+        // Clear selection
+        setSelectedContributors([]);
+      }
+    } catch (error) {
+      console.error("Error adding contributors to list:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add contributors to list",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Create a new list with selected contributors
+  const createNewList = async () => {
+    // This will be implemented in the dialog
+    setIsAddToListDialogOpen(true);
+    setIsCreatingNewList(true);
+  };
+
   return (
     <div className="w-full max-w-full py-6">
       <div className="flex justify-between items-center mb-6 w-full">
@@ -140,6 +219,40 @@ export default function ContributorsPage() {
           <p className="text-muted-foreground">Overview of all contributors and their activity metrics.</p>
         </div>
         <div className="flex space-x-2">
+          {selectedContributors.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add to List
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Add to List</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {sublists.length > 0 ? (
+                  <>
+                    <DropdownMenuGroup>
+                      {sublists.map((sublist) => (
+                        <DropdownMenuItem 
+                          key={sublist.id}
+                          onClick={() => addToExistingList(sublist.id)}
+                        >
+                          {sublist.name}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                  </>
+                ) : null}
+                <DropdownMenuItem onClick={createNewList}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create New List
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           <Link href="/contributors/sublists">
             <Button variant="outline">
               <Users className="mr-2 h-4 w-4" />
@@ -241,6 +354,13 @@ export default function ContributorsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox 
+                        checked={selectedContributors.length === filteredContributors.length && filteredContributors.length > 0}
+                        onCheckedChange={toggleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     <TableHead>
                       <button 
                         className="flex items-center font-medium text-left"
@@ -307,13 +427,20 @@ export default function ContributorsPage() {
                 <TableBody>
                   {filteredContributors.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center">
+                      <TableCell colSpan={8} className="h-24 text-center">
                         No contributors found.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredContributors.map((contributor) => (
-                      <TableRow key={contributor.id}>
+                      <TableRow key={contributor.id} className={selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""}>
+                        <TableCell>
+                          <Checkbox 
+                            checked={selectedContributors.includes(contributor.id)}
+                            onCheckedChange={() => toggleContributorSelection(contributor.id)}
+                            aria-label={`Select ${contributor.name}`}
+                          />
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="h-8 w-8">
@@ -337,6 +464,82 @@ export default function ContributorsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog for creating a new list */}
+      <Dialog open={isAddToListDialogOpen} onOpenChange={setIsAddToListDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New List</DialogTitle>
+            <DialogDescription>
+              Create a new list with the selected contributors.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="list-name">List Name</Label>
+              <Input
+                id="list-name"
+                placeholder="Enter list name"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="list-description">Description (optional)</Label>
+              <Input
+                id="list-description"
+                placeholder="Enter description"
+                value={newListDescription}
+                onChange={(e) => setNewListDescription(e.target.value)}
+              />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {selectedContributors.length} contributors will be added to this list.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddToListDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!newListName.trim()) return;
+                
+                try {
+                  const newSublist = await createContributorSublist({
+                    name: newListName,
+                    description: newListDescription,
+                    contributorIds: selectedContributors
+                  });
+                  
+                  setSublists([...sublists, newSublist]);
+                  setNewListName("");
+                  setNewListDescription("");
+                  setSelectedContributors([]);
+                  setIsAddToListDialogOpen(false);
+                  
+                  toast({
+                    title: "List created",
+                    description: `New list "${newListName}" created with ${selectedContributors.length} contributors`,
+                  });
+                } catch (error) {
+                  console.error("Error creating list:", error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to create list",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              disabled={!newListName.trim()}
+            >
+              Create List
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 
