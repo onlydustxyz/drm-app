@@ -1,16 +1,14 @@
 import { ActiveDevsChart, DevelopersByChainChart } from "@/components/charts/dashboard-charts";
-import { WorldMapWrapper } from "@/components/charts/world-map-wrapper";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CalendarClock, DollarSign, Users } from "lucide-react";
-import { getDashboardKPIs, getDeveloperActivity, getDevelopersByChain, getDevelopersByCountry } from "@/lib/dashboard-service";
+import { getDashboardKPIs, getDeveloperActivity, getDevelopersByChain } from "@/lib/dashboard-service";
 import { Suspense } from "react";
 
 export default async function DashboardPage() {
 	// Fetch data for the dashboard
 	const kpis = await getDashboardKPIs();
 	const developerActivity = await getDeveloperActivity();
-	const developersByCountry = await getDevelopersByCountry();
 	const developersByChain = await getDevelopersByChain();
 
 	return (
@@ -75,16 +73,6 @@ export default async function DashboardPage() {
 							<Suspense fallback={<div>Loading chart...</div>}>
 								<ActiveDevsChart data={developerActivity} />
 							</Suspense>
-						</CardContent>
-					</Card>
-					
-					<Card className="w-full">
-						<CardHeader>
-							<CardTitle>Global Developer Distribution</CardTitle>
-							<CardDescription>Developers by country</CardDescription>
-						</CardHeader>
-						<CardContent className="h-[400px]">
-							<WorldMapWrapper data={developersByCountry} />
 						</CardContent>
 					</Card>
 				</div>

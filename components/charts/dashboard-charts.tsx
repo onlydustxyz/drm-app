@@ -54,53 +54,36 @@ export function RevenueChart() {
 	);
 }
 
-interface ActiveDevsChartProps {
-	data: DeveloperActivity[];
-}
+export function ActiveDevsChart({ data }: { data: DeveloperActivity[] }) {
+	const formattedData = data.map(item => {
+		return {
+			name: item.month,
+			value: item.activeDevs
+		};
+	});
 
-export function ActiveDevsChart({ data }: ActiveDevsChartProps) {
 	return (
 		<ResponsiveContainer width="100%" height="100%">
 			<AreaChart
-				data={data}
-				margin={{
-					top: 10,
-					right: 30,
-					left: 0,
-					bottom: 0,
-				}}
+				data={formattedData}
+				margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
 			>
-				<CartesianGrid strokeDasharray="3 3" />
+				<defs>
+					<linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+						<stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+						<stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+					</linearGradient>
+				</defs>
 				<XAxis dataKey="name" />
 				<YAxis />
+				<CartesianGrid strokeDasharray="3 3" />
 				<Tooltip />
-				<Legend />
-				<Area 
-					type="monotone" 
-					dataKey="fullTime" 
-					name="Full Time Devs"
-					stackId="1"
-					stroke="#22c55e" 
-					fill="#22c55e" 
-					fillOpacity={0.3} 
-				/>
-				<Area 
-					type="monotone" 
-					dataKey="partTime" 
-					name="Part Time Devs"
-					stackId="1"
-					stroke="#3b82f6" 
-					fill="#3b82f6" 
-					fillOpacity={0.3} 
-				/>
-				<Area 
-					type="monotone" 
-					dataKey="onTime" 
-					name="On-Time Devs"
-					stackId="1"
-					stroke="#f59e0b" 
-					fill="#f59e0b" 
-					fillOpacity={0.3} 
+				<Area
+					type="monotone"
+					dataKey="value"
+					stroke="#8884d8"
+					fillOpacity={1}
+					fill="url(#colorUv)"
 				/>
 			</AreaChart>
 		</ResponsiveContainer>

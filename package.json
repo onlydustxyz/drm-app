@@ -31,7 +31,8 @@
 		"next": "^15.2.1",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",
-		"recharts": "^2.15.1",
+		"react-resizable-panels": "^2.0.12",
+		"recharts": "^2.12.2",
 		"tailwind-merge": "^3.0.2",
 		"tailwindcss-animate": "^1.0.7"
 	},
