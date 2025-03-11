@@ -1,5 +1,6 @@
 "use client";
 
+import { DeveloperActivity } from "@/lib/dashboard-service";
 import {
 	Area,
 	AreaChart,
@@ -30,30 +31,6 @@ export const revenueData = [
 	{ name: "Oct", value: 32000 },
 	{ name: "Nov", value: 38000 },
 	{ name: "Dec", value: 45231 },
-];
-
-// Monthly active developers data
-export const activeDevsData = [
-	{ name: "Jan", value: 85 },
-	{ name: "Feb", value: 92 },
-	{ name: "Mar", value: 97 },
-	{ name: "Apr", value: 105 },
-	{ name: "May", value: 110 },
-	{ name: "Jun", value: 102 },
-	{ name: "Jul", value: 108 },
-	{ name: "Aug", value: 115 },
-	{ name: "Sep", value: 120 },
-	{ name: "Oct", value: 125 },
-	{ name: "Nov", value: 122 },
-	{ name: "Dec", value: 128 },
-];
-
-export const dealStageData = [
-	{ name: "Discovery", value: 35 },
-	{ name: "Qualified", value: 25 },
-	{ name: "Proposal", value: 20 },
-	{ name: "Negotiation", value: 12 },
-	{ name: "Closed Won", value: 8 },
 ];
 
 export const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
@@ -95,11 +72,15 @@ export function RevenueChart() {
 	);
 }
 
-export function ActiveDevsChart() {
+interface ActiveDevsChartProps {
+	data: DeveloperActivity[];
+}
+
+export function ActiveDevsChart({ data }: ActiveDevsChartProps) {
 	return (
 		<ResponsiveContainer width="100%" height="100%">
 			<AreaChart
-				data={activeDevsData}
+				data={data}
 				margin={{
 					top: 10,
 					right: 30,
@@ -111,33 +92,35 @@ export function ActiveDevsChart() {
 				<XAxis dataKey="name" />
 				<YAxis />
 				<Tooltip />
-				<Area type="monotone" dataKey="value" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
-			</AreaChart>
-		</ResponsiveContainer>
-	);
-}
-
-export function DealStageChart() {
-	return (
-		<ResponsiveContainer width="100%" height="100%">
-			<PieChart>
-				<Pie
-					data={dealStageData}
-					cx="50%"
-					cy="50%"
-					labelLine={false}
-					label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-					outerRadius={80}
-					fill="#8884d8"
-					dataKey="value"
-				>
-					{dealStageData.map((entry, index) => (
-						<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-					))}
-				</Pie>
-				<Tooltip />
 				<Legend />
-			</PieChart>
+				<Area 
+					type="monotone" 
+					dataKey="fullTime" 
+					name="Full Time Devs"
+					stackId="1"
+					stroke="#22c55e" 
+					fill="#22c55e" 
+					fillOpacity={0.3} 
+				/>
+				<Area 
+					type="monotone" 
+					dataKey="partTime" 
+					name="Part Time Devs"
+					stackId="1"
+					stroke="#3b82f6" 
+					fill="#3b82f6" 
+					fillOpacity={0.3} 
+				/>
+				<Area 
+					type="monotone" 
+					dataKey="onTime" 
+					name="On-Time Devs"
+					stackId="1"
+					stroke="#f59e0b" 
+					fill="#f59e0b" 
+					fillOpacity={0.3} 
+				/>
+			</AreaChart>
 		</ResponsiveContainer>
 	);
 }

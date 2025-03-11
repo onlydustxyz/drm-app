@@ -1,10 +1,16 @@
-import { ActiveDevsChart, ContactGrowthChart, DealStageChart } from "@/components/charts/dashboard-charts";
+import { ActiveDevsChart, ContactGrowthChart } from "@/components/charts/dashboard-charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CalendarClock, DollarSign, Users } from "lucide-react";
+import { getDashboardKPIs, getDeveloperActivity } from "@/lib/dashboard-service";
+import { Suspense } from "react";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+	// Fetch data for the dashboard
+	const kpis = await getDashboardKPIs();
+	const developerActivity = await getDeveloperActivity();
+
 	return (
 		<div className="space-y-6">
 			<div>
@@ -28,8 +34,8 @@ export default function DashboardPage() {
 								<Users className="h-4 w-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">42</div>
-								<p className="text-xs text-muted-foreground">+3.5% from last month</p>
+								<div className="text-2xl font-bold">{kpis.fullTimeDevs}</div>
+								<p className="text-xs text-muted-foreground">+{kpis.fullTimeDevsGrowth}% from last month</p>
 							</CardContent>
 						</Card>
 						<Card>
@@ -38,8 +44,8 @@ export default function DashboardPage() {
 								<Users className="h-4 w-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">128</div>
-								<p className="text-xs text-muted-foreground">+7.2% from last month</p>
+								<div className="text-2xl font-bold">{kpis.monthlyActiveDevs}</div>
+								<p className="text-xs text-muted-foreground">+{kpis.monthlyActiveDevsGrowth}% from last month</p>
 							</CardContent>
 						</Card>
 						<Card>
@@ -48,8 +54,8 @@ export default function DashboardPage() {
 								<DollarSign className="h-4 w-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">87</div>
-								<p className="text-xs text-muted-foreground">+4.3% from last month</p>
+								<div className="text-2xl font-bold">{kpis.totalRepos}</div>
+								<p className="text-xs text-muted-foreground">+{kpis.totalReposGrowth}% from last month</p>
 							</CardContent>
 						</Card>
 						<Card>
@@ -58,30 +64,22 @@ export default function DashboardPage() {
 								<CalendarClock className="h-4 w-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">12,547</div>
-								<p className="text-xs text-muted-foreground">+15.8% from last month</p>
+								<div className="text-2xl font-bold">{kpis.totalCommits.toLocaleString()}</div>
+								<p className="text-xs text-muted-foreground">+{kpis.totalCommitsGrowth}% from last month</p>
 							</CardContent>
 						</Card>
 					</div>
 
-					<div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
+					<div className="grid gap-4 grid-cols-1">
 						<Card>
 							<CardHeader>
 								<CardTitle>Monthly Active Developers</CardTitle>
 								<CardDescription>Developer activity over the last year</CardDescription>
 							</CardHeader>
 							<CardContent className="h-[300px]">
-								<ActiveDevsChart />
-							</CardContent>
-						</Card>
-
-						<Card>
-							<CardHeader>
-								<CardTitle>Deal Stage Distribution</CardTitle>
-								<CardDescription>Current deals by stage</CardDescription>
-							</CardHeader>
-							<CardContent className="h-[300px]">
-								<DealStageChart />
+								<Suspense fallback={<div>Loading chart...</div>}>
+									<ActiveDevsChart data={developerActivity} />
+								</Suspense>
 							</CardContent>
 						</Card>
 					</div>
