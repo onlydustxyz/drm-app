@@ -604,7 +604,7 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
       </div>
       
       {/* Repository filter */}
-      <div className="bg-white p-4 rounded-lg border border-gray-200">
+      <div className="bg-white p-4 rounded-lg">
         <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
           <GitPullRequestIcon className="h-4 w-4" />
           Filter by Repository
@@ -639,7 +639,7 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
       </div>
       
       {/* View toggle */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-lg border border-gray-200">
+      <div className="flex items-center justify-between bg-white p-4 rounded-lg">
         <div className="flex items-center space-x-8">
           <div className="flex items-center space-x-2">
             <Label htmlFor="view-mode" className="text-sm font-medium flex items-center gap-1.5">

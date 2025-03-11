@@ -12,8 +12,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RetentionAreaChart, RetentionBarChart, RetentionChart } from "@/components/charts/retention-chart";
+import { GitHubActivityGraph } from "@/components/charts/github-activity-graph";
 import { Contributor, getContributors } from "@/lib/contributors-service";
-import { ContributorSublist, getContributorRetentionData, getContributorSublist, updateContributorSublist } from "@/lib/contributor-sublists-service";
+import { ContributorSublist, getContributorRetentionData, getContributorSublist, updateContributorSublist, getContributorActivityData } from "@/lib/contributor-sublists-service";
 import { formatDate } from "@/lib/utils";
 import { ChevronLeft, Edit, Users, Activity, BarChart3, Import, AlertCircle, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -28,6 +29,7 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
   const [retentionData, setRetentionData] = useState<any[]>([]);
+  const [activityData, setActivityData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [newSublistName, setNewSublistName] = useState("");
@@ -57,20 +59,34 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
           return;
         }
         
+        console.log("Sublist data:", sublistData);
+        
         setSublist(sublistData);
         setNewSublistName(sublistData.name);
         setNewSublistDescription(sublistData.description);
         setSelectedContributorIds([...sublistData.contributorIds]);
         
-        // Fetch contributors and retention data
-        const [contributorsData, retentionData] = await Promise.all([
+        // Fetch contributors, retention data, and activity data
+        const [contributorsData, retentionData, activityData] = await Promise.all([
           getContributors(),
-          getContributorRetentionData(sublistData.contributorIds)
+          getContributorRetentionData(sublistData.contributorIds),
+          getContributorActivityData(sublistData.contributorIds)
         ]);
         
+        console.log("All contributors:", contributorsData);
+        console.log("Contributor IDs in sublist:", sublistData.contributorIds);
+        
+        // Make sure we're comparing strings to strings for IDs
+        const filteredContribs = contributorsData.filter(c => 
+          sublistData.contributorIds.includes(String(c.id))
+        );
+        
+        console.log("Filtered contributors:", filteredContribs);
+        
         setContributors(contributorsData);
-        setFilteredContributors(contributorsData.filter(c => sublistData.contributorIds.includes(c.id)));
+        setFilteredContributors(filteredContribs);
         setRetentionData(retentionData);
+        setActivityData(activityData);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -93,16 +109,24 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
       
       if (updatedSublist) {
         setSublist(updatedSublist);
-        setFilteredContributors(contributors.filter(c => updatedSublist.contributorIds.includes(c.id)));
+        // Make sure we're comparing strings to strings for IDs
+        setFilteredContributors(contributors.filter(c => 
+          updatedSublist.contributorIds.includes(String(c.id))
+        ));
         setIsEditing(false);
         setImportMode("manual");
         setGithubHandles("");
         setImportError("");
         setImportSuccess("");
         
-        // Update retention data
-        const retentionData = await getContributorRetentionData(updatedSublist.contributorIds);
+        // Update retention data and activity data
+        const [retentionData, activityData] = await Promise.all([
+          getContributorRetentionData(updatedSublist.contributorIds),
+          getContributorActivityData(updatedSublist.contributorIds)
+        ]);
+        
         setRetentionData(retentionData);
+        setActivityData(activityData);
       }
     } catch (error) {
       console.error("Error updating sublist:", error);
@@ -184,7 +208,7 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
     ];
     
     // Remove duplicates
-    setSelectedContributorIds([...new Set(newSelectedIds)]);
+    setSelectedContributorIds(Array.from(new Set(newSelectedIds)));
     
     // Show results
     const totalAdded = matchedContributors.length + newContributors.length;
@@ -261,6 +285,19 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
         </Link>
         <h1 className="text-3xl font-bold ml-4">{sublist.name}</h1>
       </div>
+
+      {/* Debug information */}
+      {process.env.NODE_ENV !== 'production' && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <h3 className="text-sm font-medium text-yellow-800 mb-2">Debug Information</h3>
+          <div className="text-xs text-yellow-700 space-y-1">
+            <p>Sublist ID: {sublist.id}</p>
+            <p>Contributor IDs: {sublist.contributorIds.join(', ')}</p>
+            <p>Filtered Contributors Count: {filteredContributors.length}</p>
+            <p>All Contributors Count: {contributors.length}</p>
+          </div>
+        </div>
+      )}
 
       <Card className="mb-6">
         <CardHeader>
@@ -563,19 +600,13 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
             </TabsContent>
             
             <TabsContent value="retention">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contributor Retention</CardTitle>
-                  <CardDescription>
-                    Monthly retention rate and active contributors
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[400px]">
-                    <RetentionChart data={retentionData} />
-                  </div>
-                </CardContent>
-              </Card>
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Contributor Activity</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  GitHub-style activity graph showing PR contributions by contributors and projects
+                </p>
+                <GitHubActivityGraph data={activityData} />
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
