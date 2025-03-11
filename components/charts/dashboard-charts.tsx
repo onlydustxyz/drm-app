@@ -1,11 +1,13 @@
 "use client";
 
-import { DeveloperActivity } from "@/lib/dashboard-service";
+import { DeveloperActivity, DevelopersByChain } from "@/lib/dashboard-service";
 import {
 	Area,
 	AreaChart,
 	CartesianGrid,
 	Legend,
+	Line,
+	LineChart,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -101,6 +103,73 @@ export function ActiveDevsChart({ data }: ActiveDevsChartProps) {
 					fillOpacity={0.3} 
 				/>
 			</AreaChart>
+		</ResponsiveContainer>
+	);
+}
+
+interface DevelopersByChainChartProps {
+	data: DevelopersByChain[];
+}
+
+export function DevelopersByChainChart({ data }: DevelopersByChainChartProps) {
+	// Format the date for display
+	const formattedData = data.map(item => {
+		const [year, month] = item.date.split('-');
+		return {
+			...item,
+			formattedDate: `${year}-${month}`
+		};
+	});
+
+	return (
+		<ResponsiveContainer width="100%" height="100%">
+			<LineChart
+				data={formattedData}
+				margin={{
+					top: 10,
+					right: 30,
+					left: 0,
+					bottom: 0,
+				}}
+			>
+				<CartesianGrid strokeDasharray="3 3" />
+				<XAxis 
+					dataKey="formattedDate" 
+					tick={{ fontSize: 10 }}
+					interval={6} // Show every 6th label to avoid crowding
+				/>
+				<YAxis 
+					domain={[0, 'dataMax + 50']} 
+					label={{ value: 'Developers', angle: -90, position: 'insideLeft' }} 
+				/>
+				<Tooltip 
+					formatter={(value, name) => {
+						return [value, name === "singleChain" ? "Single Chain" : "Multi Chain"];
+					}}
+					labelFormatter={(label) => `Date: ${label}`}
+				/>
+				<Legend 
+					formatter={(value) => value === "singleChain" ? "Single Chain" : "Multi Chain"}
+				/>
+				<Line 
+					type="monotone" 
+					dataKey="singleChain" 
+					name="singleChain"
+					stroke="#3b82f6" 
+					strokeWidth={2}
+					dot={false}
+					activeDot={{ r: 6 }}
+				/>
+				<Line 
+					type="monotone" 
+					dataKey="multiChain" 
+					name="multiChain"
+					stroke="#22c55e" 
+					strokeWidth={2}
+					dot={false}
+					activeDot={{ r: 6 }}
+				/>
+			</LineChart>
 		</ResponsiveContainer>
 	);
 }

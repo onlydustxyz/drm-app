@@ -1,9 +1,9 @@
-import { ActiveDevsChart } from "@/components/charts/dashboard-charts";
+import { ActiveDevsChart, DevelopersByChainChart } from "@/components/charts/dashboard-charts";
 import { WorldMapWrapper } from "@/components/charts/world-map-wrapper";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { CalendarClock, DollarSign, Users } from "lucide-react";
-import { getDashboardKPIs, getDeveloperActivity, getDevelopersByCountry } from "@/lib/dashboard-service";
+import { getDashboardKPIs, getDeveloperActivity, getDevelopersByChain, getDevelopersByCountry } from "@/lib/dashboard-service";
 import { Suspense } from "react";
 
 export default async function DashboardPage() {
@@ -11,6 +11,7 @@ export default async function DashboardPage() {
 	const kpis = await getDashboardKPIs();
 	const developerActivity = await getDeveloperActivity();
 	const developersByCountry = await getDevelopersByCountry();
+	const developersByChain = await getDevelopersByChain();
 
 	return (
 		<div className="space-y-6 w-full max-w-full">
@@ -84,6 +85,20 @@ export default async function DashboardPage() {
 						</CardHeader>
 						<CardContent className="h-[400px]">
 							<WorldMapWrapper data={developersByCountry} />
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="w-full">
+					<Card className="w-full">
+						<CardHeader>
+							<CardTitle>Active Developers by Chain Type</CardTitle>
+							<CardDescription>Single chain vs. multi-chain developers over time</CardDescription>
+						</CardHeader>
+						<CardContent className="h-[400px]">
+							<Suspense fallback={<div>Loading chart...</div>}>
+								<DevelopersByChainChart data={developersByChain} />
+							</Suspense>
 						</CardContent>
 					</Card>
 				</div>
