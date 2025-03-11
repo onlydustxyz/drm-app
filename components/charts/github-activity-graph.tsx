@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, GitPullRequestIcon, UsersIcon, FolderIcon } from "lucide-react";
+import { CalendarIcon, GitPullRequestIcon, UsersIcon, FolderIcon, FilterIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 // Interface for contributor activity data
 export interface ContributorActivity {
@@ -45,30 +46,30 @@ const formatWeek = (weekStr: string) => {
 
 // Activity Legend Component
 const ActivityLegend = () => (
-  <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-md">
-    <div className="flex items-center gap-1">
-      <CalendarIcon className="h-4 w-4 text-gray-500" />
-      <span className="text-xs font-medium text-gray-700">Activity Level:</span>
-    </div>
+  <div className="flex items-center gap-4 mb-6">
     <div className="flex items-center gap-2">
+      <CalendarIcon className="h-4 w-4 text-gray-500" />
+      <span className="text-sm font-medium">Activity Level:</span>
+    </div>
+    <div className="flex items-center gap-4">
       <div className="flex items-center gap-1">
-        <div className="w-3 h-3 bg-gray-100 border border-gray-200 rounded-sm"></div>
+        <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
         <span className="text-xs">None</span>
       </div>
       <div className="flex items-center gap-1">
-        <div className="w-3 h-3 bg-green-100 border border-gray-200 rounded-sm"></div>
+        <div className="w-3 h-3 bg-green-100 rounded-sm"></div>
         <span className="text-xs">1-2 PRs</span>
       </div>
       <div className="flex items-center gap-1">
-        <div className="w-3 h-3 bg-green-300 border border-gray-200 rounded-sm"></div>
+        <div className="w-3 h-3 bg-green-300 rounded-sm"></div>
         <span className="text-xs">3-5 PRs</span>
       </div>
       <div className="flex items-center gap-1">
-        <div className="w-3 h-3 bg-green-500 border border-gray-200 rounded-sm"></div>
+        <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
         <span className="text-xs">6-10 PRs</span>
       </div>
       <div className="flex items-center gap-1">
-        <div className="w-3 h-3 bg-green-700 border border-gray-200 rounded-sm"></div>
+        <div className="w-3 h-3 bg-green-700 rounded-sm"></div>
         <span className="text-xs">10+ PRs</span>
       </div>
     </div>
@@ -78,8 +79,9 @@ const ActivityLegend = () => (
 export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
   const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
   const [selectedContributor, setSelectedContributor] = useState<string | null>(null);
-  const [hoveredWeek, setHoveredWeek] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"contributors" | "projects">("contributors");
+  const [hoveredWeek, setHoveredWeek] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   
   // Handle empty data case
   if (!data || data.length === 0) {
@@ -223,47 +225,10 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
   
   // Render the contributor view
   const renderContributorView = () => (
-    <div className="space-y-6">
-      {/* Contributor filter */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <button
-          onClick={() => setSelectedContributor(null)}
-          className={cn(
-            "px-3 py-1.5 text-sm rounded-md flex items-center gap-1.5 transition-colors",
-            selectedContributor === null 
-              ? "bg-primary text-primary-foreground" 
-              : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-          )}
-        >
-          <UsersIcon className="h-4 w-4" />
-          All Contributors
-        </button>
-        {data.map(contributor => (
-          <button
-            key={contributor.id}
-            onClick={() => setSelectedContributor(contributor.id)}
-            className={cn(
-              "px-3 py-1.5 text-sm rounded-md flex items-center gap-2 transition-colors",
-              selectedContributor === contributor.id 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            )}
-          >
-            <img 
-              src={contributor.avatar} 
-              alt={contributor.name} 
-              className="w-5 h-5 rounded-full"
-            />
-            {contributor.name}
-          </button>
-        ))}
-      </div>
-      
-      <ActivityLegend />
-      
+    <div>
       {/* Activity graph by contributor */}
-      <div className="overflow-x-auto rounded-md border border-gray-200">
-        <table className="w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50">
               <th className="text-left p-3 font-medium text-gray-600 border-b">Contributor</th>
@@ -421,11 +386,9 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
   // Render the project view
   const renderProjectView = () => (
     <div className="space-y-6">
-      <ActivityLegend />
-      
       {/* Activity graph by project */}
-      <div className="overflow-x-auto rounded-md border border-gray-200">
-        <table className="w-full">
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
           <thead>
             <tr className="bg-gray-50">
               <th className="text-left p-3 font-medium text-gray-600 border-b">Project</th>
@@ -577,94 +540,158 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
   );
   
   return (
-    <div className="space-y-6">
-      {/* Stats summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">Total Pull Requests</div>
-          <div className="text-2xl font-bold flex items-center gap-2">
-            <GitPullRequestIcon className="h-5 w-5 text-green-600" />
+    <div className="space-y-4">
+      {/* Header stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <h3 className="text-sm font-medium mb-2 text-gray-700">Total Activity</h3>
+          <div className="flex items-center gap-2 text-2xl font-semibold">
+            <GitPullRequestIcon className="h-5 w-5 text-primary" />
             {totalPRs}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">Active Contributors</div>
-          <div className="text-2xl font-bold flex items-center gap-2">
+        
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <h3 className="text-sm font-medium mb-2 text-gray-700">Active Contributors</h3>
+          <div className="flex items-center gap-2 text-2xl font-semibold">
             <UsersIcon className="h-5 w-5 text-blue-600" />
-            {activeContributors}/{filteredData.length}
+            {data.filter(c => c.weeklyActivity.some(a => a.prCount > 0)).length}/{data.length}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">Active Projects</div>
-          <div className="text-2xl font-bold flex items-center gap-2">
+        
+        <div className="bg-white p-4 rounded-lg shadow-sm">
+          <h3 className="text-sm font-medium mb-2 text-gray-700">Active Projects</h3>
+          <div className="flex items-center gap-2 text-2xl font-semibold">
             <FolderIcon className="h-5 w-5 text-amber-600" />
             {projectData.filter(p => p.weeklyActivity.some(a => a.prCount > 0)).length}/{projectData.length}
           </div>
         </div>
       </div>
       
-      {/* Repository filter */}
-      <div className="bg-white p-4 rounded-lg">
-        <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
-          <GitPullRequestIcon className="h-4 w-4" />
-          Filter by Repository
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedRepo(null)}
-            className={cn(
-              "px-3 py-1.5 text-sm rounded-md transition-colors",
-              selectedRepo === null 
-                ? "bg-primary text-primary-foreground" 
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            )}
+      <div className="flex items-center justify-between mb-6">
+        {/* View toggle - always visible */}
+        <div className="flex items-center gap-2">
+          <Label htmlFor="view-mode" className="text-sm font-medium flex items-center gap-1.5">
+            <UsersIcon className="h-4 w-4 text-blue-600" />
+            Contributors
+          </Label>
+          <Switch
+            id="view-mode"
+            checked={viewMode === "projects"}
+            onCheckedChange={(checked) => setViewMode(checked ? "projects" : "contributors")}
+          />
+          <Label htmlFor="view-mode" className="text-sm font-medium flex items-center gap-1.5">
+            <FolderIcon className="h-4 w-4 text-amber-600" />
+            Projects
+          </Label>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {/* Filter toggle button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center gap-1.5"
           >
-            All Repositories
-          </button>
-          {allRepos.map(repo => (
-            <button
-              key={repo}
-              onClick={() => setSelectedRepo(repo)}
-              className={cn(
-                "px-3 py-1.5 text-sm rounded-md transition-colors",
-                selectedRepo === repo 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              )}
-            >
-              {repo}
-            </button>
-          ))}
+            <FilterIcon className="h-4 w-4" />
+            {showFilters ? "Hide Filters" : "Show Filters"}
+          </Button>
+          
+          <div className="text-sm text-gray-500">
+            {viewMode === "contributors" ? 
+              `Showing ${filteredData.filter(c => c.weeklyActivity.some(a => a.prCount > 0)).length} active contributors` : 
+              `Showing ${projectData.filter(p => p.weeklyActivity.some(a => a.prCount > 0)).length} active projects`
+            }
+          </div>
         </div>
       </div>
       
-      {/* View toggle */}
-      <div className="flex items-center justify-between bg-white p-4 rounded-lg">
-        <div className="flex items-center space-x-8">
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="view-mode" className="text-sm font-medium flex items-center gap-1.5">
-              <UsersIcon className="h-4 w-4 text-blue-600" />
-              Contributors
-            </Label>
-            <Switch
-              id="view-mode"
-              checked={viewMode === "projects"}
-              onCheckedChange={(checked) => setViewMode(checked ? "projects" : "contributors")}
-            />
-            <Label htmlFor="view-mode" className="text-sm font-medium flex items-center gap-1.5">
-              <FolderIcon className="h-4 w-4 text-amber-600" />
-              Projects
-            </Label>
+      {/* Activity Legend - always visible */}
+      <ActivityLegend />
+      
+      {/* Filters - hidden behind button */}
+      {showFilters && (
+        <div className="space-y-6 mb-6 p-4 bg-gray-50 rounded-lg">
+          {/* Repository filter */}
+          <div>
+            <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+              <GitPullRequestIcon className="h-4 w-4" />
+              Filter by Repository
+            </h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedRepo(null)}
+                className={cn(
+                  "px-3 py-1.5 text-sm rounded-md transition-colors",
+                  selectedRepo === null 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                )}
+              >
+                All Repositories
+              </button>
+              {allRepos.map(repo => (
+                <button
+                  key={repo}
+                  onClick={() => setSelectedRepo(repo)}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded-md transition-colors",
+                    selectedRepo === repo 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  {repo}
+                </button>
+              ))}
+            </div>
           </div>
+          
+          {/* Contributor filter - only show in contributors view */}
+          {viewMode === "contributors" && (
+            <div>
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-1.5">
+                <UsersIcon className="h-4 w-4" />
+                Filter by Contributor
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedContributor(null)}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded-md flex items-center gap-1.5 transition-colors",
+                    selectedContributor === null 
+                      ? "bg-primary text-primary-foreground" 
+                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  )}
+                >
+                  <UsersIcon className="h-4 w-4" />
+                  All Contributors
+                </button>
+                {data.map(contributor => (
+                  <button
+                    key={contributor.id}
+                    onClick={() => setSelectedContributor(contributor.id)}
+                    className={cn(
+                      "px-3 py-1.5 text-sm rounded-md flex items-center gap-2 transition-colors",
+                      selectedContributor === contributor.id 
+                        ? "bg-primary text-primary-foreground" 
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    )}
+                  >
+                    <img 
+                      src={contributor.avatar} 
+                      alt={contributor.name} 
+                      className="w-5 h-5 rounded-full"
+                    />
+                    {contributor.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        
-        <div className="text-sm text-gray-500">
-          {viewMode === "contributors" ? 
-            `Showing ${filteredData.filter(c => c.weeklyActivity.some(a => a.prCount > 0)).length} active contributors` : 
-            `Showing ${projectData.filter(p => p.weeklyActivity.some(a => a.prCount > 0)).length} active projects`
-          }
-        </div>
-      </div>
+      )}
       
       {/* Content based on view mode */}
       {viewMode === "contributors" ? renderContributorView() : renderProjectView()}
