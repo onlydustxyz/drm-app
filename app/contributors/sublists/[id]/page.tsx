@@ -15,10 +15,11 @@ import { RetentionAreaChart, RetentionBarChart, RetentionChart } from "@/compone
 import { Contributor, getContributors } from "@/lib/contributors-service";
 import { ContributorSublist, getContributorRetentionData, getContributorSublist, updateContributorSublist } from "@/lib/contributor-sublists-service";
 import { formatDate } from "@/lib/utils";
-import { ChevronLeft, Edit, Users, Activity, BarChart3, Import, AlertCircle } from "lucide-react";
+import { ChevronLeft, Edit, Users, Activity, BarChart3, Import, AlertCircle, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Avatar } from "@/components/ui/avatar";
 
 export default function SublistDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -37,6 +38,10 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
   const [githubHandles, setGithubHandles] = useState("");
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Contributor | null;
+    direction: 'ascending' | 'descending';
+  }>({ key: null, direction: 'descending' });
 
   // Fetch sublist and contributors data
   useEffect(() => {
@@ -189,6 +194,35 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
         setImportSuccess(prev => `${prev} (${newContributors.length} new)`);
       }
     }
+  };
+
+  // Handle sorting
+  const requestSort = (key: keyof Contributor) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    
+    setSortConfig({ key, direction });
+    
+    const sortedData = [...filteredContributors].sort((a, b) => {
+      if (a[key] < b[key]) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (a[key] > b[key]) {
+        return direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+    
+    setFilteredContributors(sortedData);
+  };
+
+  // Get sort direction indicator
+  const getSortDirectionIndicator = (key: keyof Contributor) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
   };
 
   if (isLoading) {
@@ -404,32 +438,103 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
             </TabsList>
             
             <TabsContent value="overview">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>PRs Merged</TableHead>
-                    <TableHead>PRs Opened</TableHead>
-                    <TableHead>Issues Opened</TableHead>
-                    <TableHead>Issues Closed</TableHead>
-                    <TableHead>Commits</TableHead>
-                    <TableHead>Last Active</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredContributors.map((contributor) => (
-                    <TableRow key={contributor.id}>
-                      <TableCell className="font-medium">{contributor.name}</TableCell>
-                      <TableCell>{contributor.prMerged}</TableCell>
-                      <TableCell>{contributor.prOpened}</TableCell>
-                      <TableCell>{contributor.issuesOpened}</TableCell>
-                      <TableCell>{contributor.issuesClosed}</TableCell>
-                      <TableCell>{contributor.commits}</TableCell>
-                      <TableCell>{formatDate(contributor.lastActive)}</TableCell>
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <button 
+                          className="flex items-center font-medium text-left"
+                          onClick={() => requestSort('name')}
+                        >
+                          Contributor{getSortDirectionIndicator('name')}
+                        </button>
+                      </TableHead>
+                      <TableHead className="text-center">
+                        <button 
+                          className="flex items-center justify-center gap-1 w-full"
+                          onClick={() => requestSort('prMerged')}
+                        >
+                          <GitPullRequestClosed className="h-4 w-4" />
+                          <span>PRs Merged{getSortDirectionIndicator('prMerged')}</span>
+                        </button>
+                      </TableHead>
+                      <TableHead className="text-center">
+                        <button 
+                          className="flex items-center justify-center gap-1 w-full"
+                          onClick={() => requestSort('prOpened')}
+                        >
+                          <GitPullRequest className="h-4 w-4" />
+                          <span>PRs Opened{getSortDirectionIndicator('prOpened')}</span>
+                        </button>
+                      </TableHead>
+                      <TableHead className="text-center">
+                        <button 
+                          className="flex items-center justify-center gap-1 w-full"
+                          onClick={() => requestSort('issuesOpened')}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                          <span>Issues Opened{getSortDirectionIndicator('issuesOpened')}</span>
+                        </button>
+                      </TableHead>
+                      <TableHead className="text-center">
+                        <button 
+                          className="flex items-center justify-center gap-1 w-full"
+                          onClick={() => requestSort('issuesClosed')}
+                        >
+                          <GitBranch className="h-4 w-4" />
+                          <span>Issues Closed{getSortDirectionIndicator('issuesClosed')}</span>
+                        </button>
+                      </TableHead>
+                      <TableHead className="text-center">
+                        <button 
+                          className="flex items-center justify-center gap-1 w-full"
+                          onClick={() => requestSort('commits')}
+                        >
+                          <GitCommit className="h-4 w-4" />
+                          <span>Commits{getSortDirectionIndicator('commits')}</span>
+                        </button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <button 
+                          className="flex items-center justify-end w-full"
+                          onClick={() => requestSort('lastActive')}
+                        >
+                          Last Active{getSortDirectionIndicator('lastActive')}
+                        </button>
+                      </TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredContributors.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-24 text-center">
+                          No contributors found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredContributors.map((contributor) => (
+                        <TableRow key={contributor.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <img src={contributor.avatar} alt={contributor.name} />
+                              </Avatar>
+                              <span className="font-medium">{contributor.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{contributor.prMerged}</TableCell>
+                          <TableCell className="text-center">{contributor.prOpened}</TableCell>
+                          <TableCell className="text-center">{contributor.issuesOpened}</TableCell>
+                          <TableCell className="text-center">{contributor.issuesClosed}</TableCell>
+                          <TableCell className="text-center">{contributor.commits}</TableCell>
+                          <TableCell className="text-right">{formatDate(contributor.lastActive)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </TabsContent>
             
             <TabsContent value="activity">
