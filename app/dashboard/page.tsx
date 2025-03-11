@@ -1,8 +1,8 @@
-import { ContactGrowthChart, DealStageChart, RevenueChart } from "@/components/charts/dashboard-charts";
+import { ActiveDevsChart, ContactGrowthChart, DealStageChart } from "@/components/charts/dashboard-charts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Building2, CalendarClock, ContactIcon, DollarSign, Users } from "lucide-react";
+import { CalendarClock, DollarSign, Users } from "lucide-react";
 
 export default function DashboardPage() {
 	return (
@@ -24,42 +24,42 @@ export default function DashboardPage() {
 					<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Total Contacts</CardTitle>
-								<ContactIcon className="h-4 w-4 text-muted-foreground" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">254</div>
-								<p className="text-xs text-muted-foreground">+4.2% from last month</p>
-							</CardContent>
-						</Card>
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Companies</CardTitle>
-								<Building2 className="h-4 w-4 text-muted-foreground" />
-							</CardHeader>
-							<CardContent>
-								<div className="text-2xl font-bold">45</div>
-								<p className="text-xs text-muted-foreground">+2.1% from last month</p>
-							</CardContent>
-						</Card>
-						<Card>
-							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Active Deals</CardTitle>
+								<CardTitle className="text-sm font-medium">Full-Time Devs</CardTitle>
 								<Users className="h-4 w-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">12</div>
-								<p className="text-xs text-muted-foreground">+12.5% from last month</p>
+								<div className="text-2xl font-bold">42</div>
+								<p className="text-xs text-muted-foreground">+3.5% from last month</p>
 							</CardContent>
 						</Card>
 						<Card>
 							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-								<CardTitle className="text-sm font-medium">Revenue</CardTitle>
+								<CardTitle className="text-sm font-medium">Monthly Active Devs</CardTitle>
+								<Users className="h-4 w-4 text-muted-foreground" />
+							</CardHeader>
+							<CardContent>
+								<div className="text-2xl font-bold">128</div>
+								<p className="text-xs text-muted-foreground">+7.2% from last month</p>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+								<CardTitle className="text-sm font-medium">Total Repos</CardTitle>
 								<DollarSign className="h-4 w-4 text-muted-foreground" />
 							</CardHeader>
 							<CardContent>
-								<div className="text-2xl font-bold">$45,231.89</div>
-								<p className="text-xs text-muted-foreground">+20.1% from last month</p>
+								<div className="text-2xl font-bold">87</div>
+								<p className="text-xs text-muted-foreground">+4.3% from last month</p>
+							</CardContent>
+						</Card>
+						<Card>
+							<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+								<CardTitle className="text-sm font-medium">Total Commits</CardTitle>
+								<CalendarClock className="h-4 w-4 text-muted-foreground" />
+							</CardHeader>
+							<CardContent>
+								<div className="text-2xl font-bold">12,547</div>
+								<p className="text-xs text-muted-foreground">+15.8% from last month</p>
 							</CardContent>
 						</Card>
 					</div>
@@ -67,11 +67,11 @@ export default function DashboardPage() {
 					<div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
 						<Card>
 							<CardHeader>
-								<CardTitle>Revenue Growth</CardTitle>
-								<CardDescription>Monthly revenue over the last year</CardDescription>
+								<CardTitle>Monthly Active Developers</CardTitle>
+								<CardDescription>Developer activity over the last year</CardDescription>
 							</CardHeader>
 							<CardContent className="h-[300px]">
-								<RevenueChart />
+								<ActiveDevsChart />
 							</CardContent>
 						</Card>
 

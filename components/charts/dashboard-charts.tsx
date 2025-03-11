@@ -32,6 +32,22 @@ export const revenueData = [
 	{ name: "Dec", value: 45231 },
 ];
 
+// Monthly active developers data
+export const activeDevsData = [
+	{ name: "Jan", value: 85 },
+	{ name: "Feb", value: 92 },
+	{ name: "Mar", value: 97 },
+	{ name: "Apr", value: 105 },
+	{ name: "May", value: 110 },
+	{ name: "Jun", value: 102 },
+	{ name: "Jul", value: 108 },
+	{ name: "Aug", value: 115 },
+	{ name: "Sep", value: 120 },
+	{ name: "Oct", value: 125 },
+	{ name: "Nov", value: 122 },
+	{ name: "Dec", value: 128 },
+];
+
 export const dealStageData = [
 	{ name: "Discovery", value: 35 },
 	{ name: "Qualified", value: 25 },
@@ -74,6 +90,28 @@ export function RevenueChart() {
 				<YAxis />
 				<Tooltip />
 				<Area type="monotone" dataKey="value" stroke="#8884d8" fill="#8884d8" fillOpacity={0.3} />
+			</AreaChart>
+		</ResponsiveContainer>
+	);
+}
+
+export function ActiveDevsChart() {
+	return (
+		<ResponsiveContainer width="100%" height="100%">
+			<AreaChart
+				data={activeDevsData}
+				margin={{
+					top: 10,
+					right: 30,
+					left: 0,
+					bottom: 0,
+				}}
+			>
+				<CartesianGrid strokeDasharray="3 3" />
+				<XAxis dataKey="name" />
+				<YAxis />
+				<Tooltip />
+				<Area type="monotone" dataKey="value" stroke="#22c55e" fill="#22c55e" fillOpacity={0.3} />
 			</AreaChart>
 		</ResponsiveContainer>
 	);
