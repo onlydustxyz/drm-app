@@ -17,9 +17,16 @@ export interface DeveloperActivity {
   onTime: number;
 }
 
+export interface DevelopersByCountry {
+  code: string;
+  value: number;
+  name: string;
+}
+
 export interface DashboardData {
   kpis: DashboardKPI;
   developerActivity: DeveloperActivity[];
+  developersByCountry: DevelopersByCountry[];
 }
 
 // Mock data implementation
@@ -47,6 +54,28 @@ const mockDashboardData: DashboardData = {
     { name: "Oct", fullTime: 52, partTime: 48, onTime: 25 },
     { name: "Nov", fullTime: 50, partTime: 47, onTime: 25 },
     { name: "Dec", fullTime: 53, partTime: 50, onTime: 25 }
+  ],
+  developersByCountry: [
+    { code: "us", value: 149, name: "United States" },
+    { code: "in", value: 126, name: "India" },
+    { code: "cn", value: 85, name: "China" },
+    { code: "gb", value: 72, name: "United Kingdom" },
+    { code: "de", value: 65, name: "Germany" },
+    { code: "fr", value: 58, name: "France" },
+    { code: "ca", value: 47, name: "Canada" },
+    { code: "au", value: 42, name: "Australia" },
+    { code: "br", value: 38, name: "Brazil" },
+    { code: "ru", value: 35, name: "Russia" },
+    { code: "jp", value: 32, name: "Japan" },
+    { code: "nl", value: 28, name: "Netherlands" },
+    { code: "es", value: 25, name: "Spain" },
+    { code: "it", value: 22, name: "Italy" },
+    { code: "se", value: 18, name: "Sweden" },
+    { code: "pl", value: 16, name: "Poland" },
+    { code: "kr", value: 15, name: "South Korea" },
+    { code: "za", value: 12, name: "South Africa" },
+    { code: "mx", value: 10, name: "Mexico" },
+    { code: "sg", value: 8, name: "Singapore" }
   ]
 };
 
@@ -55,6 +84,7 @@ export interface DashboardService {
   getDashboardData(): Promise<DashboardData>;
   getDashboardKPIs(): Promise<DashboardKPI>;
   getDeveloperActivity(): Promise<DeveloperActivity[]>;
+  getDevelopersByCountry(): Promise<DevelopersByCountry[]>;
 }
 
 // Mock implementation of the dashboard service
@@ -76,6 +106,11 @@ export class MockDashboardService implements DashboardService {
     const data = await this.getDashboardData();
     return data.developerActivity;
   }
+
+  async getDevelopersByCountry(): Promise<DevelopersByCountry[]> {
+    const data = await this.getDashboardData();
+    return data.developersByCountry;
+  }
 }
 
 // Create a singleton instance of the service
@@ -92,4 +127,8 @@ export async function getDashboardKPIs(): Promise<DashboardKPI> {
 
 export async function getDeveloperActivity(): Promise<DeveloperActivity[]> {
   return dashboardService.getDeveloperActivity();
+}
+
+export async function getDevelopersByCountry(): Promise<DevelopersByCountry[]> {
+  return dashboardService.getDevelopersByCountry();
 }
