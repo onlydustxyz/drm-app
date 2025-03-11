@@ -1,0 +1,28 @@
+node_modules
+
+# Next.js
+.next/
+out/
+
+# Environment variables
+.env*.local
+!.env.local.example
+
+# Build outputs
+*.log
+dist/
+build/
+
+# IDE files
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+*.pem
