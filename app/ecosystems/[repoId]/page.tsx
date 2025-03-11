@@ -196,7 +196,7 @@ export default function RepositoryOverviewPage({ params }: { params: { repoId: s
 					</div>
 					<p className="text-muted-foreground">{repository.description}</p>
 				</div>
-				<div className="flex gap-4">
+				<div className="flex gap-4 items-center">
 					<div className="flex items-center gap-1">
 						<Star className="h-5 w-5 text-yellow-500" />
 						<span className="font-medium">{repository.stars}</span>
@@ -209,6 +209,9 @@ export default function RepositoryOverviewPage({ params }: { params: { repoId: s
 						<Eye className="h-5 w-5 text-blue-500" />
 						<span className="font-medium">{repository.watchers}</span>
 					</div>
+					<Link href={`/ecosystems/${params.repoId}/contributors`}>
+						<Button className="ml-4">View Contributors</Button>
+					</Link>
 				</div>
 			</div>
 
