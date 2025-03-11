@@ -109,10 +109,15 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 					asChild
 					onClick={handleClick}
 				>
-					<Link href="/logout">
+					<button
+						onClick={async () => {
+							await fetch('/auth/signout', { method: 'POST' });
+							window.location.href = '/login';
+						}}
+					>
 						<LogOut className="mr-2 h-4 w-4" />
 						Logout
-					</Link>
+					</button>
 				</Button>
 			</div>
 		</div>
