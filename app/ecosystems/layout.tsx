@@ -1,3 +1,5 @@
+"use client";
+
 import { CrmLayout } from "@/components/layout/crm-layout";
 
 export default function EcosystemsLayout({ children }: { children: React.ReactNode }) {
