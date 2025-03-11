@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
-import { BarChart3, Building2, CalendarDays, ContactIcon, Code2, LogOut, PanelLeft, Settings, Users } from "lucide-react";
+import { BarChart3, Building2, CalendarDays, ContactIcon, Code2, LogOut, PanelLeft, Settings, Users, GitPullRequest } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -44,6 +44,11 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 			name: "Reports",
 			href: "/reports",
 			icon: BarChart3,
+		},
+		{
+			name: "Contributors",
+			href: "/contributors",
+			icon: GitPullRequest,
 		},
 		{
 			name: "Ecosystem Repos",
