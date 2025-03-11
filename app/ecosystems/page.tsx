@@ -1,73 +1,21 @@
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { createClient } from "@/lib/supabase/server";
 import { Calendar, Eye, GitFork, Star } from "lucide-react";
 import Link from "next/link";
 
-// Mock data for repositories
-const repositories = [
-	{
-		id: 1,
-		name: "blockchain-core",
-		description: "Core blockchain implementation for the ecosystem",
-		url: "https://github.com/ecosystem/blockchain-core",
-		stars: 1245,
-		forks: 328,
-		watchers: 89,
-		lastUpdated: "2023-12-15",
-		primaryLanguage: "Rust",
-		license: "MIT",
-	},
-	{
-		id: 2,
-		name: "smart-contracts",
-		description: "Smart contract templates and libraries",
-		url: "https://github.com/ecosystem/smart-contracts",
-		stars: 876,
-		forks: 203,
-		watchers: 55,
-		lastUpdated: "2024-01-20",
-		primaryLanguage: "Solidity",
-		license: "Apache-2.0",
-	},
-	{
-		id: 3,
-		name: "ecosystem-js",
-		description: "JavaScript SDK for ecosystem integration",
-		url: "https://github.com/ecosystem/ecosystem-js",
-		stars: 543,
-		forks: 127,
-		watchers: 34,
-		lastUpdated: "2024-02-10",
-		primaryLanguage: "TypeScript",
-		license: "MIT",
-	},
-	{
-		id: 4,
-		name: "docs",
-		description: "Documentation for the ecosystem",
-		url: "https://github.com/ecosystem/docs",
-		stars: 320,
-		forks: 98,
-		watchers: 28,
-		lastUpdated: "2024-03-01",
-		primaryLanguage: "MDX",
-		license: "CC-BY-4.0",
-	},
-	{
-		id: 5,
-		name: "governance",
-		description: "Governance tools and proposals",
-		url: "https://github.com/ecosystem/governance",
-		stars: 412,
-		forks: 87,
-		watchers: 42,
-		lastUpdated: "2024-02-25",
-		primaryLanguage: "Python",
-		license: "GPL-3.0",
-	},
-];
+export default async function EcosystemRepositoriesPage() {
+	// Fetch repositories from Supabase
+	const supabase = await createClient();
+	const { data: repositories, error } = await supabase.from("repositories").select();
 
-export default function EcosystemRepositoriesPage() {
+	if (error) {
+		console.error("Error fetching repositories:", error);
+	}
+
+	// Use empty array as fallback if there's an error or no data
+	const repoData = repositories || [];
+
 	return (
 		<div className="space-y-6">
 			<div>
@@ -86,17 +34,16 @@ export default function EcosystemRepositoriesPage() {
 							<TableHead className="text-center">Forks</TableHead>
 							<TableHead className="text-center">Watchers</TableHead>
 							<TableHead>Language</TableHead>
-							<TableHead>License</TableHead>
 							<TableHead>Last Updated</TableHead>
 							<TableHead className="w-[150px]">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
-						{repositories.map((repo) => (
+						{repoData.map((repo) => (
 							<TableRow key={repo.id}>
 								<TableCell className="font-medium">
 									<a
-										href={repo.url}
+										href={repo.url || ""}
 										className="hover:underline text-primary"
 										target="_blank"
 										rel="noopener noreferrer"
@@ -125,16 +72,16 @@ export default function EcosystemRepositoriesPage() {
 								</TableCell>
 								<TableCell>
 									<span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-										{repo.primaryLanguage}
+										{repo.languages && Array.isArray(repo.languages) && repo.languages.length > 0
+											? (repo.languages[0] as { name: string }).name ?? "Unknown"
+											: "Unknown"}
 									</span>
 								</TableCell>
-								<TableCell>
-									<span className="text-xs text-muted-foreground">{repo.license}</span>
-								</TableCell>
+
 								<TableCell>
 									<div className="flex items-center gap-1">
 										<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-										<span className="text-sm text-muted-foreground">{repo.lastUpdated}</span>
+										<span className="text-sm text-muted-foreground">{repo.last_updated_at}</span>
 									</div>
 								</TableCell>
 								<TableCell>
