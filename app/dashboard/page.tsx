@@ -11,15 +11,15 @@ export default async function DashboardPage() {
 	const developerActivity = await getDeveloperActivity();
 
 	return (
-		<div className="space-y-6">
+		<div className="space-y-6 w-full">
 			<div>
 				<h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
 				<p className="text-muted-foreground">Overview of your CRM activities and metrics.</p>
 			</div>
 			<Separator />
 
-			<div className="space-y-6">
-				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+			<div className="space-y-6 w-full">
+				<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 w-full">
 					<Card>
 						<CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
 							<CardTitle className="text-sm font-medium">Full-Time Devs</CardTitle>
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
 					</Card>
 				</div>
 
-				<div className="grid gap-4 grid-cols-1">
+				<div className="grid gap-4 grid-cols-1 w-full">
 					<Card>
 						<CardHeader>
 							<CardTitle>Monthly Active Developers</CardTitle>
