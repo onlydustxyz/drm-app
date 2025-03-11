@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, Eye, GitFork, Star } from "lucide-react";
+import Link from "next/link";
 
 // Mock data for repositories
 const repositories = [
@@ -87,6 +88,7 @@ export default function EcosystemRepositoriesPage() {
 							<TableHead>Language</TableHead>
 							<TableHead>License</TableHead>
 							<TableHead>Last Updated</TableHead>
+							<TableHead className="w-[150px]">Actions</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
@@ -134,6 +136,14 @@ export default function EcosystemRepositoriesPage() {
 										<Calendar className="h-3.5 w-3.5 text-muted-foreground" />
 										<span className="text-sm text-muted-foreground">{repo.lastUpdated}</span>
 									</div>
+								</TableCell>
+								<TableCell>
+									<Link
+										href={`/ecosystems/${repo.id}`}
+										className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-8 w-full"
+									>
+										View Details
+									</Link>
 								</TableCell>
 							</TableRow>
 						))}
