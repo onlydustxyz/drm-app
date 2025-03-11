@@ -4,13 +4,8 @@ import { DeveloperActivity } from "@/lib/dashboard-service";
 import {
 	Area,
 	AreaChart,
-	Bar,
-	BarChart,
 	CartesianGrid,
-	Cell,
 	Legend,
-	Pie,
-	PieChart,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -34,21 +29,6 @@ export const revenueData = [
 ];
 
 export const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
-
-export const contactGrowthData = [
-	{ name: "Jan", new: 25, lost: 5 },
-	{ name: "Feb", new: 30, lost: 8 },
-	{ name: "Mar", new: 35, lost: 10 },
-	{ name: "Apr", new: 40, lost: 12 },
-	{ name: "May", new: 42, lost: 15 },
-	{ name: "Jun", new: 48, lost: 10 },
-	{ name: "Jul", new: 52, lost: 8 },
-	{ name: "Aug", new: 55, lost: 12 },
-	{ name: "Sep", new: 60, lost: 15 },
-	{ name: "Oct", new: 65, lost: 18 },
-	{ name: "Nov", new: 68, lost: 15 },
-	{ name: "Dec", new: 72, lost: 10 },
-];
 
 export function RevenueChart() {
 	return (
@@ -121,30 +101,6 @@ export function ActiveDevsChart({ data }: ActiveDevsChartProps) {
 					fillOpacity={0.3} 
 				/>
 			</AreaChart>
-		</ResponsiveContainer>
-	);
-}
-
-export function ContactGrowthChart() {
-	return (
-		<ResponsiveContainer width="100%" height="100%">
-			<BarChart
-				data={contactGrowthData}
-				margin={{
-					top: 20,
-					right: 30,
-					left: 20,
-					bottom: 5,
-				}}
-			>
-				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis dataKey="name" />
-				<YAxis />
-				<Tooltip />
-				<Legend />
-				<Bar dataKey="new" fill="#8884d8" name="New Contacts" />
-				<Bar dataKey="lost" fill="#82ca9d" name="Lost Contacts" />
-			</BarChart>
 		</ResponsiveContainer>
 	);
 }
