@@ -46,11 +46,11 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 
-export default async function SublistDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SublistDetailPage({ params }: { params: Promise<{ id: string }> }) {
 	const router = useRouter();
-	const { id: sublistId } = await params;
+	const { id: sublistId } = use(params);
 	const [sublist, setSublist] = useState<ContributorSublist | null>(null);
 	const [contributors, setContributors] = useState<Contributor[]>([]);
 	const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
