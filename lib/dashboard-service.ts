@@ -11,8 +11,10 @@ export interface DashboardKPI {
 }
 
 export interface DeveloperActivity {
-  month: string;
-  activeDevs: number;
+  name: string;
+  fullTime: number;
+  partTime: number;
+  onTime: number;
 }
 
 export interface DevelopersByChain {
@@ -40,18 +42,18 @@ const mockDashboardData: DashboardData = {
     totalCommitsGrowth: 15.8
   },
   developerActivity: [
-    { month: "Jan", activeDevs: 35 },
-    { month: "Feb", activeDevs: 38 },
-    { month: "Mar", activeDevs: 40 },
-    { month: "Apr", activeDevs: 42 },
-    { month: "May", activeDevs: 45 },
-    { month: "Jun", activeDevs: 42 },
-    { month: "Jul", activeDevs: 44 },
-    { month: "Aug", activeDevs: 48 },
-    { month: "Sep", activeDevs: 50 },
-    { month: "Oct", activeDevs: 52 },
-    { month: "Nov", activeDevs: 50 },
-    { month: "Dec", activeDevs: 53 }
+    { name: "Jan", fullTime: 35, partTime: 30, onTime: 20 },
+    { name: "Feb", fullTime: 38, partTime: 32, onTime: 22 },
+    { name: "Mar", fullTime: 40, partTime: 35, onTime: 22 },
+    { name: "Apr", fullTime: 42, partTime: 38, onTime: 25 },
+    { name: "May", fullTime: 45, partTime: 40, onTime: 25 },
+    { name: "Jun", fullTime: 42, partTime: 38, onTime: 22 },
+    { name: "Jul", fullTime: 44, partTime: 40, onTime: 24 },
+    { name: "Aug", fullTime: 48, partTime: 42, onTime: 25 },
+    { name: "Sep", fullTime: 50, partTime: 45, onTime: 25 },
+    { name: "Oct", fullTime: 52, partTime: 48, onTime: 25 },
+    { name: "Nov", fullTime: 50, partTime: 47, onTime: 25 },
+    { name: "Dec", fullTime: 53, partTime: 50, onTime: 25 }
   ],
   developersByChain: [
     { date: "2018-01", singleChain: 5, multiChain: 2 },

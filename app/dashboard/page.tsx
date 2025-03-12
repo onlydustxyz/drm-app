@@ -66,8 +66,8 @@ export default async function DashboardPage() {
 				<div className="grid gap-4 md:grid-cols-2 w-full">
 					<Card className="w-full">
 						<CardHeader>
-							<CardTitle>Monthly Active Developers</CardTitle>
-							<CardDescription>Developer activity over the last year</CardDescription>
+							<CardTitle>Developer Types Distribution</CardTitle>
+							<CardDescription>Full-time, part-time, and on-time developers over the last year</CardDescription>
 						</CardHeader>
 						<CardContent className="h-[300px]">
 							<Suspense fallback={<div>Loading chart...</div>}>
