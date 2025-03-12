@@ -42,6 +42,66 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			contributor_sublists: {
+				Row: {
+					id: string;
+					name: string;
+					description: string;
+					contributor_ids: string[];
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: string;
+					name: string;
+					description: string;
+					contributor_ids: string[];
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: string;
+					name?: string;
+					description?: string;
+					contributor_ids?: string[];
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
+			contributor_retention: {
+				Row: {
+					id: number;
+					month: string;
+					active_count: number;
+					total_count: number;
+					retention_rate: number;
+					contributor_ids: string[];
+					created_at: string;
+					updated_at: string;
+				};
+				Insert: {
+					id?: number;
+					month: string;
+					active_count: number;
+					total_count: number;
+					retention_rate: number;
+					contributor_ids: string[];
+					created_at?: string;
+					updated_at?: string;
+				};
+				Update: {
+					id?: number;
+					month?: string;
+					active_count?: number;
+					total_count?: number;
+					retention_rate?: number;
+					contributor_ids?: string[];
+					created_at?: string;
+					updated_at?: string;
+				};
+				Relationships: [];
+			};
 			dashboard_kpis: {
 				Row: {
 					id: number;

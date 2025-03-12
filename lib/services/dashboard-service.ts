@@ -327,46 +327,46 @@ export class MockDashboardService implements DashboardService {
 
 // HTTP implementation of the dashboard service
 export class HttpDashboardService implements DashboardService {
-	private dashboardStorage: DashboardStorage;
+	private storage: DashboardStorage;
 
 	constructor() {
-		this.dashboardStorage = getDashboardStorage();
+		this.storage = getDashboardStorage();
 	}
 
 	async getDashboardData(): Promise<DashboardData> {
-		return this.dashboardStorage.getDashboardData();
+		return this.storage.getDashboardData();
 	}
 
 	async getDashboardKPIs(): Promise<DashboardKPI> {
-		return this.dashboardStorage.getDashboardKPIs();
+		return this.storage.getDashboardKPIs();
 	}
 
 	async getDeveloperActivity(): Promise<DeveloperActivity[]> {
-		return this.dashboardStorage.getDeveloperActivity();
+		return this.storage.getDeveloperActivity();
 	}
 
 	async getDevelopersByChain(): Promise<DevelopersByChain[]> {
-		return this.dashboardStorage.getDevelopersByChain();
+		return this.storage.getDevelopersByChain();
 	}
 
 	async getDeveloperLocations(): Promise<DeveloperLocation[]> {
-		return this.dashboardStorage.getDeveloperLocations();
+		return this.storage.getDeveloperLocations();
 	}
 
 	async getCommitsByDevType(): Promise<CommitsByDevType[]> {
-		return this.dashboardStorage.getCommitsByDevType();
+		return this.storage.getCommitsByDevType();
 	}
 
 	async getMonthlyCommits(): Promise<MonthlyCommits[]> {
-		return this.dashboardStorage.getMonthlyCommits();
+		return this.storage.getMonthlyCommits();
 	}
 
 	async getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]> {
-		return this.dashboardStorage.getMonthlyPRsMerged();
+		return this.storage.getMonthlyPRsMerged();
 	}
 
 	async getDevActivity(): Promise<DevActivity[]> {
-		return this.dashboardStorage.getDevActivity();
+		return this.storage.getDevActivity();
 	}
 }
 
