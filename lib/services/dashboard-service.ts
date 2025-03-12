@@ -1,3 +1,5 @@
+import { DashboardStorage, getDashboardStorage } from "../storage/dashboard-storage";
+
 // Dashboard data types
 export interface DashboardKPI {
 	fullTimeDevs: number;
@@ -325,56 +327,46 @@ export class MockDashboardService implements DashboardService {
 
 // HTTP implementation of the dashboard service
 export class HttpDashboardService implements DashboardService {
-	private baseUrl: string;
+	private dashboardStorage: DashboardStorage;
 
-	constructor(baseUrl: string = "/api/dashboard") {
-		this.baseUrl = baseUrl;
-	}
-
-	private async fetchData<T>(endpoint: string): Promise<T> {
-		const response = await fetch(`http://localhost:3000${this.baseUrl}${endpoint}`);
-
-		if (!response.ok) {
-			throw new Error(`HTTP error! Status: ${response.status}`);
-		}
-
-		return response.json() as Promise<T>;
+	constructor() {
+		this.dashboardStorage = getDashboardStorage();
 	}
 
 	async getDashboardData(): Promise<DashboardData> {
-		return this.fetchData<DashboardData>("");
+		return this.dashboardStorage.getDashboardData();
 	}
 
 	async getDashboardKPIs(): Promise<DashboardKPI> {
-		return this.fetchData<DashboardKPI>("/kpis");
+		return this.dashboardStorage.getDashboardKPIs();
 	}
 
 	async getDeveloperActivity(): Promise<DeveloperActivity[]> {
-		return this.fetchData<DeveloperActivity[]>("/developer-activity");
+		return this.dashboardStorage.getDeveloperActivity();
 	}
 
 	async getDevelopersByChain(): Promise<DevelopersByChain[]> {
-		return this.fetchData<DevelopersByChain[]>("/developers-by-chain");
+		return this.dashboardStorage.getDevelopersByChain();
 	}
 
 	async getDeveloperLocations(): Promise<DeveloperLocation[]> {
-		return this.fetchData<DeveloperLocation[]>("/developer-locations");
+		return this.dashboardStorage.getDeveloperLocations();
 	}
 
 	async getCommitsByDevType(): Promise<CommitsByDevType[]> {
-		return this.fetchData<CommitsByDevType[]>("/commits-by-dev-type");
+		return this.dashboardStorage.getCommitsByDevType();
 	}
 
 	async getMonthlyCommits(): Promise<MonthlyCommits[]> {
-		return this.fetchData<MonthlyCommits[]>("/monthly-commits");
+		return this.dashboardStorage.getMonthlyCommits();
 	}
 
 	async getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]> {
-		return this.fetchData<MonthlyPRsMerged[]>("/monthly-prs-merged");
+		return this.dashboardStorage.getMonthlyPRsMerged();
 	}
 
 	async getDevActivity(): Promise<DevActivity[]> {
-		return this.fetchData<DevActivity[]>("/dev-activity");
+		return this.dashboardStorage.getDevActivity();
 	}
 }
 
