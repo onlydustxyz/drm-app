@@ -11,13 +11,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Contributor, getContributors } from "@/lib/contributors-service";
-import { ContributorSublist, getContributorSublists, updateContributorSublist } from "@/lib/contributor-sublists-service";
+import { ContributorSublist, getContributorSublists, updateContributorSublist, createContributorSublist } from "@/lib/contributor-sublists-service";
 import { formatDate } from "@/lib/utils";
 import { Check, ChevronDown, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, PlusCircle, Search, SlidersHorizontal, X, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function ContributorsPage() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
@@ -42,6 +44,16 @@ export default function ContributorsPage() {
   const [newListName, setNewListName] = useState("");
   const [newListDescription, setNewListDescription] = useState("");
   const [isCreatingNewList, setIsCreatingNewList] = useState(false);
+  
+  // Add contributors by GitHub handles states
+  const [isAddContributorsDialogOpen, setIsAddContributorsDialogOpen] = useState(false);
+  const [githubHandles, setGithubHandles] = useState("");
+  const [importError, setImportError] = useState("");
+  const [importSuccess, setImportSuccess] = useState("");
+  const [selectedListsForNewContributors, setSelectedListsForNewContributors] = useState<string[]>([]);
+  const [isCreateListFromImportOpen, setIsCreateListFromImportOpen] = useState(false);
+  const [newContributorsToAdd, setNewContributorsToAdd] = useState<Contributor[]>([]);
+  const [listSearchQuery, setListSearchQuery] = useState("");
 
   // Fetch contributors data
   useEffect(() => {
@@ -211,6 +223,204 @@ export default function ContributorsPage() {
     setIsCreatingNewList(true);
   };
 
+  // Handle adding contributors by GitHub handles
+  const handleAddContributors = () => {
+    setIsAddContributorsDialogOpen(true);
+    setGithubHandles("");
+    setImportError("");
+    setImportSuccess("");
+    setSelectedListsForNewContributors([]);
+    setNewContributorsToAdd([]);
+  };
+
+  // Toggle a list selection for new contributors
+  const toggleListSelection = (listId: string, checked?: boolean) => {
+    if (checked !== undefined) {
+      // Called from checkbox
+      setSelectedListsForNewContributors(prev => 
+        checked 
+          ? [...prev, listId]
+          : prev.filter(id => id !== listId)
+      );
+    } else {
+      // Called from button
+      setSelectedListsForNewContributors(prev => 
+        prev.includes(listId)
+          ? prev.filter(id => id !== listId)
+          : [...prev, listId]
+      );
+    }
+  };
+
+  // Select all lists
+  const selectAllLists = () => {
+    setSelectedListsForNewContributors(sublists.map(list => list.id));
+  };
+
+  // Clear all selected lists
+  const clearAllLists = () => {
+    setSelectedListsForNewContributors([]);
+  };
+
+  // Process GitHub handles and add contributors
+  const handleImportGithubHandles = async () => {
+    if (!githubHandles.trim()) {
+      setImportError("Please enter GitHub handles to import");
+      return;
+    }
+
+    setImportError("");
+    setImportSuccess("");
+    
+    // Parse the GitHub handles (comma, space, or newline separated)
+    const handles = githubHandles
+      .split(/[\s,\n]+/)
+      .map(handle => handle.trim())
+      .filter(handle => handle.length > 0);
+    
+    if (handles.length === 0) {
+      setImportError("No valid GitHub handles found");
+      return;
+    }
+
+    // Find contributors matching the GitHub handles
+    // For this mock implementation, we'll just match by name
+    // In a real implementation, you would match by GitHub username
+    const matchedContributors: Contributor[] = [];
+    const newContributors: Contributor[] = [];
+    
+    handles.forEach(handle => {
+      // Remove @ prefix if present
+      const cleanHandle = handle.startsWith('@') ? handle.substring(1) : handle;
+      
+      // Find contributor by name (in a real app, match by GitHub username)
+      const contributor = contributors.find(c => 
+        c.name.toLowerCase() === cleanHandle.toLowerCase()
+      );
+      
+      if (contributor) {
+        matchedContributors.push(contributor);
+      } else {
+        // Create a new contributor for unmatched handle
+        const newContributor: Contributor = {
+          id: `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // Generate a unique ID
+          name: cleanHandle,
+          avatar: `https://github.com/${cleanHandle}.png`,
+          prMerged: 0,
+          prOpened: 0,
+          issuesOpened: 0,
+          issuesClosed: 0,
+          commits: 0,
+          lastActive: new Date().toISOString().split('T')[0]
+        };
+        newContributors.push(newContributor);
+      }
+    });
+    
+    // Add new contributors to the contributors list
+    if (newContributors.length > 0) {
+      const updatedContributors = [...contributors, ...newContributors];
+      setContributors(updatedContributors);
+      setFilteredContributors(updatedContributors);
+    }
+    
+    // Combine matched and new contributors
+    const allAddedContributors = [...matchedContributors, ...newContributors];
+    setNewContributorsToAdd(allAddedContributors);
+    
+    // Show results
+    const totalAdded = newContributors.length;
+    const totalMatched = matchedContributors.length;
+    
+    if (totalAdded > 0 || totalMatched > 0) {
+      let successMessage = "";
+      
+      if (totalAdded > 0) {
+        successMessage = `Successfully added ${totalAdded} new contributor${totalAdded === 1 ? '' : 's'}`;
+        if (totalMatched > 0) {
+          successMessage += ` and matched ${totalMatched} existing contributor${totalMatched === 1 ? '' : 's'}`;
+        }
+      } else if (totalMatched > 0) {
+        successMessage = `Matched ${totalMatched} existing contributor${totalMatched === 1 ? '' : 's'}`;
+      }
+      
+      setImportSuccess(successMessage);
+      
+      toast({
+        title: "Contributors processed",
+        description: successMessage,
+      });
+      
+      // Add to selected lists if any were chosen
+      if (selectedListsForNewContributors.length > 0) {
+        try {
+          const contributorIds = allAddedContributors.map(c => c.id);
+          
+          // Process each selected list
+          const updatePromises = selectedListsForNewContributors.map(async (listId) => {
+            const sublist = sublists.find(s => s.id === listId);
+            if (!sublist) return null;
+            
+            // Create a new set to avoid duplicates
+            const updatedContributorIds = Array.from(
+              new Set([...sublist.contributorIds, ...contributorIds])
+            );
+
+            return updateContributorSublist(listId, {
+              contributorIds: updatedContributorIds
+            });
+          });
+          
+          const updatedSublists = await Promise.all(updatePromises);
+          const validUpdatedSublists = updatedSublists.filter(Boolean) as ContributorSublist[];
+          
+          if (validUpdatedSublists.length > 0) {
+            // Update the local state
+            setSublists(prev => 
+              prev.map(s => {
+                const updated = validUpdatedSublists.find(u => u.id === s.id);
+                return updated || s;
+              })
+            );
+
+            toast({
+              title: "Contributors added to lists",
+              description: `${contributorIds.length} contributors added to ${validUpdatedSublists.length} list${validUpdatedSublists.length === 1 ? '' : 's'}`,
+            });
+          }
+        } catch (error) {
+          console.error("Error adding contributors to lists:", error);
+          toast({
+            title: "Error",
+            description: "Failed to add contributors to one or more lists",
+            variant: "destructive",
+          });
+        }
+      }
+      
+      // Close the dialog after a short delay if we're not creating a new list
+      if (!isCreateListFromImportOpen) {
+        setTimeout(() => {
+          setIsAddContributorsDialogOpen(false);
+        }, 1500);
+      }
+    } else {
+      setImportError("No contributors were added. All handles already exist.");
+    }
+  };
+
+  // Handle creating a new list from the import dialog
+  const handleCreateListFromImport = () => {
+    // Parse GitHub handles first if not already done
+    if (newContributorsToAdd.length === 0 && githubHandles.trim()) {
+      handleImportGithubHandles();
+    }
+    
+    setIsCreateListFromImportOpen(true);
+    setNewListName("");
+    setNewListDescription("");
+  };
+
   return (
     <div className="w-full max-w-full py-6">
       <div className="flex justify-between items-center mb-6 w-full">
@@ -253,6 +463,10 @@ export default function ContributorsPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          <Button variant="default" onClick={handleAddContributors}>
+            <Users className="mr-2 h-4 w-4" />
+            Add Contributors
+          </Button>
           <Link href="/contributors/sublists">
             <Button variant="outline">
               <Users className="mr-2 h-4 w-4" />
@@ -534,6 +748,270 @@ export default function ContributorsPage() {
                 }
               }}
               disabled={!newListName.trim()}
+            >
+              Create List
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for adding contributors by GitHub handles */}
+      <Dialog open={isAddContributorsDialogOpen} onOpenChange={setIsAddContributorsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Contributors</DialogTitle>
+            <DialogDescription>
+              Add contributors by their GitHub handles. Separate multiple handles with commas, spaces, or new lines.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="github-handles">GitHub Handles</Label>
+              <Textarea
+                id="github-handles"
+                placeholder="e.g., octocat, user1, user2"
+                value={githubHandles}
+                onChange={(e) => setGithubHandles(e.target.value)}
+                className="min-h-[120px]"
+              />
+              {importError && (
+                <p className="text-sm text-destructive mt-2">{importError}</p>
+              )}
+              {importSuccess && (
+                <p className="text-sm text-green-600 mt-2">{importSuccess}</p>
+              )}
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="contributor-list">Add to Lists (Optional)</Label>
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <div className="relative w-full">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search lists..."
+                      className="pl-8"
+                      value={listSearchQuery}
+                      onChange={(e) => setListSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handleCreateListFromImport}
+                    type="button"
+                    title="Create new list"
+                  >
+                    <PlusCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                {selectedListsForNewContributors.length > 0 && (
+                  <div className="flex justify-between items-center mt-2">
+                    <p className="text-sm text-muted-foreground">
+                      {selectedListsForNewContributors.length} of {sublists.length} lists selected
+                    </p>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={selectAllLists}
+                        disabled={selectedListsForNewContributors.length === sublists.length}
+                      >
+                        Select All
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={clearAllLists}
+                        disabled={selectedListsForNewContributors.length === 0}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                <ScrollArea className="h-[200px] border rounded-md p-2">
+                  {sublists.length === 0 ? (
+                    <p className="text-sm text-muted-foreground p-2">No lists available. Create a new list to get started.</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {sublists
+                        .filter(sublist => 
+                          listSearchQuery === "" || 
+                          sublist.name.toLowerCase().includes(listSearchQuery.toLowerCase()) ||
+                          (sublist.description && sublist.description.toLowerCase().includes(listSearchQuery.toLowerCase()))
+                        )
+                        .map(sublist => (
+                          <div 
+                            key={sublist.id} 
+                            className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${
+                              selectedListsForNewContributors.includes(sublist.id) 
+                                ? 'bg-secondary' 
+                                : 'hover:bg-secondary/50'
+                            }`}
+                            onClick={() => toggleListSelection(sublist.id)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <Checkbox 
+                                checked={selectedListsForNewContributors.includes(sublist.id)}
+                                onCheckedChange={(checked) => toggleListSelection(sublist.id, checked as boolean)}
+                                id={`list-${sublist.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <Label 
+                                htmlFor={`list-${sublist.id}`}
+                                className="cursor-pointer text-sm font-medium"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {sublist.name}
+                              </Label>
+                            </div>
+                            {sublist.description && (
+                              <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                {sublist.description}
+                              </span>
+                            )}
+                          </div>
+                        ))
+                      }
+                      {listSearchQuery && !sublists.some(sublist => 
+                        sublist.name.toLowerCase().includes(listSearchQuery.toLowerCase()) ||
+                        (sublist.description && sublist.description.toLowerCase().includes(listSearchQuery.toLowerCase()))
+                      ) && (
+                        <p className="text-sm text-muted-foreground p-2">No lists match your search.</p>
+                      )}
+                    </div>
+                  )}
+                </ScrollArea>
+                
+                {selectedListsForNewContributors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    <p className="text-sm font-medium">Selected lists:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedListsForNewContributors.map(listId => {
+                        const list = sublists.find(s => s.id === listId);
+                        if (!list) return null;
+                        
+                        return (
+                          <div 
+                            key={listId} 
+                            className="flex items-center gap-1 bg-secondary text-secondary-foreground px-3 py-1 rounded-full text-sm"
+                          >
+                            <span>{list.name}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-4 w-4 p-0 hover:bg-transparent"
+                              onClick={() => toggleListSelection(listId)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddContributorsDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" onClick={handleImportGithubHandles}>
+              Add Contributors
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog for creating a new list from import */}
+      <Dialog 
+        open={isCreateListFromImportOpen} 
+        onOpenChange={(open) => {
+          setIsCreateListFromImportOpen(open);
+          // Don't close the Add Contributors dialog when this dialog is closed
+          if (!open && isAddContributorsDialogOpen) {
+            // If a list was created and selected, update the UI
+            if (selectedListsForNewContributors.length > 0) {
+              toast({
+                title: "Lists selected",
+                description: `Contributors will be added to the selected lists`,
+              });
+            }
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New List</DialogTitle>
+            <DialogDescription>
+              Create a new list with the imported contributors.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-list-name">List Name</Label>
+              <Input
+                id="new-list-name"
+                placeholder="Enter list name"
+                value={newListName}
+                onChange={(e) => setNewListName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-list-description">Description (optional)</Label>
+              <Input
+                id="new-list-description"
+                placeholder="Enter description"
+                value={newListDescription}
+                onChange={(e) => setNewListDescription(e.target.value)}
+              />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {newContributorsToAdd.length} contributors will be added to this list.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateListFromImportOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                if (!newListName.trim() || newContributorsToAdd.length === 0) return;
+                
+                try {
+                  const newSublist = await createContributorSublist({
+                    name: newListName,
+                    description: newListDescription,
+                    contributorIds: newContributorsToAdd.map(c => c.id)
+                  });
+                  
+                  setSublists([...sublists, newSublist]);
+                  setNewListName("");
+                  setNewListDescription("");
+                  setIsCreateListFromImportOpen(false);
+                  setSelectedListsForNewContributors(prev => [...prev, newSublist.id]);
+                  
+                  toast({
+                    title: "List created",
+                    description: `New list "${newListName}" created with ${newContributorsToAdd.length} contributors`,
+                  });
+                } catch (error) {
+                  console.error("Error creating list:", error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to create list",
+                    variant: "destructive",
+                  });
+                }
+              }}
+              disabled={!newListName.trim() || newContributorsToAdd.length === 0}
             >
               Create List
             </Button>
