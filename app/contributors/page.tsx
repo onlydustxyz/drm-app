@@ -13,13 +13,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Contributor, getContributors } from "@/lib/contributors-service";
 import { ContributorSublist, getContributorSublists, updateContributorSublist, createContributorSublist } from "@/lib/contributor-sublists-service";
 import { formatDate } from "@/lib/utils";
-import { Check, ChevronDown, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, PlusCircle, Search, SlidersHorizontal, X, Users } from "lucide-react";
+import { Check, ChevronDown, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, PlusCircle, Search, SlidersHorizontal, X, Users, MapPin, Building, Star, UserPlus, Activity, Code, Award, ExternalLink, Github, Twitter, Linkedin, Globe } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export default function ContributorsPage() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
@@ -54,6 +56,18 @@ export default function ContributorsPage() {
   const [isCreateListFromImportOpen, setIsCreateListFromImportOpen] = useState(false);
   const [newContributorsToAdd, setNewContributorsToAdd] = useState<Contributor[]>([]);
   const [listSearchQuery, setListSearchQuery] = useState("");
+
+  // Add new state for expanded rows
+  const [expandedRows, setExpandedRows] = useState<string[]>([]);
+  
+  // Toggle row expansion
+  const toggleRowExpansion = (contributorId: string) => {
+    setExpandedRows(prev => 
+      prev.includes(contributorId)
+        ? prev.filter(id => id !== contributorId)
+        : [...prev, contributorId]
+    );
+  };
 
   // Fetch contributors data
   useEffect(() => {
@@ -305,13 +319,32 @@ export default function ContributorsPage() {
         const newContributor: Contributor = {
           id: `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // Generate a unique ID
           name: cleanHandle,
+          handle: cleanHandle,
           avatar: `https://github.com/${cleanHandle}.png`,
+          type: 'One-Time',
+          tenure: 'Newcomer',
+          description: 'New contributor',
+          location: 'Unknown',
+          organizations: [],
           prMerged: 0,
           prOpened: 0,
           issuesOpened: 0,
           issuesClosed: 0,
           commits: 0,
-          lastActive: new Date().toISOString().split('T')[0]
+          lastActive: new Date().toISOString().split('T')[0],
+          latestCommit: {
+            message: 'No commits yet',
+            date: new Date().toISOString().split('T')[0],
+            url: `https://github.com/${cleanHandle}`
+          },
+          socialLinks: {
+            github: `https://github.com/${cleanHandle}`
+          },
+          activityScore: 0,
+          languages: [],
+          reputationScore: 0,
+          stars: 0,
+          followers: 0
         };
         newContributors.push(newContributor);
       }
@@ -419,6 +452,16 @@ export default function ContributorsPage() {
     setIsCreateListFromImportOpen(true);
     setNewListName("");
     setNewListDescription("");
+  };
+
+  // Get tenure color - no longer needed with default badges
+  const getTenureColor = (tenure: string) => {
+    return '';
+  };
+  
+  // Get type color - no longer needed with default badges
+  const getTypeColor = (type: string) => {
+    return '';
   };
 
   return (
@@ -583,40 +626,68 @@ export default function ContributorsPage() {
                         Contributor{getSortDirectionIndicator('name')}
                       </button>
                     </TableHead>
+                    <TableHead>
+                      <button 
+                        className="flex items-center font-medium text-left"
+                        onClick={() => requestSort('handle')}
+                      >
+                        <span>Handle{getSortDirectionIndicator('handle')}</span>
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button 
+                        className="flex items-center font-medium text-left"
+                        onClick={() => requestSort('type')}
+                      >
+                        <span>Type{getSortDirectionIndicator('type')}</span>
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button 
+                        className="flex items-center font-medium text-left"
+                        onClick={() => requestSort('tenure')}
+                      >
+                        <span>Tenure{getSortDirectionIndicator('tenure')}</span>
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <button 
+                        className="flex items-center justify-center gap-1 w-full"
+                        onClick={() => requestSort('activityScore')}
+                      >
+                        <span>Activity{getSortDirectionIndicator('activityScore')}</span>
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <button 
+                        className="flex items-center justify-center gap-1 w-full"
+                        onClick={() => requestSort('reputationScore')}
+                      >
+                        <span>Reputation{getSortDirectionIndicator('reputationScore')}</span>
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <button 
+                        className="flex items-center justify-center gap-1 w-full"
+                        onClick={() => requestSort('stars')}
+                      >
+                        <span>Stars{getSortDirectionIndicator('stars')}</span>
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <button 
+                        className="flex items-center justify-center gap-1 w-full"
+                        onClick={() => requestSort('followers')}
+                      >
+                        <span>Followers{getSortDirectionIndicator('followers')}</span>
+                      </button>
+                    </TableHead>
                     <TableHead className="text-center">
                       <button 
                         className="flex items-center justify-center gap-1 w-full"
                         onClick={() => requestSort('prMerged')}
                       >
-                        <GitPullRequestClosed className="h-4 w-4" />
                         <span>PRs Merged{getSortDirectionIndicator('prMerged')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('prOpened')}
-                      >
-                        <GitPullRequest className="h-4 w-4" />
-                        <span>PRs Opened{getSortDirectionIndicator('prOpened')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('issuesOpened')}
-                      >
-                        <MessageSquare className="h-4 w-4" />
-                        <span>Issues Opened{getSortDirectionIndicator('issuesOpened')}</span>
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-center">
-                      <button 
-                        className="flex items-center justify-center gap-1 w-full"
-                        onClick={() => requestSort('issuesClosed')}
-                      >
-                        <GitBranch className="h-4 w-4" />
-                        <span>Issues Closed{getSortDirectionIndicator('issuesClosed')}</span>
                       </button>
                     </TableHead>
                     <TableHead className="text-center">
@@ -624,7 +695,6 @@ export default function ContributorsPage() {
                         className="flex items-center justify-center gap-1 w-full"
                         onClick={() => requestSort('commits')}
                       >
-                        <GitCommit className="h-4 w-4" />
                         <span>Commits{getSortDirectionIndicator('commits')}</span>
                       </button>
                     </TableHead>
@@ -641,35 +711,193 @@ export default function ContributorsPage() {
                 <TableBody>
                   {filteredContributors.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="h-24 text-center">
+                      <TableCell colSpan={12} className="h-24 text-center">
                         No contributors found.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredContributors.map((contributor) => (
-                      <TableRow key={contributor.id} className={selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""}>
-                        <TableCell>
-                          <Checkbox 
-                            checked={selectedContributors.includes(contributor.id)}
-                            onCheckedChange={() => toggleContributorSelection(contributor.id)}
-                            aria-label={`Select ${contributor.name}`}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <img src={contributor.avatar} alt={contributor.name} />
-                            </Avatar>
-                            <span className="font-medium">{contributor.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">{contributor.prMerged}</TableCell>
-                        <TableCell className="text-center">{contributor.prOpened}</TableCell>
-                        <TableCell className="text-center">{contributor.issuesOpened}</TableCell>
-                        <TableCell className="text-center">{contributor.issuesClosed}</TableCell>
-                        <TableCell className="text-center">{contributor.commits}</TableCell>
-                        <TableCell className="text-right">{formatDate(contributor.lastActive)}</TableCell>
-                      </TableRow>
+                      <>
+                        <TableRow 
+                          key={contributor.id} 
+                          className={selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""}
+                          onClick={() => toggleRowExpansion(contributor.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <Checkbox 
+                              checked={selectedContributors.includes(contributor.id)}
+                              onCheckedChange={() => toggleContributorSelection(contributor.id)}
+                              aria-label={`Select ${contributor.name}`}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <img src={contributor.avatar} alt={contributor.name} />
+                              </Avatar>
+                              <span className="font-medium">{contributor.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>@{contributor.handle}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary">
+                              {contributor.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">
+                              {contributor.tenure}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{contributor.activityScore}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{contributor.reputationScore}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{contributor.stars}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <span>{contributor.followers}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center">{contributor.prMerged}</TableCell>
+                          <TableCell className="text-center">{contributor.commits}</TableCell>
+                          <TableCell className="text-right">{formatDate(contributor.lastActive)}</TableCell>
+                        </TableRow>
+                        {expandedRows.includes(contributor.id) && (
+                          <TableRow className="bg-muted/20">
+                            <TableCell colSpan={12} className="p-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h3 className="text-lg font-medium mb-2">Profile</h3>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Description:</span>
+                                      <p>{contributor.description}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                                      <span>{contributor.location}</span>
+                                    </div>
+                                    {contributor.organizations.length > 0 && (
+                                      <div className="flex items-center gap-1">
+                                        <Building className="h-4 w-4 text-muted-foreground" />
+                                        <div className="flex flex-wrap gap-1">
+                                          {contributor.organizations.map((org, index) => (
+                                            <Badge key={index} variant="outline">{org}</Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div className="flex items-center gap-2">
+                                      {contributor.socialLinks.github && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <a href={contributor.socialLinks.github} target="_blank" rel="noopener noreferrer">
+                                                <Github className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
+                                              </a>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>GitHub</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                      {contributor.socialLinks.twitter && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <a href={contributor.socialLinks.twitter} target="_blank" rel="noopener noreferrer">
+                                                <Twitter className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
+                                              </a>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Twitter</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                      {contributor.socialLinks.linkedin && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <a href={contributor.socialLinks.linkedin} target="_blank" rel="noopener noreferrer">
+                                                <Linkedin className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
+                                              </a>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>LinkedIn</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                      {contributor.socialLinks.website && (
+                                        <TooltipProvider>
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <a href={contributor.socialLinks.website} target="_blank" rel="noopener noreferrer">
+                                                <Globe className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
+                                              </a>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                              <p>Website</p>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                        </TooltipProvider>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <h3 className="text-lg font-medium mb-2">Activity</h3>
+                                  <div className="space-y-2">
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Latest Commit:</span>
+                                      <div className="flex items-center gap-1 mt-1">
+                                        <GitCommit className="h-4 w-4 text-muted-foreground" />
+                                        <a 
+                                          href={contributor.latestCommit.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer"
+                                          className="text-sm hover:underline flex items-center gap-1"
+                                        >
+                                          {contributor.latestCommit.message}
+                                          <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                      </div>
+                                      <div className="text-xs text-muted-foreground mt-1">
+                                        {formatDate(contributor.latestCommit.date)}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <span className="text-sm text-muted-foreground">Languages:</span>
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {contributor.languages.map((lang, index) => (
+                                          <Badge key={index} variant="outline" className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                                            <Code className="h-3 w-3" />
+                                            {lang.name} ({lang.percentage}%)
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
                     ))
                   )}
                 </TableBody>
