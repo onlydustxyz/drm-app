@@ -7,14 +7,8 @@ import { NextResponse } from "next/server";
  */
 export async function GET() {
 	try {
-		console.log("Getting dashboard KPIs");
 		const dashboardStorage = getDashboardStorage();
-
-		console.log(dashboardStorage);
-
 		const data = await dashboardStorage.getDashboardKPIs();
-
-		console.log(data);
 		return NextResponse.json(data);
 	} catch (error) {
 		console.error("Error fetching dashboard KPIs:", error);
