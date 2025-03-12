@@ -24,8 +24,8 @@ import {
 	createContributorSublist,
 	deleteContributorSublist,
 	getContributorSublists,
-} from "@/lib/contributor-sublists-service";
-import { Contributor, getContributors } from "@/lib/contributors-service";
+} from "@/lib/services/contributor-sublists-service";
+import { Contributor, getContributors } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle, ChevronRight, Import, Plus, Search, Trash2, Users } from "lucide-react";
 import Link from "next/link";

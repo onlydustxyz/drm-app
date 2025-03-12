@@ -2,15 +2,24 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Repository, getRepositories } from "@/lib/repositories-service";
+import { Repository, getRepositories } from "@/lib/services/repositories-service";
 import { formatDate } from "@/lib/utils";
-import { Calendar, Eye, GitBranch, GitCommit, GitFork, GitPullRequest, GitPullRequestClosed, MessageSquare, Search, SlidersHorizontal, Star, Users } from "lucide-react";
+import {
+	GitBranch,
+	GitCommit,
+	GitPullRequest,
+	GitPullRequestClosed,
+	MessageSquare,
+	Search,
+	SlidersHorizontal,
+	Star,
+	Users,
+} from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -21,9 +30,9 @@ export default function EcosystemRepositoriesPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [sortConfig, setSortConfig] = useState<{
 		key: keyof Repository | null;
-		direction: 'ascending' | 'descending';
-	}>({ key: null, direction: 'descending' });
-	
+		direction: "ascending" | "descending";
+	}>({ key: null, direction: "descending" });
+
 	// Filter states
 	const [minStars, setMinStars] = useState<number | "">("");
 	const [minPRs, setMinPRs] = useState<number | "">("");
@@ -31,7 +40,7 @@ export default function EcosystemRepositoriesPage() {
 	const [selectedLanguage, setSelectedLanguage] = useState<string>("");
 	const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 	const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
-	
+
 	// Fetch repositories data
 	useEffect(() => {
 		const fetchData = async () => {
@@ -40,10 +49,10 @@ export default function EcosystemRepositoriesPage() {
 				const data = await getRepositories();
 				setRepositories(data);
 				setFilteredRepositories(data);
-				
+
 				// Extract unique languages
 				const languages = new Set<string>();
-				data.forEach(repo => {
+				data.forEach((repo: Repository) => {
 					if (repo.languages && Array.isArray(repo.languages) && repo.languages.length > 0) {
 						const langName = (repo.languages[0] as { name: string }).name;
 						if (langName) languages.add(langName);
@@ -68,33 +77,28 @@ export default function EcosystemRepositoriesPage() {
 		// Apply search filter
 		if (searchQuery.trim() !== "") {
 			const lowercaseQuery = searchQuery.toLowerCase();
-			filtered = filtered.filter((repository) =>
-				repository.name.toLowerCase().includes(lowercaseQuery) ||
-				repository.description.toLowerCase().includes(lowercaseQuery)
+			filtered = filtered.filter(
+				(repository) =>
+					repository.name.toLowerCase().includes(lowercaseQuery) ||
+					repository.description.toLowerCase().includes(lowercaseQuery)
 			);
 		}
 
 		// Apply minimum stars filter
 		if (minStars !== "") {
-			filtered = filtered.filter(
-				(repository) => repository.stars >= Number(minStars)
-			);
+			filtered = filtered.filter((repository) => repository.stars >= Number(minStars));
 			activeFilters++;
 		}
 
 		// Apply minimum PRs filter
 		if (minPRs !== "") {
-			filtered = filtered.filter(
-				(repository) => repository.prMerged + repository.prOpened >= Number(minPRs)
-			);
+			filtered = filtered.filter((repository) => repository.prMerged + repository.prOpened >= Number(minPRs));
 			activeFilters++;
 		}
 
 		// Apply minimum commits filter
 		if (minCommits !== "") {
-			filtered = filtered.filter(
-				(repository) => repository.commits >= Number(minCommits)
-			);
+			filtered = filtered.filter((repository) => repository.commits >= Number(minCommits));
 			activeFilters++;
 		}
 
@@ -116,31 +120,31 @@ export default function EcosystemRepositoriesPage() {
 
 	// Handle sorting
 	const requestSort = (key: keyof Repository) => {
-		let direction: 'ascending' | 'descending' = 'ascending';
-		
-		if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-			direction = 'descending';
+		let direction: "ascending" | "descending" = "ascending";
+
+		if (sortConfig.key === key && sortConfig.direction === "ascending") {
+			direction = "descending";
 		}
-		
+
 		setSortConfig({ key, direction });
-		
+
 		const sortedData = [...filteredRepositories].sort((a, b) => {
 			if (a[key] < b[key]) {
-				return direction === 'ascending' ? -1 : 1;
+				return direction === "ascending" ? -1 : 1;
 			}
 			if (a[key] > b[key]) {
-				return direction === 'ascending' ? 1 : -1;
+				return direction === "ascending" ? 1 : -1;
 			}
 			return 0;
 		});
-		
+
 		setFilteredRepositories(sortedData);
 	};
 
 	// Get sort direction indicator
 	const getSortDirectionIndicator = (key: keyof Repository) => {
 		if (sortConfig.key !== key) return null;
-		return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
+		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
 	};
 
 	// Reset all filters
@@ -186,9 +190,9 @@ export default function EcosystemRepositoriesPage() {
 							<div className="space-y-4">
 								<div className="flex items-center justify-between">
 									<h4 className="font-medium">Filters</h4>
-									<Button 
-										variant="ghost" 
-										size="sm" 
+									<Button
+										variant="ghost"
+										size="sm"
 										onClick={resetFilters}
 										disabled={!minStars && !minPRs && !minCommits && !selectedLanguage}
 									>
@@ -270,82 +274,86 @@ export default function EcosystemRepositoriesPage() {
 									<TableHeader>
 										<TableRow>
 											<TableHead>
-												<button 
+												<button
 													className="flex items-center font-medium text-left"
-													onClick={() => requestSort('name')}
+													onClick={() => requestSort("name")}
 												>
-													Repository{getSortDirectionIndicator('name')}
+													Repository{getSortDirectionIndicator("name")}
 												</button>
 											</TableHead>
 											<TableHead className="text-center">
-												<button 
+												<button
 													className="flex items-center justify-center gap-1 w-full"
-													onClick={() => requestSort('prMerged')}
+													onClick={() => requestSort("prMerged")}
 												>
 													<GitPullRequestClosed className="h-4 w-4" />
-													<span>PRs Merged{getSortDirectionIndicator('prMerged')}</span>
+													<span>PRs Merged{getSortDirectionIndicator("prMerged")}</span>
 												</button>
 											</TableHead>
 											<TableHead className="text-center">
-												<button 
+												<button
 													className="flex items-center justify-center gap-1 w-full"
-													onClick={() => requestSort('prOpened')}
+													onClick={() => requestSort("prOpened")}
 												>
 													<GitPullRequest className="h-4 w-4" />
-													<span>PRs Opened{getSortDirectionIndicator('prOpened')}</span>
+													<span>PRs Opened{getSortDirectionIndicator("prOpened")}</span>
 												</button>
 											</TableHead>
 											<TableHead className="text-center">
-												<button 
+												<button
 													className="flex items-center justify-center gap-1 w-full"
-													onClick={() => requestSort('issuesOpened')}
+													onClick={() => requestSort("issuesOpened")}
 												>
 													<MessageSquare className="h-4 w-4" />
-													<span>Issues Opened{getSortDirectionIndicator('issuesOpened')}</span>
+													<span>
+														Issues Opened{getSortDirectionIndicator("issuesOpened")}
+													</span>
 												</button>
 											</TableHead>
 											<TableHead className="text-center">
-												<button 
+												<button
 													className="flex items-center justify-center gap-1 w-full"
-													onClick={() => requestSort('issuesClosed')}
+													onClick={() => requestSort("issuesClosed")}
 												>
 													<GitBranch className="h-4 w-4" />
-													<span>Issues Closed{getSortDirectionIndicator('issuesClosed')}</span>
+													<span>
+														Issues Closed{getSortDirectionIndicator("issuesClosed")}
+													</span>
 												</button>
 											</TableHead>
 											<TableHead className="text-center">
-												<button 
+												<button
 													className="flex items-center justify-center gap-1 w-full"
-													onClick={() => requestSort('commits')}
+													onClick={() => requestSort("commits")}
 												>
 													<GitCommit className="h-4 w-4" />
-													<span>Commits{getSortDirectionIndicator('commits')}</span>
+													<span>Commits{getSortDirectionIndicator("commits")}</span>
 												</button>
 											</TableHead>
 											<TableHead className="text-center">
-												<button 
+												<button
 													className="flex items-center justify-center gap-1 w-full"
-													onClick={() => requestSort('contributors')}
+													onClick={() => requestSort("contributors")}
 												>
 													<Users className="h-4 w-4" />
-													<span>Contributors{getSortDirectionIndicator('contributors')}</span>
+													<span>Contributors{getSortDirectionIndicator("contributors")}</span>
 												</button>
 											</TableHead>
 											<TableHead className="text-center">
-												<button 
+												<button
 													className="flex items-center justify-center gap-1 w-full"
-													onClick={() => requestSort('stars')}
+													onClick={() => requestSort("stars")}
 												>
 													<Star className="h-4 w-4 text-yellow-500" />
-													<span>Stars{getSortDirectionIndicator('stars')}</span>
+													<span>Stars{getSortDirectionIndicator("stars")}</span>
 												</button>
 											</TableHead>
 											<TableHead className="text-right">
-												<button 
+												<button
 													className="flex items-center justify-end w-full"
-													onClick={() => requestSort('last_updated_at')}
+													onClick={() => requestSort("last_updated_at")}
 												>
-													Last Updated{getSortDirectionIndicator('last_updated_at')}
+													Last Updated{getSortDirectionIndicator("last_updated_at")}
 												</button>
 											</TableHead>
 											<TableHead className="w-[100px]">Actions</TableHead>
@@ -371,13 +379,18 @@ export default function EcosystemRepositoriesPage() {
 															>
 																{repo.name}
 															</a>
-															<span className="text-xs text-muted-foreground mt-1">{repo.description}</span>
+															<span className="text-xs text-muted-foreground mt-1">
+																{repo.description}
+															</span>
 															<div className="mt-1">
-																{repo.languages && Array.isArray(repo.languages) && repo.languages.length > 0 && (
-																	<span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-																		{(repo.languages[0] as { name: string }).name ?? "Unknown"}
-																	</span>
-																)}
+																{repo.languages &&
+																	Array.isArray(repo.languages) &&
+																	repo.languages.length > 0 && (
+																		<span className="inline-flex items-center rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+																			{(repo.languages[0] as { name: string })
+																				.name ?? "Unknown"}
+																		</span>
+																	)}
 															</div>
 														</div>
 													</TableCell>
@@ -393,7 +406,9 @@ export default function EcosystemRepositoriesPage() {
 															<span>{repo.stars}</span>
 														</div>
 													</TableCell>
-													<TableCell className="text-right">{formatDate(repo.last_updated_at)}</TableCell>
+													<TableCell className="text-right">
+														{formatDate(repo.last_updated_at)}
+													</TableCell>
 													<TableCell>
 														<Link
 															href={`/ecosystems/${repo.id}`}

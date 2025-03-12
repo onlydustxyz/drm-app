@@ -27,8 +27,8 @@ import {
 	getContributorRetentionData,
 	getContributorSublist,
 	updateContributorSublist,
-} from "@/lib/contributor-sublists-service";
-import { Contributor, getContributors } from "@/lib/contributors-service";
+} from "@/lib/services/contributor-sublists-service";
+import { Contributor, getContributors } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
 import {
 	Activity,
@@ -103,7 +103,7 @@ export default function SublistDetailPage({ params }: { params: Promise<{ id: st
 				console.log("Contributor IDs in sublist:", sublistData.contributorIds);
 
 				// Make sure we're comparing strings to strings for IDs
-				const filteredContribs = contributorsData.filter((c) =>
+				const filteredContribs = contributorsData.filter((c: Contributor) =>
 					sublistData.contributorIds.includes(String(c.id))
 				);
 

@@ -1,27 +1,24 @@
 "use client";
 
-import { 
-	CommitsByDevType, 
-	DevActivity, 
-	DeveloperActivity, 
-	DeveloperLocation, 
-	DevelopersByChain, 
-	MonthlyCommits, 
-	MonthlyPRsMerged 
-} from "@/lib/dashboard-service";
+import {
+	CommitsByDevType,
+	DevActivity,
+	DeveloperActivity,
+	DeveloperLocation,
+	DevelopersByChain,
+	MonthlyCommits,
+	MonthlyPRsMerged,
+} from "@/lib/services/dashboard-service";
 import {
 	Area,
 	AreaChart,
 	Bar,
 	BarChart,
 	CartesianGrid,
-	Cell,
 	ComposedChart,
 	Legend,
 	Line,
 	LineChart,
-	Pie,
-	PieChart,
 	ResponsiveContainer,
 	Tooltip,
 	XAxis,
@@ -85,32 +82,32 @@ export function ActiveDevsChart({ data }: { data: DeveloperActivity[] }) {
 				<YAxis />
 				<Tooltip />
 				<Legend />
-				<Area 
-					type="monotone" 
-					dataKey="fullTime" 
+				<Area
+					type="monotone"
+					dataKey="fullTime"
 					name="Full Time Devs"
 					stackId="1"
-					stroke="#22c55e" 
-					fill="#22c55e" 
-					fillOpacity={0.3} 
+					stroke="#22c55e"
+					fill="#22c55e"
+					fillOpacity={0.3}
 				/>
-				<Area 
-					type="monotone" 
-					dataKey="partTime" 
+				<Area
+					type="monotone"
+					dataKey="partTime"
 					name="Part Time Devs"
 					stackId="1"
-					stroke="#3b82f6" 
-					fill="#3b82f6" 
-					fillOpacity={0.3} 
+					stroke="#3b82f6"
+					fill="#3b82f6"
+					fillOpacity={0.3}
 				/>
-				<Area 
-					type="monotone" 
-					dataKey="onTime" 
+				<Area
+					type="monotone"
+					dataKey="onTime"
 					name="On-Time Devs"
 					stackId="1"
-					stroke="#f59e0b" 
-					fill="#f59e0b" 
-					fillOpacity={0.3} 
+					stroke="#f59e0b"
+					fill="#f59e0b"
+					fillOpacity={0.3}
 				/>
 			</AreaChart>
 		</ResponsiveContainer>
@@ -123,11 +120,11 @@ interface DevelopersByChainChartProps {
 
 export function DevelopersByChainChart({ data }: DevelopersByChainChartProps) {
 	// Format the date for display
-	const formattedData = data.map(item => {
-		const [year, month] = item.date.split('-');
+	const formattedData = data.map((item) => {
+		const [year, month] = item.date.split("-");
 		return {
 			...item,
-			formattedDate: `${year}-${month}`
+			formattedDate: `${year}-${month}`,
 		};
 	});
 
@@ -143,38 +140,36 @@ export function DevelopersByChainChart({ data }: DevelopersByChainChartProps) {
 				}}
 			>
 				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis 
-					dataKey="formattedDate" 
+				<XAxis
+					dataKey="formattedDate"
 					tick={{ fontSize: 10 }}
 					interval={6} // Show every 6th label to avoid crowding
 				/>
-				<YAxis 
-					domain={[0, 'dataMax + 50']} 
-					label={{ value: 'Developers', angle: -90, position: 'insideLeft' }} 
+				<YAxis
+					domain={[0, "dataMax + 50"]}
+					label={{ value: "Developers", angle: -90, position: "insideLeft" }}
 				/>
-				<Tooltip 
+				<Tooltip
 					formatter={(value, name) => {
 						return [value, name === "singleChain" ? "Single Chain" : "Multi Chain"];
 					}}
 					labelFormatter={(label) => `Date: ${label}`}
 				/>
-				<Legend 
-					formatter={(value) => value === "singleChain" ? "Single Chain" : "Multi Chain"}
-				/>
-				<Line 
-					type="monotone" 
-					dataKey="singleChain" 
+				<Legend formatter={(value) => (value === "singleChain" ? "Single Chain" : "Multi Chain")} />
+				<Line
+					type="monotone"
+					dataKey="singleChain"
 					name="singleChain"
-					stroke="#3b82f6" 
+					stroke="#3b82f6"
 					strokeWidth={2}
 					dot={false}
 					activeDot={{ r: 6 }}
 				/>
-				<Line 
-					type="monotone" 
-					dataKey="multiChain" 
+				<Line
+					type="monotone"
+					dataKey="multiChain"
 					name="multiChain"
-					stroke="#22c55e" 
+					stroke="#22c55e"
 					strokeWidth={2}
 					dot={false}
 					activeDot={{ r: 6 }}
@@ -204,29 +199,29 @@ export function DevTypeDistributionChart({ data }: { data: DeveloperActivity[] }
 				<YAxis />
 				<Tooltip />
 				<Legend />
-				<Line 
-					type="monotone" 
-					dataKey="fullTime" 
+				<Line
+					type="monotone"
+					dataKey="fullTime"
 					name="Full Time Devs"
-					stroke="#22c55e" 
+					stroke="#22c55e"
 					strokeWidth={2}
 					dot={{ r: 3 }}
 					activeDot={{ r: 6 }}
 				/>
-				<Line 
-					type="monotone" 
-					dataKey="partTime" 
+				<Line
+					type="monotone"
+					dataKey="partTime"
 					name="Part Time Devs"
-					stroke="#3b82f6" 
+					stroke="#3b82f6"
 					strokeWidth={2}
 					dot={{ r: 3 }}
 					activeDot={{ r: 6 }}
 				/>
-				<Line 
-					type="monotone" 
-					dataKey="onTime" 
+				<Line
+					type="monotone"
+					dataKey="onTime"
 					name="One Time Devs"
-					stroke="#f59e0b" 
+					stroke="#f59e0b"
 					strokeWidth={2}
 					dot={{ r: 3 }}
 					activeDot={{ r: 6 }}
@@ -240,10 +235,10 @@ export function DevTypeDistributionChart({ data }: { data: DeveloperActivity[] }
 export function DeveloperLocationsMap({ data }: { data: DeveloperLocation[] }) {
 	// This is a placeholder - in a real implementation, you would use a map library
 	// like react-simple-maps, mapbox, or leaflet to render a proper map
-	
+
 	// For now, we'll just show a bar chart of top countries
 	const sortedData = [...data].sort((a, b) => b.count - a.count).slice(0, 10);
-	
+
 	return (
 		<ResponsiveContainer width="100%" height="100%">
 			<BarChart
@@ -258,12 +253,7 @@ export function DeveloperLocationsMap({ data }: { data: DeveloperLocation[] }) {
 			>
 				<CartesianGrid strokeDasharray="3 3" />
 				<XAxis type="number" />
-				<YAxis 
-					dataKey="country" 
-					type="category" 
-					tick={{ fontSize: 12 }}
-					width={100}
-				/>
+				<YAxis dataKey="country" type="category" tick={{ fontSize: 12 }} width={100} />
 				<Tooltip />
 				<Legend />
 				<Bar dataKey="count" name="Developers" fill="#3b82f6" />
@@ -290,32 +280,32 @@ export function CommitsByDevTypeChart({ data }: { data: CommitsByDevType[] }) {
 				<YAxis />
 				<Tooltip />
 				<Legend />
-				<Area 
-					type="monotone" 
-					dataKey="fullTime" 
+				<Area
+					type="monotone"
+					dataKey="fullTime"
 					name="Full Time Devs"
 					stackId="1"
-					stroke="#22c55e" 
-					fill="#22c55e" 
-					fillOpacity={0.3} 
+					stroke="#22c55e"
+					fill="#22c55e"
+					fillOpacity={0.3}
 				/>
-				<Area 
-					type="monotone" 
-					dataKey="partTime" 
+				<Area
+					type="monotone"
+					dataKey="partTime"
 					name="Part Time Devs"
 					stackId="1"
-					stroke="#3b82f6" 
-					fill="#3b82f6" 
-					fillOpacity={0.3} 
+					stroke="#3b82f6"
+					fill="#3b82f6"
+					fillOpacity={0.3}
 				/>
-				<Area 
-					type="monotone" 
-					dataKey="onTime" 
+				<Area
+					type="monotone"
+					dataKey="onTime"
 					name="One Time Devs"
 					stackId="1"
-					stroke="#f59e0b" 
-					fill="#f59e0b" 
-					fillOpacity={0.3} 
+					stroke="#f59e0b"
+					fill="#f59e0b"
+					fillOpacity={0.3}
 				/>
 			</AreaChart>
 		</ResponsiveContainer>
@@ -325,11 +315,11 @@ export function CommitsByDevTypeChart({ data }: { data: CommitsByDevType[] }) {
 // Monthly Commits Chart
 export function MonthlyCommitsChart({ data }: { data: MonthlyCommits[] }) {
 	// Format the date for display
-	const formattedData = data.map(item => {
-		const [year, month] = item.date.split('-');
+	const formattedData = data.map((item) => {
+		const [year, month] = item.date.split("-");
 		return {
 			...item,
-			formattedDate: `${year}-${month}`
+			formattedDate: `${year}-${month}`,
 		};
 	});
 
@@ -345,22 +335,18 @@ export function MonthlyCommitsChart({ data }: { data: MonthlyCommits[] }) {
 				}}
 			>
 				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis 
-					dataKey="formattedDate" 
-					tick={{ fontSize: 10 }}
-					interval={1}
-				/>
+				<XAxis dataKey="formattedDate" tick={{ fontSize: 10 }} interval={1} />
 				<YAxis />
-				<Tooltip 
+				<Tooltip
 					formatter={(value) => [`${value} commits`, "Commits"]}
 					labelFormatter={(label) => `Date: ${label}`}
 				/>
 				<Legend />
-				<Line 
-					type="monotone" 
-					dataKey="count" 
+				<Line
+					type="monotone"
+					dataKey="count"
 					name="Commits"
-					stroke="#3b82f6" 
+					stroke="#3b82f6"
 					strokeWidth={2}
 					dot={false}
 					activeDot={{ r: 6 }}
@@ -373,11 +359,11 @@ export function MonthlyCommitsChart({ data }: { data: MonthlyCommits[] }) {
 // Monthly PRs Merged Chart
 export function MonthlyPRsMergedChart({ data }: { data: MonthlyPRsMerged[] }) {
 	// Format the date for display
-	const formattedData = data.map(item => {
-		const [year, month] = item.date.split('-');
+	const formattedData = data.map((item) => {
+		const [year, month] = item.date.split("-");
 		return {
 			...item,
-			formattedDate: `${year}-${month}`
+			formattedDate: `${year}-${month}`,
 		};
 	});
 
@@ -393,22 +379,18 @@ export function MonthlyPRsMergedChart({ data }: { data: MonthlyPRsMerged[] }) {
 				}}
 			>
 				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis 
-					dataKey="formattedDate" 
-					tick={{ fontSize: 10 }}
-					interval={1}
-				/>
+				<XAxis dataKey="formattedDate" tick={{ fontSize: 10 }} interval={1} />
 				<YAxis />
-				<Tooltip 
+				<Tooltip
 					formatter={(value) => [`${value} PRs`, "PRs Merged"]}
 					labelFormatter={(label) => `Date: ${label}`}
 				/>
 				<Legend />
-				<Line 
-					type="monotone" 
-					dataKey="count" 
+				<Line
+					type="monotone"
+					dataKey="count"
 					name="PRs Merged"
-					stroke="#22c55e" 
+					stroke="#22c55e"
 					strokeWidth={2}
 					dot={false}
 					activeDot={{ r: 6 }}
@@ -421,11 +403,11 @@ export function MonthlyPRsMergedChart({ data }: { data: MonthlyPRsMerged[] }) {
 // Developer Activity Chart (Active/Churned/Reactivated)
 export function DevActivityChart({ data }: { data: DevActivity[] }) {
 	// Format the date for display
-	const formattedData = data.map(item => {
-		const [year, month] = item.date.split('-');
+	const formattedData = data.map((item) => {
+		const [year, month] = item.date.split("-");
 		return {
 			...item,
-			formattedDate: `${year}-${month}`
+			formattedDate: `${year}-${month}`,
 		};
 	});
 
@@ -441,23 +423,13 @@ export function DevActivityChart({ data }: { data: DevActivity[] }) {
 				}}
 			>
 				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis 
-					dataKey="formattedDate" 
-					tick={{ fontSize: 10 }}
-					interval={1}
-				/>
+				<XAxis dataKey="formattedDate" tick={{ fontSize: 10 }} interval={1} />
 				<YAxis />
 				<Tooltip />
 				<Legend />
 				<Bar dataKey="active" name="Active Devs" fill="#22c55e" />
 				<Bar dataKey="churned" name="Churned Devs" fill="#ef4444" />
-				<Line 
-					type="monotone" 
-					dataKey="reactivated" 
-					name="Reactivated Devs"
-					stroke="#f59e0b" 
-					strokeWidth={2}
-				/>
+				<Line type="monotone" dataKey="reactivated" name="Reactivated Devs" stroke="#f59e0b" strokeWidth={2} />
 			</ComposedChart>
 		</ResponsiveContainer>
 	);
