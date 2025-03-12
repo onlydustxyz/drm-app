@@ -1,4 +1,4 @@
-import { getDashboardStorage } from "@/lib/dashboard-storage";
+import { getDashboardStorage } from "@/lib/storage/dashboard-storage";
 import { NextResponse } from "next/server";
 
 /**

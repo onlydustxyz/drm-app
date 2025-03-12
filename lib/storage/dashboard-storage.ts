@@ -1,4 +1,3 @@
-import { SupabaseDashboardStorage } from "@/lib/dashboard-storage-supabase";
 import {
 	CommitsByDevType,
 	DashboardData,
@@ -9,7 +8,8 @@ import {
 	DevelopersByChain,
 	MonthlyCommits,
 	MonthlyPRsMerged,
-} from "./dashboard-service";
+} from "@/lib/services/dashboard-service";
+import { SupabaseDashboardStorage } from "@/lib/storage/adapters/dashboard-storage-supabase";
 
 /**
  * Interface for accessing dashboard data from storage

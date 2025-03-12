@@ -1,14 +1,14 @@
-import { 
-	getCommitsByDevType, 
-	getDashboardKPIs, 
-	getDevActivity, 
-	getDeveloperActivity, 
-	getDeveloperLocations, 
-	getDevelopersByChain, 
-	getMonthlyCommits, 
-	getMonthlyPRsMerged 
-} from "@/lib/dashboard-service";
 import { DashboardClient } from "@/components/dashboard/dashboard-client";
+import {
+	getCommitsByDevType,
+	getDashboardKPIs,
+	getDevActivity,
+	getDeveloperActivity,
+	getDeveloperLocations,
+	getDevelopersByChain,
+	getMonthlyCommits,
+	getMonthlyPRsMerged,
+} from "@/lib/services/dashboard-service";
 
 export default async function DashboardPage() {
 	// Fetch data for the dashboard
@@ -22,7 +22,7 @@ export default async function DashboardPage() {
 	const devActivity = await getDevActivity();
 
 	return (
-		<DashboardClient 
+		<DashboardClient
 			kpis={kpis}
 			developerActivity={developerActivity}
 			developersByChain={developersByChain}

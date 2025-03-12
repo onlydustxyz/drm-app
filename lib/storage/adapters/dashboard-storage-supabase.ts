@@ -9,9 +9,9 @@ import {
 	DevelopersByChain,
 	MonthlyCommits,
 	MonthlyPRsMerged,
-} from "./dashboard-service";
-import { DashboardStorage } from "./dashboard-storage";
-import { Database } from "./supabase/database.types";
+} from "../../services/dashboard-service";
+import { Database } from "../../supabase/database.types";
+import { DashboardStorage } from "../dashboard-storage";
 
 /**
  * Supabase implementation of the DashboardStorage interface
@@ -64,8 +64,6 @@ export class SupabaseDashboardStorage implements DashboardStorage {
 			.order("created_at", { ascending: false })
 			.limit(1)
 			.single();
-
-		console.log(data, error);
 
 		if (error) {
 			console.error("Error fetching dashboard KPIs:", error);
