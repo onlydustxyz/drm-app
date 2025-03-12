@@ -2,6 +2,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Activity, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
+import { use } from "react";
 import ActivityPattern from "./activity-pattern";
 import ContributorAvatar from "./contributor-avatar";
 
@@ -137,9 +138,9 @@ function getContributorRoleColor(role: string) {
 	}
 }
 
-export default function ContributorsPage({ params }: { params: { repoId: string } }) {
-	const repoId = params.repoId;
-	
+export default function ContributorsPage({ params }: { params: Promise<{ repoId: string }> }) {
+	const { repoId } = use(params);
+
 	return (
 		<div className="space-y-6">
 			<div className="flex justify-between items-center">

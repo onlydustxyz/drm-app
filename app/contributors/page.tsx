@@ -4,20 +4,60 @@ import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuGroup,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toast } from "@/components/ui/use-toast";
+import {
+	ContributorSublist,
+	createContributorSublist,
+	getContributorSublists,
+	updateContributorSublist,
+} from "@/lib/contributor-sublists-service";
 import { Contributor, getContributors } from "@/lib/contributors-service";
-import { ContributorSublist, getContributorSublists, updateContributorSublist, createContributorSublist } from "@/lib/contributor-sublists-service";
 import { formatDate } from "@/lib/utils";
-import { Check, ChevronDown, GitBranch, GitCommit, GitPullRequest, GitPullRequestClosed, MessageSquare, PlusCircle, Search, SlidersHorizontal, X, Users, MapPin, Building, Star, UserPlus, Activity, Code, Award, ExternalLink, Github, Twitter, Linkedin, Globe } from "lucide-react";
+import { 
+  ChevronDown, 
+  GitCommit, 
+  PlusCircle, 
+  Search, 
+  SlidersHorizontal, 
+  X, 
+  Users, 
+  MapPin, 
+  Building, 
+  Star, 
+  UserPlus, 
+  Activity, 
+  Code, 
+  Award, 
+  ExternalLink, 
+  Github, 
+  Twitter, 
+  Linkedin, 
+  Globe 
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "@/components/ui/use-toast";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";

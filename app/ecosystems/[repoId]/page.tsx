@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Activity, Calendar, Eye, GitBranch, GitFork, Star } from "lucide-react";
 import Link from "next/link";
+import { use } from "react";
 
 // Mock data for commit frequency (weekly commits over 8 weeks)
 const contributionFrequency = [42, 56, 38, 27, 53, 45, 62, 38];
@@ -126,8 +127,8 @@ const repositories = [
 	},
 ];
 
-export default function RepositoryOverviewPage({ params }: { params: { repoId: string } }) {
-	const repoIdString = params.repoId;
+export default function RepositoryOverviewPage({ params }: { params: Promise<{ repoId: string }> }) {
+	const { repoId: repoIdString } = use(params);
 	const repoId = parseInt(repoIdString);
 	const repository = repositories.find((repo) => repo.id === repoId);
 
