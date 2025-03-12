@@ -10,16 +10,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Contributor, getContributors } from "@/lib/contributors-service";
 import { ContributorSublist, createContributorSublist, deleteContributorSublist, getContributorSublists } from "@/lib/contributor-sublists-service";
 import { formatDate } from "@/lib/utils";
-import { Plus, Trash2, Edit, ChevronRight, Users, Import, AlertCircle } from "lucide-react";
+import { Plus, Trash2, Edit, ChevronRight, Users, Import, AlertCircle, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function ContributorSublistsPage() {
   const [contributors, setContributors] = useState<Contributor[]>([]);
   const [sublists, setSublists] = useState<ContributorSublist[]>([]);
+  const [filteredSublists, setFilteredSublists] = useState<ContributorSublist[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [newSublistName, setNewSublistName] = useState("");
@@ -29,6 +32,10 @@ export default function ContributorSublistsPage() {
   const [githubHandles, setGithubHandles] = useState("");
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof ContributorSublist | null;
+    direction: 'ascending' | 'descending';
+  }>({ key: null, direction: 'descending' });
 
   // Fetch contributors and sublists data
   useEffect(() => {
@@ -41,6 +48,7 @@ export default function ContributorSublistsPage() {
         ]);
         setContributors(contributorsData);
         setSublists(sublistsData);
+        setFilteredSublists(sublistsData);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -50,6 +58,22 @@ export default function ContributorSublistsPage() {
 
     fetchData();
   }, []);
+
+  // Apply search filter
+  useEffect(() => {
+    if (searchQuery.trim() === "") {
+      setFilteredSublists(sublists);
+      return;
+    }
+    
+    const lowercaseQuery = searchQuery.toLowerCase();
+    const filtered = sublists.filter((sublist) =>
+      sublist.name.toLowerCase().includes(lowercaseQuery) ||
+      sublist.description.toLowerCase().includes(lowercaseQuery)
+    );
+    
+    setFilteredSublists(filtered);
+  }, [searchQuery, sublists]);
 
   const handleCreateSublist = async () => {
     if (!newSublistName.trim()) return;
@@ -61,7 +85,9 @@ export default function ContributorSublistsPage() {
         contributorIds: selectedContributorIds
       });
       
-      setSublists([...sublists, newSublist]);
+      const updatedSublists = [...sublists, newSublist];
+      setSublists(updatedSublists);
+      setFilteredSublists(updatedSublists);
       setNewSublistName("");
       setNewSublistDescription("");
       setSelectedContributorIds([]);
@@ -82,6 +108,7 @@ export default function ContributorSublistsPage() {
       if (success) {
         const updatedSublists = sublists.filter(s => s.id !== id);
         setSublists(updatedSublists);
+        setFilteredSublists(updatedSublists);
       }
     } catch (error) {
       console.error("Error deleting sublist:", error);
@@ -94,6 +121,35 @@ export default function ContributorSublistsPage() {
         ? prev.filter(id => id !== contributorId)
         : [...prev, contributorId]
     );
+  };
+
+  // Handle sorting
+  const requestSort = (key: keyof ContributorSublist) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    
+    if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    
+    setSortConfig({ key, direction });
+    
+    const sortedData = [...filteredSublists].sort((a, b) => {
+      if (a[key] < b[key]) {
+        return direction === 'ascending' ? -1 : 1;
+      }
+      if (a[key] > b[key]) {
+        return direction === 'ascending' ? 1 : -1;
+      }
+      return 0;
+    });
+    
+    setFilteredSublists(sortedData);
+  };
+
+  // Get sort direction indicator
+  const getSortDirectionIndicator = (key: keyof ContributorSublist) => {
+    if (sortConfig.key !== key) return null;
+    return sortConfig.direction === 'ascending' ? ' ↑' : ' ↓';
   };
 
   const handleImportGithubHandles = () => {
@@ -329,63 +385,129 @@ export default function ContributorSublistsPage() {
           </DialogContent>
         </Dialog>
       </div>
+      <Separator className="mb-6" />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {sublists.length === 0 ? (
-          <div className="col-span-full">
-            <Card>
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-xl font-medium mb-2">No Sublists Created</h3>
-                <p className="text-muted-foreground mb-6 text-center">
-                  Create your first sublist to start tracking specific groups of contributors.
-                </p>
+      <Card className="w-full max-w-full">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <CardTitle>Contributor Sublists</CardTitle>
+              <CardDescription>
+                Manage your contributor sublists to track specific groups of contributors.
+              </CardDescription>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              <div className="relative w-full md:w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search sublists..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {filteredSublists.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <Users className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-xl font-medium mb-2">No Sublists Found</h3>
+              <p className="text-muted-foreground mb-6 text-center">
+                {searchQuery ? "No sublists match your search criteria." : "Create your first sublist to start tracking specific groups of contributors."}
+              </p>
+              {!searchQuery && (
                 <Button onClick={() => setIsCreating(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Create Sublist
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
-        ) : (
-          sublists.map((sublist) => (
-            <Card key={sublist.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle>{sublist.name}</CardTitle>
-                    <CardDescription>
-                      {sublist.description}
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteSublist(sublist.id);
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-sm text-muted-foreground mb-4">
-                  <span className="font-medium">Created:</span> {formatDate(sublist.createdAt)} | 
-                  <span className="font-medium ml-2">Contributors:</span> {sublist.contributorIds.length}
-                </div>
-                <Link href={`/contributors/sublists/${sublist.id}`}>
-                  <Button className="w-full">
-                    View Details
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+              )}
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                      <button 
+                        className="flex items-center font-medium text-left"
+                        onClick={() => requestSort('name')}
+                      >
+                        Name{getSortDirectionIndicator('name')}
+                      </button>
+                    </TableHead>
+                    <TableHead>
+                      <button 
+                        className="flex items-center font-medium text-left"
+                        onClick={() => requestSort('description')}
+                      >
+                        Description{getSortDirectionIndicator('description')}
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <button 
+                        className="flex items-center justify-center gap-1 w-full"
+                        onClick={() => requestSort('contributorIds')}
+                      >
+                        <Users className="h-4 w-4" />
+                        <span>Contributors{getSortDirectionIndicator('contributorIds')}</span>
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <button 
+                        className="flex items-center justify-center gap-1 w-full"
+                        onClick={() => requestSort('createdAt')}
+                      >
+                        Created{getSortDirectionIndicator('createdAt')}
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                      <button 
+                        className="flex items-center justify-center gap-1 w-full"
+                        onClick={() => requestSort('updatedAt')}
+                      >
+                        Updated{getSortDirectionIndicator('updatedAt')}
+                      </button>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSublists.map((sublist) => (
+                    <TableRow key={sublist.id}>
+                      <TableCell className="font-medium">{sublist.name}</TableCell>
+                      <TableCell>{sublist.description}</TableCell>
+                      <TableCell className="text-center">{sublist.contributorIds.length}</TableCell>
+                      <TableCell className="text-center">{formatDate(sublist.createdAt)}</TableCell>
+                      <TableCell className="text-center">{formatDate(sublist.updatedAt)}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSublist(sublist.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                          <Link href={`/contributors/sublists/${sublist.id}`}>
+                            <Button variant="ghost" size="icon">
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 } 
