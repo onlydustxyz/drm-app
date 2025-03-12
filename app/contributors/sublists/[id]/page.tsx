@@ -206,12 +206,31 @@ export default function SublistDetailPage({ params }: { params: Promise<{ id: st
 					id: `new-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // Generate a unique ID
 					name: cleanHandle,
 					avatar: `https://github.com/${cleanHandle}.png`,
+					handle: cleanHandle,
+					type: "One-Time",
+					tenure: "Newcomer",
+					description: `GitHub user ${cleanHandle}`,
+					location: "",
+					organizations: [],
 					prMerged: 0,
 					prOpened: 0,
 					issuesOpened: 0,
 					issuesClosed: 0,
 					commits: 0,
 					lastActive: new Date().toISOString().split("T")[0],
+					latestCommit: {
+						message: "",
+						date: "",
+						url: "",
+					},
+					socialLinks: {
+						github: `https://github.com/${cleanHandle}`,
+					},
+					activityScore: 0,
+					languages: [],
+					reputationScore: 0,
+					stars: 0,
+					followers: 0,
 				};
 				newContributors.push(newContributor);
 			}
