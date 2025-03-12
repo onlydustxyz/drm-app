@@ -1,0 +1,58 @@
+import { date, decimal, index, integer, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+
+// Dashboard KPIs table
+export const dashboardKpis = pgTable("dashboard_kpis", {
+	id: serial("id").primaryKey(),
+	full_time_devs: integer("full_time_devs").notNull(),
+	full_time_devs_growth: decimal("full_time_devs_growth", { precision: 5, scale: 2 }).notNull(),
+	monthly_active_devs: integer("monthly_active_devs").notNull(),
+	monthly_active_devs_growth: decimal("monthly_active_devs_growth", { precision: 5, scale: 2 }).notNull(),
+	total_repos: integer("total_repos").notNull(),
+	total_repos_growth: decimal("total_repos_growth", { precision: 5, scale: 2 }).notNull(),
+	total_commits: integer("total_commits").notNull(),
+	total_commits_growth: decimal("total_commits_growth", { precision: 5, scale: 2 }).notNull(),
+	total_projects: integer("total_projects").notNull(),
+	total_projects_growth: decimal("total_projects_growth", { precision: 5, scale: 2 }).notNull(),
+	created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Developer Activity table
+export const developerActivity = pgTable("developer_activity", {
+	id: serial("id").primaryKey(),
+	name: varchar("name", { length: 50 }).notNull(),
+	full_time: integer("full_time").notNull(),
+	part_time: integer("part_time").notNull(),
+	on_time: integer("on_time").notNull(),
+	created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Developers by Chain table
+export const developersByChain = pgTable(
+	"developers_by_chain",
+	{
+		id: serial("id").primaryKey(),
+		date: date("date").notNull(),
+		single_chain: integer("single_chain").notNull(),
+		multi_chain: integer("multi_chain").notNull(),
+		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => {
+		return {
+			dateIdx: index("idx_developers_by_chain_date").on(table.date),
+		};
+	}
+);
+
+// Developer Locations table
+export const developerLocations = pgTable("developer_locations", {
+	id: serial("id").primaryKey(),
+	country: varchar("country", { length: 100 }).notNull(),
+	count: integer("count").notNull(),
+	latitude: decimal("latitude", { precision: 9, scale: 6 }).notNull(),
+	longitude: decimal("longitude", { precision: 9, scale: 6 }).notNull(),
+	created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
