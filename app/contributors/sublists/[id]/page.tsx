@@ -327,19 +327,6 @@ export default function SublistDetailPage({ params }: { params: Promise<{ id: st
 				<h1 className="text-3xl font-bold ml-4">{sublist.name}</h1>
 			</div>
 
-			{/* Debug information */}
-			{process.env.NODE_ENV !== "production" && (
-				<div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-					<h3 className="text-sm font-medium text-yellow-800 mb-2">Debug Information</h3>
-					<div className="text-xs text-yellow-700 space-y-1">
-						<p>Sublist ID: {sublist.id}</p>
-						<p>Contributor IDs: {sublist.contributorIds.join(", ")}</p>
-						<p>Filtered Contributors Count: {filteredContributors.length}</p>
-						<p>All Contributors Count: {contributors.length}</p>
-					</div>
-				</div>
-			)}
-
 			<Card className="mb-6">
 				<CardHeader>
 					<div className="flex justify-between items-center">
