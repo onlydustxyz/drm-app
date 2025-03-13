@@ -1,5 +1,9 @@
+import {
+	ContributorSublist,
+	createContributorSublist,
+	getContributorSublists,
+} from "@/lib/services/contributor-sublists-service";
 import { NextResponse } from "next/server";
-import { getContributorSublists, createContributorSublist } from "@/lib/services/contributor-sublists-service";
 
 export async function GET(request: Request) {
 	try {
@@ -14,7 +18,7 @@ export async function GET(request: Request) {
 			search: searchQuery,
 			sort: sortKey
 				? {
-						key: sortKey,
+						key: sortKey as keyof ContributorSublist,
 						direction: sortDirection === "descending" ? "descending" : "ascending",
 				  }
 				: undefined,

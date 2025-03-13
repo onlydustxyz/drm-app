@@ -5,7 +5,7 @@ import {
 	ContributorSublist,
 	generateRetentionData,
 } from "@/lib/services/contributor-sublists-service";
-import { eq, or, ilike, desc, asc } from "drizzle-orm";
+import { asc, desc, eq, ilike, or } from "drizzle-orm";
 import { ContributorSublistsStorage } from "../contributor-sublists-storage";
 
 /**
@@ -31,7 +31,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 				const searchTerm = `%${options.search.trim()}%`;
 				query = query.where(
 					or(ilike(contributorSublists.name, searchTerm), ilike(contributorSublists.description, searchTerm))
-				);
+				) as any;
 			}
 
 			// Apply sorting based on provided parameters
@@ -49,14 +49,14 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 				const sortField = sortFieldMap[options.sort.key];
 				if (sortField) {
 					if (options.sort.direction === "descending") {
-						query = query.orderBy(desc(sortField));
+						query = query.orderBy(desc(sortField)) as any;
 					} else {
-						query = query.orderBy(asc(sortField));
+						query = query.orderBy(asc(sortField)) as any;
 					}
 				}
 			} else {
 				// Default sorting
-				query = query.orderBy(contributorSublists.created_at);
+				query = query.orderBy(contributorSublists.created_at) as any;
 			}
 
 			const result = await query;

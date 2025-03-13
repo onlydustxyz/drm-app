@@ -25,7 +25,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { ContributorSublist } from "@/lib/services/contributor-sublists-service";
 import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Activity,
 	AlertCircle,
@@ -43,7 +43,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // API fetch functions
 const fetchSublist = async (id: string): Promise<ContributorSublist> => {
@@ -117,6 +117,7 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
 	const [githubHandles, setGithubHandles] = useState("");
 	const [importError, setImportError] = useState("");
 	const [importSuccess, setImportSuccess] = useState("");
+	const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
 	const [sortConfig, setSortConfig] = useState<{
 		key: keyof Contributor | null;
 		direction: "ascending" | "descending";
@@ -124,18 +125,22 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
 
 	// Queries
 	const {
-		data: sublist,
+		data: sublist = {} as ContributorSublist,
 		isLoading: isLoadingSublist,
 		error: sublistError,
 	} = useQuery({
 		queryKey: ["sublist", sublistId],
 		queryFn: () => fetchSublist(sublistId),
-		onSuccess: (data) => {
-			setNewSublistName(data.name);
-			setNewSublistDescription(data.description);
-			setSelectedContributorIds([...data.contributorIds]);
-		},
 	});
+
+	// Handle sublist data loaded
+	useEffect(() => {
+		if (sublist && sublist.name) {
+			setNewSublistName(sublist.name);
+			setNewSublistDescription(sublist.description || "");
+			setSelectedContributorIds([...sublist.contributorIds]);
+		}
+	}, [sublist]);
 
 	const {
 		data: contributors = [],
@@ -146,9 +151,13 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
 		queryFn: fetchContributors,
 	});
 
-	const filteredContributors = sublist
-		? contributors.filter((c) => sublist.contributorIds.includes(String(c.id)))
-		: [];
+	// Update filtered contributors whenever the sublist or contributors change
+	useEffect(() => {
+		if (sublist && sublist.contributorIds && contributors.length > 0) {
+			const filtered = contributors.filter((c) => sublist.contributorIds.includes(String(c.id)));
+			setFilteredContributors(filtered);
+		}
+	}, [sublist, contributors]);
 
 	const {
 		data: retentionData = [],
@@ -157,7 +166,7 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
 	} = useQuery({
 		queryKey: ["retention", sublist?.contributorIds],
 		queryFn: () => fetchRetentionData(sublist?.contributorIds || []),
-		enabled: !!sublist?.contributorIds.length,
+		enabled: !!sublist?.contributorIds?.length,
 	});
 
 	const {
@@ -167,7 +176,7 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
 	} = useQuery({
 		queryKey: ["activity", sublist?.contributorIds],
 		queryFn: () => fetchActivityData(sublist?.contributorIds || []),
-		enabled: !!sublist?.contributorIds.length,
+		enabled: !!sublist?.contributorIds?.length,
 	});
 
 	// Mutations
@@ -315,14 +324,12 @@ export default function SublistDetailPage({ params }: { params: { id: string } }
 		}
 	};
 
-	// Handle sorting
+	// Request sort
 	const requestSort = (key: keyof Contributor) => {
 		let direction: "ascending" | "descending" = "ascending";
-
 		if (sortConfig.key === key && sortConfig.direction === "ascending") {
 			direction = "descending";
 		}
-
 		setSortConfig({ key, direction });
 
 		const sortedData = [...filteredContributors].sort((a, b) => {
