@@ -19,19 +19,66 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/components/ui/use-toast";
 import { ContributorSublist } from "@/lib/services/contributor-sublists-service";
 import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
-import { AlertCircle, ChevronRight, Import, Plus, Search, Trash2, Users } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, ChevronRight, Import, Loader2, Plus, Search, Trash2, Users } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+
+// API fetch functions
+const fetchContributors = async (): Promise<Contributor[]> => {
+	const response = await fetch("/api/contributors");
+	if (!response.ok) {
+		throw new Error("Failed to fetch contributors");
+	}
+	return response.json();
+};
+
+const fetchSublists = async (): Promise<ContributorSublist[]> => {
+	const response = await fetch("/api/contributor-sublists");
+	if (!response.ok) {
+		throw new Error("Failed to fetch sublists");
+	}
+	return response.json();
+};
+
+const createSublist = async (data: {
+	name: string;
+	description: string;
+	contributorIds: string[];
+}): Promise<ContributorSublist> => {
+	const response = await fetch("/api/contributor-sublists", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(data),
+	});
+	if (!response.ok) {
+		throw new Error("Failed to create sublist");
+	}
+	return response.json();
+};
+
+const deleteSublist = async (id: string): Promise<{ success: boolean }> => {
+	const response = await fetch(`/api/contributor-sublists/${id}`, {
+		method: "DELETE",
+	});
+	if (!response.ok) {
+		throw new Error("Failed to delete sublist");
+	}
+	return response.json();
+};
 
 export default function ContributorSublistsPage() {
-	const [contributors, setContributors] = useState<Contributor[]>([]);
-	const [sublists, setSublists] = useState<ContributorSublist[]>([]);
-	const [filteredSublists, setFilteredSublists] = useState<ContributorSublist[]>([]);
+	const { toast } = useToast();
+	const queryClient = useQueryClient();
+
+	// State for UI
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isLoading, setIsLoading] = useState(true);
 	const [isCreating, setIsCreating] = useState(false);
 	const [newSublistName, setNewSublistName] = useState("");
 	const [newSublistDescription, setNewSublistDescription] = useState("");
@@ -45,80 +92,33 @@ export default function ContributorSublistsPage() {
 		direction: "ascending" | "descending";
 	}>({ key: null, direction: "descending" });
 
-	// Fetch contributors and sublists data
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				setIsLoading(true);
-				const [contributorsResponse, sublistsResponse] = await Promise.all([
-					fetch("/api/contributors"),
-					fetch("/api/contributor-sublists"),
-				]);
+	// Queries
+	const {
+		data: contributors = [],
+		isLoading: isLoadingContributors,
+		error: contributorsError,
+	} = useQuery({
+		queryKey: ["contributors"],
+		queryFn: fetchContributors,
+	});
 
-				if (!contributorsResponse.ok || !sublistsResponse.ok) {
-					throw new Error("Failed to fetch data");
-				}
+	const {
+		data: sublists = [],
+		isLoading: isLoadingSublists,
+		error: sublistsError,
+	} = useQuery({
+		queryKey: ["sublists"],
+		queryFn: fetchSublists,
+	});
 
-				const [contributorsData, sublistsData] = await Promise.all([
-					contributorsResponse.json(),
-					sublistsResponse.json(),
-				]);
+	// Mutations
+	const createSublistMutation = useMutation({
+		mutationFn: createSublist,
+		onSuccess: () => {
+			// Invalidate and refetch
+			queryClient.invalidateQueries({ queryKey: ["sublists"] });
 
-				setContributors(contributorsData);
-				setSublists(sublistsData);
-				setFilteredSublists(sublistsData);
-			} catch (error) {
-				console.error("Error fetching data:", error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchData();
-	}, []);
-
-	// Apply search filter
-	useEffect(() => {
-		if (searchQuery.trim() === "") {
-			setFilteredSublists(sublists);
-			return;
-		}
-
-		const lowercaseQuery = searchQuery.toLowerCase();
-		const filtered = sublists.filter(
-			(sublist) =>
-				sublist.name.toLowerCase().includes(lowercaseQuery) ||
-				sublist.description.toLowerCase().includes(lowercaseQuery)
-		);
-
-		setFilteredSublists(filtered);
-	}, [searchQuery, sublists]);
-
-	const handleCreateSublist = async () => {
-		if (!newSublistName.trim()) return;
-
-		try {
-			const response = await fetch("/api/contributor-sublists", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					name: newSublistName,
-					description: newSublistDescription,
-					contributorIds: selectedContributorIds,
-				}),
-			});
-
-			if (!response.ok) {
-				throw new Error("Failed to create sublist");
-			}
-
-			const newSublist = await response.json();
-
-			const updatedSublists = [...sublists, newSublist];
-			setSublists(updatedSublists);
-			setFilteredSublists(updatedSublists);
+			// Reset form
 			setNewSublistName("");
 			setNewSublistDescription("");
 			setSelectedContributorIds([]);
@@ -127,66 +127,68 @@ export default function ContributorSublistsPage() {
 			setImportError("");
 			setImportSuccess("");
 			setIsCreating(false);
-		} catch (error) {
-			console.error("Error creating sublist:", error);
-		}
+
+			toast({
+				title: "Success",
+				description: "Contributor sublist created successfully",
+			});
+		},
+		onError: (error) => {
+			toast({
+				title: "Error",
+				description: `Failed to create sublist: ${error.message}`,
+				variant: "destructive",
+			});
+		},
+	});
+
+	const deleteSublistMutation = useMutation({
+		mutationFn: deleteSublist,
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["sublists"] });
+			toast({
+				title: "Success",
+				description: "Contributor sublist deleted successfully",
+			});
+		},
+		onError: (error) => {
+			toast({
+				title: "Error",
+				description: `Failed to delete sublist: ${error.message}`,
+				variant: "destructive",
+			});
+		},
+	});
+
+	// Derived state for filtered sublists
+	const filteredSublists = sublists.filter((sublist) => {
+		if (searchQuery.trim() === "") return true;
+
+		const lowercaseQuery = searchQuery.toLowerCase();
+		return (
+			sublist.name.toLowerCase().includes(lowercaseQuery) ||
+			sublist.description.toLowerCase().includes(lowercaseQuery)
+		);
+	});
+
+	const handleCreateSublist = () => {
+		if (!newSublistName.trim()) return;
+
+		createSublistMutation.mutate({
+			name: newSublistName,
+			description: newSublistDescription,
+			contributorIds: selectedContributorIds,
+		});
 	};
 
-	const handleDeleteSublist = async (id: string) => {
-		try {
-			const response = await fetch(`/api/contributor-sublists/${id}`, {
-				method: "DELETE",
-			});
-
-			if (!response.ok) {
-				throw new Error("Failed to delete sublist");
-			}
-
-			const { success } = await response.json();
-
-			if (success) {
-				const updatedSublists = sublists.filter((s) => s.id !== id);
-				setSublists(updatedSublists);
-				setFilteredSublists(updatedSublists);
-			}
-		} catch (error) {
-			console.error("Error deleting sublist:", error);
-		}
+	const handleDeleteSublist = (id: string) => {
+		deleteSublistMutation.mutate(id);
 	};
 
 	const handleCheckboxChange = (contributorId: string) => {
 		setSelectedContributorIds((prev) =>
 			prev.includes(contributorId) ? prev.filter((id) => id !== contributorId) : [...prev, contributorId]
 		);
-	};
-
-	// Handle sorting
-	const requestSort = (key: keyof ContributorSublist) => {
-		let direction: "ascending" | "descending" = "ascending";
-
-		if (sortConfig.key === key && sortConfig.direction === "ascending") {
-			direction = "descending";
-		}
-
-		setSortConfig({ key, direction });
-
-		const sortedData = [...filteredSublists].sort((a, b) => {
-			if (a[key] < b[key]) {
-				return direction === "ascending" ? -1 : 1;
-			}
-			if (a[key] > b[key]) {
-				return direction === "ascending" ? 1 : -1;
-			}
-			return 0;
-		});
-
-		setFilteredSublists(sortedData);
-	};
-
-	// Get sort direction indicator
-	const getSortDirectionIndicator = (key: keyof ContributorSublist) => {
-		if (sortConfig.key !== key) return null;
-		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
 	};
 
 	const handleImportGithubHandles = () => {
@@ -262,7 +264,9 @@ export default function ContributorSublistsPage() {
 
 		// Add new contributors to the contributors list
 		if (newContributors.length > 0) {
-			setContributors((prevContributors) => [...prevContributors, ...newContributors]);
+			queryClient.setQueryData(["contributors"], (oldData: Contributor[] | undefined) =>
+				oldData ? [...oldData, ...newContributors] : newContributors
+			);
 		}
 
 		// Update selected contributor IDs
@@ -285,10 +289,51 @@ export default function ContributorSublistsPage() {
 		}
 	};
 
-	if (isLoading) {
+	// Request sorting
+	const requestSort = (key: keyof ContributorSublist) => {
+		let direction: "ascending" | "descending" = "ascending";
+
+		if (sortConfig.key === key && sortConfig.direction === "ascending") {
+			direction = "descending";
+		}
+
+		setSortConfig({ key, direction });
+
+		// Sorting is now handled in the render phase, no need to mutate the filtered array
+	};
+
+	// Get sort direction indicator
+	const getSortDirectionIndicator = (key: keyof ContributorSublist) => {
+		if (sortConfig.key !== key) return null;
+		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
+	};
+
+	// Sort the filtered sublists based on the sort config
+	const sortedSublists = [...filteredSublists].sort((a, b) => {
+		if (!sortConfig.key) return 0;
+
+		if (a[sortConfig.key] < b[sortConfig.key]) {
+			return sortConfig.direction === "ascending" ? -1 : 1;
+		}
+		if (a[sortConfig.key] > b[sortConfig.key]) {
+			return sortConfig.direction === "ascending" ? 1 : -1;
+		}
+		return 0;
+	});
+
+	// Loading and error states
+	const isLoading = isLoadingContributors || isLoadingSublists;
+	const error = contributorsError || sublistsError;
+
+	if (error) {
 		return (
-			<div className="flex items-center justify-center h-screen">
-				<div className="text-lg">Loading...</div>
+			<div className="container mx-auto py-6">
+				<Alert variant="destructive">
+					<AlertCircle className="h-4 w-4" />
+					<AlertDescription>
+						{error instanceof Error ? error.message : "An unknown error occurred"}
+					</AlertDescription>
+				</Alert>
 			</div>
 		);
 	}
@@ -356,21 +401,31 @@ export default function ContributorSublistsPage() {
 								<TabsContent value="manual">
 									<div className="grid grid-cols-4 gap-4">
 										<div className="col-start-2 col-span-3 border rounded-md p-4 max-h-[200px] overflow-y-auto">
-											{contributors.map((contributor) => (
-												<div key={contributor.id} className="flex items-center space-x-2 mb-2">
-													<Checkbox
-														id={`contributor-${contributor.id}`}
-														checked={selectedContributorIds.includes(contributor.id)}
-														onCheckedChange={() => handleCheckboxChange(contributor.id)}
-													/>
-													<Label
-														htmlFor={`contributor-${contributor.id}`}
-														className="cursor-pointer"
-													>
-														{contributor.name}
-													</Label>
+											{isLoadingContributors ? (
+												<div className="flex items-center justify-center p-4">
+													<Loader2 className="h-4 w-4 animate-spin mr-2" />
+													<span>Loading contributors...</span>
 												</div>
-											))}
+											) : (
+												contributors.map((contributor) => (
+													<div
+														key={contributor.id}
+														className="flex items-center space-x-2 mb-2"
+													>
+														<Checkbox
+															id={`contributor-${contributor.id}`}
+															checked={selectedContributorIds.includes(contributor.id)}
+															onCheckedChange={() => handleCheckboxChange(contributor.id)}
+														/>
+														<Label
+															htmlFor={`contributor-${contributor.id}`}
+															className="cursor-pointer"
+														>
+															{contributor.name}
+														</Label>
+													</div>
+												))
+											)}
 										</div>
 									</div>
 								</TabsContent>
@@ -384,8 +439,16 @@ export default function ContributorSublistsPage() {
 												onChange={(e) => setGithubHandles(e.target.value)}
 												className="mb-2 h-24"
 											/>
-											<Button onClick={handleImportGithubHandles} className="mb-2">
-												<Import className="mr-2 h-4 w-4" />
+											<Button
+												onClick={handleImportGithubHandles}
+												className="mb-2"
+												disabled={isLoadingContributors}
+											>
+												{isLoadingContributors ? (
+													<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												) : (
+													<Import className="mr-2 h-4 w-4" />
+												)}
 												Import Handles
 											</Button>
 
@@ -439,7 +502,16 @@ export default function ContributorSublistsPage() {
 							<Button variant="outline" onClick={() => setIsCreating(false)}>
 								Cancel
 							</Button>
-							<Button onClick={handleCreateSublist}>Create Sublist</Button>
+							<Button onClick={handleCreateSublist} disabled={createSublistMutation.isPending}>
+								{createSublistMutation.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Creating...
+									</>
+								) : (
+									"Create Sublist"
+								)}
+							</Button>
 						</DialogFooter>
 					</DialogContent>
 				</Dialog>
@@ -469,7 +541,12 @@ export default function ContributorSublistsPage() {
 					</div>
 				</CardHeader>
 				<CardContent>
-					{filteredSublists.length === 0 ? (
+					{isLoading ? (
+						<div className="flex items-center justify-center py-12">
+							<Loader2 className="h-8 w-8 animate-spin mr-2" />
+							<span>Loading sublists...</span>
+						</div>
+					) : filteredSublists.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12">
 							<Users className="h-12 w-12 text-muted-foreground mb-4" />
 							<h3 className="text-xl font-medium mb-2">No Sublists Found</h3>
@@ -535,7 +612,7 @@ export default function ContributorSublistsPage() {
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{filteredSublists.map((sublist) => (
+									{sortedSublists.map((sublist) => (
 										<TableRow key={sublist.id}>
 											<TableCell className="font-medium">{sublist.name}</TableCell>
 											<TableCell>{sublist.description}</TableCell>
@@ -557,8 +634,14 @@ export default function ContributorSublistsPage() {
 															e.stopPropagation();
 															handleDeleteSublist(sublist.id);
 														}}
+														disabled={deleteSublistMutation.isPending}
 													>
-														<Trash2 className="h-4 w-4" />
+														{deleteSublistMutation.isPending &&
+														deleteSublistMutation.variables === sublist.id ? (
+															<Loader2 className="h-4 w-4 animate-spin" />
+														) : (
+															<Trash2 className="h-4 w-4" />
+														)}
 													</Button>
 													<Link href={`/contributors/sublists/${sublist.id}`}>
 														<Button variant="ghost" size="icon">
