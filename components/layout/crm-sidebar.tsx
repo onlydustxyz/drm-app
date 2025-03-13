@@ -85,26 +85,6 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 					))}
 				</div>
 			</div>
-			<Separator />
-			<div className="px-3 py-2">
-				<h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Settings</h2>
-				<div className="space-y-1">
-					<Button
-						variant={pathname === "/settings" ? "secondary" : "ghost"}
-						className={cn(
-							"w-full justify-start",
-							pathname === "/settings" ? "bg-secondary" : "hover:bg-secondary/20"
-						)}
-						asChild
-						onClick={handleClick}
-					>
-						<Link href="/settings">
-							<Settings className="mr-2 h-4 w-4" />
-							Settings
-						</Link>
-					</Button>
-				</div>
-			</div>
 			<div className="mt-auto px-3 py-2">
 				<Button
 					variant="ghost"
