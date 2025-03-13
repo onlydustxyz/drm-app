@@ -1,5 +1,5 @@
 import { getDeveloperLocations } from "@/lib/services/dashboard-service";
-import { ServerChartSection } from "../chart-base/server-chart-section";
+import { ServerChartSection } from "./chart-base/server-chart-section";
 
 export async function ServerDeveloperLocationsSection() {
 	// Fetch data on the server

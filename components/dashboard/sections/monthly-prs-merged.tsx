@@ -1,5 +1,5 @@
 import { getMonthlyPRsMerged } from "@/lib/services/dashboard-service";
-import { ServerChartSection } from "../chart-base/server-chart-section";
+import { ServerChartSection } from "./chart-base/server-chart-section";
 
 export async function ServerMonthlyPRsMergedSection() {
 	// Fetch data on the server

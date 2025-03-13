@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FilterableChart } from "./filterable-chart";
+import { Chart } from "./chart";
 
 interface ServerChartSectionProps {
 	title: string;
@@ -17,7 +17,7 @@ export async function ServerChartSection({ title, description, data, chartType }
 				{description && <CardDescription>{description}</CardDescription>}
 			</CardHeader>
 			<CardContent className="h-80">
-				<FilterableChart data={data} chartType={chartType} />
+				<Chart data={data} chartType={chartType} />
 			</CardContent>
 		</Card>
 	);
