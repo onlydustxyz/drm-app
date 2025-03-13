@@ -1,14 +1,14 @@
+import { Toaster } from "@/components/ui/toaster";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 import { TanstackQueryProvider } from "./providers";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
 	title: "DRM App",
-	description: "Next.js app with Supabase Auth",
+	description: "DRM App",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
