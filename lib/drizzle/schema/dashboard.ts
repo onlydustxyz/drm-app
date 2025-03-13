@@ -56,3 +56,67 @@ export const developerLocations = pgTable("developer_locations", {
 	created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 	updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// Commits by Developer Type table
+export const commitsByDevType = pgTable("commits_by_dev_type", {
+	id: serial("id").primaryKey(),
+	name: varchar("name", { length: 50 }).notNull(),
+	full_time: integer("full_time").notNull(),
+	part_time: integer("part_time").notNull(),
+	on_time: integer("on_time").notNull(),
+	created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Monthly Commits table
+export const monthlyCommits = pgTable(
+	"monthly_commits",
+	{
+		id: serial("id").primaryKey(),
+		date: date("date").notNull(),
+		count: integer("count").notNull(),
+		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => {
+		return {
+			dateIdx: index("idx_monthly_commits_date").on(table.date),
+		};
+	}
+);
+
+// Monthly PRs Merged table
+export const monthlyPRsMerged = pgTable(
+	"monthly_prs_merged",
+	{
+		id: serial("id").primaryKey(),
+		date: date("date").notNull(),
+		count: integer("count").notNull(),
+		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => {
+		return {
+			dateIdx: index("idx_monthly_prs_merged_date").on(table.date),
+		};
+	}
+);
+
+// Developer Activity Stats table
+export const devActivity = pgTable(
+	"dev_activity",
+	{
+		id: serial("id").primaryKey(),
+		date: date("date").notNull(),
+		active: integer("active").notNull(),
+		churned: integer("churned").notNull(),
+		reactivated: integer("reactivated").notNull(),
+		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+		updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => {
+		return {
+			dateIdx: index("idx_dev_activity_date").on(table.date),
+		};
+	}
+);

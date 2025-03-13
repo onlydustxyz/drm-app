@@ -5,15 +5,13 @@ import {
 	DevActivity,
 	DeveloperActivity,
 	DeveloperLocation,
-	DevelopersByChain,
 	MonthlyCommits,
 	MonthlyPRsMerged,
 } from "@/lib/services/dashboard-service";
-import { SupabaseDashboardStorage } from "@/lib/storage/adapters/dashboard-storage-supabase";
+import { DrizzleDashboardStorage } from "@/lib/storage/adapters/dashboard-storage-drizzle";
 
 /**
  * Interface for accessing dashboard data from storage
- * This will be implemented later
  */
 export interface DashboardStorage {
 	getDashboardData(): Promise<DashboardData>;
@@ -26,11 +24,8 @@ export interface DashboardStorage {
 	getDevActivity(): Promise<DevActivity[]>;
 }
 
-// Create a singleton instance that will be replaced with the real implementation later
-let dashboardStorage: DashboardStorage = new SupabaseDashboardStorage(
-	process.env.NEXT_PUBLIC_SUPABASE_URL!,
-	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Create a singleton instance using Drizzle implementation
+let dashboardStorage: DashboardStorage = new DrizzleDashboardStorage();
 
 export function getDashboardStorage(): DashboardStorage {
 	return dashboardStorage;
