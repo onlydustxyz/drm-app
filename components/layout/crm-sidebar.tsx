@@ -34,7 +34,7 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 		},
 		{
 			name: "Repositories",
-			href: "/ecosystems",
+			href: "/repositories",
 			icon: Code2,
 			subItems: [
 				{
