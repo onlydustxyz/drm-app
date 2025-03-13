@@ -19,13 +19,8 @@ import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import {
-	ContributorSublist,
-	createContributorSublist,
-	deleteContributorSublist,
-	getContributorSublists,
-} from "@/lib/services/contributor-sublists-service";
-import { Contributor, getContributors } from "@/lib/services/contributors-service";
+import { ContributorSublist } from "@/lib/services/contributor-sublists-service";
+import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle, ChevronRight, Import, Plus, Search, Trash2, Users } from "lucide-react";
 import Link from "next/link";
@@ -55,10 +50,20 @@ export default function ContributorSublistsPage() {
 		const fetchData = async () => {
 			try {
 				setIsLoading(true);
-				const [contributorsData, sublistsData] = await Promise.all([
-					getContributors(),
-					getContributorSublists(),
+				const [contributorsResponse, sublistsResponse] = await Promise.all([
+					fetch("/api/contributors"),
+					fetch("/api/contributor-sublists"),
 				]);
+
+				if (!contributorsResponse.ok || !sublistsResponse.ok) {
+					throw new Error("Failed to fetch data");
+				}
+
+				const [contributorsData, sublistsData] = await Promise.all([
+					contributorsResponse.json(),
+					sublistsResponse.json(),
+				]);
+
 				setContributors(contributorsData);
 				setSublists(sublistsData);
 				setFilteredSublists(sublistsData);
@@ -93,11 +98,23 @@ export default function ContributorSublistsPage() {
 		if (!newSublistName.trim()) return;
 
 		try {
-			const newSublist = await createContributorSublist({
-				name: newSublistName,
-				description: newSublistDescription,
-				contributorIds: selectedContributorIds,
+			const response = await fetch("/api/contributor-sublists", {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify({
+					name: newSublistName,
+					description: newSublistDescription,
+					contributorIds: selectedContributorIds,
+				}),
 			});
+
+			if (!response.ok) {
+				throw new Error("Failed to create sublist");
+			}
+
+			const newSublist = await response.json();
 
 			const updatedSublists = [...sublists, newSublist];
 			setSublists(updatedSublists);
@@ -117,7 +134,15 @@ export default function ContributorSublistsPage() {
 
 	const handleDeleteSublist = async (id: string) => {
 		try {
-			const success = await deleteContributorSublist(id);
+			const response = await fetch(`/api/contributor-sublists/${id}`, {
+				method: "DELETE",
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to delete sublist");
+			}
+
+			const { success } = await response.json();
 
 			if (success) {
 				const updatedSublists = sublists.filter((s) => s.id !== id);
