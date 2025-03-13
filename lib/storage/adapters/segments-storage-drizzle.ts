@@ -1,0 +1,439 @@
+import { db } from "@/lib/drizzle";
+import { and, eq, sql } from "drizzle-orm";
+import { Segment } from "@/lib/services/segments-service";
+import { SegmentsStorage } from "@/lib/storage/segments-storage";
+import { segmentRepositories, segments, segmentsContributors } from "@/lib/drizzle/schema/segments";
+
+/**
+ * Parses a repository URL to extract owner and repository name
+ * @param repositoryUrl Repository URL string
+ * @returns Object with owner and name, or null if parsing fails
+ */
+function parseRepositoryUrl(repositoryUrl: string): { owner: string; name: string } | null {
+    // If it's a GitHub URL format
+    const urlMatch = repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/i);
+    if (urlMatch) {
+        return {
+            owner: urlMatch[1],
+            name: urlMatch[2].replace(/\.git$/, ''),
+        };
+    }
+    
+    // If it's in the format "owner/name"
+    const simpleMatch = repositoryUrl.match(/^([^\/]+)\/([^\/]+)$/);
+    if (simpleMatch) {
+        return {
+            owner: simpleMatch[1],
+            name: simpleMatch[2].replace(/\.git$/, ''),
+        };
+    }
+    
+    return null;
+}
+
+/**
+ * Creates a repository indexing job for the public events
+ * @param owner Repository owner
+ * @param name Repository name
+ */
+async function createRepositoryIndexingJob(owner: string, name: string): Promise<void> {
+    try {
+        // Insert into the indexer.repo_public_events_indexing_jobs table
+        // Using raw SQL here since we don't have a Drizzle schema for this table
+        await db.execute(sql`
+            INSERT INTO indexer.repo_public_events_indexing_jobs 
+            (repo_owner, repo_name, status) 
+            VALUES (${owner}, ${name}, 'PENDING')
+            ON CONFLICT (repo_owner, repo_name) DO NOTHING
+        `);
+        console.log(`Created indexing job for ${owner}/${name}`);
+    } catch (error) {
+        console.error(`Failed to create indexing job for ${owner}/${name}:`, error);
+    }
+}
+
+/**
+ * Drizzle ORM implementation of the SegmentsStorage interface
+ */
+export class DrizzleSegmentsStorage implements SegmentsStorage {
+    constructor() {
+        // No additional setup needed for Drizzle as it uses the singleton db instance
+    }
+
+    /**
+     * Transform a database record to our service model
+     */
+    private async transformDbToModel(dbSegment: any): Promise<Segment> {
+        // Fetch associated contributors
+        const contributors = await db
+            .select({ contributor_id: segmentsContributors.contributor_id })
+            .from(segmentsContributors)
+            .where(eq(segmentsContributors.segment_id, dbSegment.id));
+
+        // Fetch associated repositories
+        const repositories = await db
+            .select({ repository_url: segmentRepositories.repository_url })
+            .from(segmentRepositories)
+            .where(eq(segmentRepositories.segment_id, dbSegment.id));
+
+        return {
+            id: dbSegment.id.toString(),
+            name: dbSegment.name,
+            description: dbSegment.description || "",
+            created_at: dbSegment.created_at?.toISOString() || new Date().toISOString(),
+            updated_at: dbSegment.updated_at?.toISOString() || new Date().toISOString(),
+            contributors: contributors.map(c => c.contributor_id.toString()),
+            repositories: repositories.map(r => r.repository_url)
+        };
+    }
+
+    /**
+     * Get all segments
+     */
+    async getSegments(): Promise<Segment[]> {
+        try {
+            const dbSegments = await db.select().from(segments);
+            
+            // Transform each segment to our service model
+            const result: Segment[] = [];
+            for (const dbSegment of dbSegments) {
+                const segment = await this.transformDbToModel(dbSegment);
+                result.push(segment);
+            }
+            
+            return result;
+        } catch (error) {
+            console.error("Error fetching segments:", error);
+            throw new Error("Failed to fetch segments");
+        }
+    }
+
+    /**
+     * Get a single segment by ID
+     */
+    async getSegment(id: string): Promise<Segment | undefined> {
+        try {
+            const dbSegment = await db
+                .select()
+                .from(segments)
+                .where(eq(segments.id, parseInt(id)))
+                .limit(1);
+
+            if (dbSegment.length === 0) {
+                return undefined;
+            }
+
+            return this.transformDbToModel(dbSegment[0]);
+        } catch (error) {
+            console.error(`Error fetching segment with ID ${id}:`, error);
+            throw new Error(`Failed to fetch segment with ID ${id}`);
+        }
+    }
+
+    /**
+     * Create a new segment
+     */
+    async createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at">): Promise<Segment> {
+        try {
+            const now = new Date();
+            
+            const created = await db
+                .insert(segments)
+                .values({
+                    name: segment.name,
+                    description: segment.description,
+                    created_at: now,
+                    updated_at: now
+                })
+                .returning();
+
+            if (!created[0]) {
+                throw new Error("Failed to create segment");
+            }
+
+            const newSegment = created[0];
+            
+            // Add relationships for contributors if provided
+            if (segment.contributors && segment.contributors.length > 0) {
+                for (const contributorId of segment.contributors) {
+                    await this.addContributorToSegment(
+                        newSegment.id.toString(), 
+                        contributorId
+                    );
+                }
+            }
+            
+            // Add relationships for repositories if provided
+            if (segment.repositories && segment.repositories.length > 0) {
+                for (const repositoryUrl of segment.repositories) {
+                    await this.addRepositoryToSegment(
+                        newSegment.id.toString(), 
+                        repositoryUrl
+                    );
+                }
+            }
+            
+            return this.transformDbToModel(newSegment);
+        } catch (error) {
+            console.error("Error creating segment:", error);
+            throw new Error("Failed to create segment");
+        }
+    }
+
+    /**
+     * Update an existing segment
+     */
+    async updateSegment(id: string, segment: Partial<Omit<Segment, "id" | "created_at" | "updated_at">>): Promise<Segment | undefined> {
+        try {
+            const updates: any = {};
+
+            if (segment.name !== undefined) updates.name = segment.name;
+            if (segment.description !== undefined) updates.description = segment.description;
+
+            // Always update the updated_at timestamp
+            updates.updated_at = new Date();
+
+            const updated = await db
+                .update(segments)
+                .set(updates)
+                .where(eq(segments.id, parseInt(id)))
+                .returning();
+
+            if (updated.length === 0) {
+                return undefined;
+            }
+
+            // Update contributors if provided
+            if (segment.contributors) {
+                // First remove all existing contributors
+                await db
+                    .delete(segmentsContributors)
+                    .where(eq(segmentsContributors.segment_id, parseInt(id)));
+
+                // Then add the new contributors
+                for (const contributorId of segment.contributors) {
+                    await this.addContributorToSegment(id, contributorId);
+                }
+            }
+
+            // Update repositories if provided
+            if (segment.repositories) {
+                // First remove all existing repositories
+                await db
+                    .delete(segmentRepositories)
+                    .where(eq(segmentRepositories.segment_id, parseInt(id)));
+
+                // Then add the new repositories
+                for (const repositoryUrl of segment.repositories) {
+                    await this.addRepositoryToSegment(id, repositoryUrl);
+                }
+            }
+
+            return this.transformDbToModel(updated[0]);
+        } catch (error) {
+            console.error(`Error updating segment with ID ${id}:`, error);
+            throw new Error(`Failed to update segment with ID ${id}`);
+        }
+    }
+
+    /**
+     * Delete a segment
+     */
+    async deleteSegment(id: string): Promise<boolean> {
+        try {
+            // Note: Cascading delete will handle the joins automatically
+            const deleted = await db
+                .delete(segments)
+                .where(eq(segments.id, parseInt(id)))
+                .returning({ id: segments.id });
+
+            return deleted.length > 0;
+        } catch (error) {
+            console.error(`Error deleting segment with ID ${id}:`, error);
+            throw new Error(`Failed to delete segment with ID ${id}`);
+        }
+    }
+
+    /**
+     * Add a contributor to a segment
+     */
+    async addContributorToSegment(segmentId: string, contributorId: string): Promise<boolean> {
+        try {
+            // Check if the segment exists
+            const segmentExists = await db
+                .select({ id: segments.id })
+                .from(segments)
+                .where(eq(segments.id, parseInt(segmentId)))
+                .limit(1);
+
+            if (segmentExists.length === 0) {
+                return false;
+            }
+
+            // Check if the relationship already exists
+            const existing = await db
+                .select({ id: segmentsContributors.id })
+                .from(segmentsContributors)
+                .where(
+                    and(
+                        eq(segmentsContributors.segment_id, parseInt(segmentId)),
+                        eq(segmentsContributors.contributor_id, parseInt(contributorId))
+                    )
+                )
+                .limit(1);
+
+            // If relationship already exists, consider it a success
+            if (existing.length > 0) {
+                return true;
+            }
+
+            // Create the relationship
+            await db.insert(segmentsContributors).values({
+                segment_id: parseInt(segmentId),
+                contributor_id: parseInt(contributorId),
+                created_at: new Date()
+            });
+
+            // Update the segment's updated_at timestamp
+            await db
+                .update(segments)
+                .set({ updated_at: new Date() })
+                .where(eq(segments.id, parseInt(segmentId)));
+
+            return true;
+        } catch (error) {
+            console.error(`Error adding contributor ${contributorId} to segment ${segmentId}:`, error);
+            throw new Error(`Failed to add contributor to segment`);
+        }
+    }
+
+    /**
+     * Remove a contributor from a segment
+     */
+    async removeContributorFromSegment(segmentId: string, contributorId: string): Promise<boolean> {
+        try {
+            const deleted = await db
+                .delete(segmentsContributors)
+                .where(
+                    and(
+                        eq(segmentsContributors.segment_id, parseInt(segmentId)),
+                        eq(segmentsContributors.contributor_id, parseInt(contributorId))
+                    )
+                )
+                .returning({ id: segmentsContributors.id });
+
+            if (deleted.length > 0) {
+                // Update the segment's updated_at timestamp
+                await db
+                    .update(segments)
+                    .set({ updated_at: new Date() })
+                    .where(eq(segments.id, parseInt(segmentId)));
+                
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error(`Error removing contributor ${contributorId} from segment ${segmentId}:`, error);
+            throw new Error(`Failed to remove contributor from segment`);
+        }
+    }
+
+    /**
+     * Add a repository to a segment
+     */
+    async addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
+        try {
+            // Check if the segment exists
+            const segmentExists = await db
+                .select({ id: segments.id })
+                .from(segments)
+                .where(eq(segments.id, parseInt(segmentId)))
+                .limit(1);
+
+            if (segmentExists.length === 0) {
+                return false;
+            }
+
+            // Check if the relationship already exists
+            const existing = await db
+                .select({ id: segmentRepositories.id })
+                .from(segmentRepositories)
+                .where(
+                    and(
+                        eq(segmentRepositories.segment_id, parseInt(segmentId)),
+                        eq(segmentRepositories.repository_url, repositoryUrl)
+                    )
+                )
+                .limit(1);
+
+            // If relationship already exists, consider it a success
+            if (existing.length > 0) {
+                return true;
+            }
+
+            // Create the relationship
+            await db.insert(segmentRepositories).values({
+                segment_id: parseInt(segmentId),
+                repository_url: repositoryUrl,
+                created_at: new Date()
+            });
+
+            // Update the segment's updated_at timestamp
+            await db
+                .update(segments)
+                .set({ updated_at: new Date() })
+                .where(eq(segments.id, parseInt(segmentId)));
+
+            // Parse repository URL to extract owner and name, then create indexing job
+            const parsedRepo = parseRepositoryUrl(repositoryUrl);
+            if (parsedRepo) {
+                await createRepositoryIndexingJob(parsedRepo.owner, parsedRepo.name);
+            }
+
+            return true;
+        } catch (error) {
+            console.error(`Error adding repository ${repositoryUrl} to segment ${segmentId}:`, error);
+            throw new Error(`Failed to add repository to segment`);
+        }
+    }
+
+    /**
+     * Remove a repository from a segment
+     */
+    async removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
+        try {
+            const deleted = await db
+                .delete(segmentRepositories)
+                .where(
+                    and(
+                        eq(segmentRepositories.segment_id, parseInt(segmentId)),
+                        eq(segmentRepositories.repository_url, repositoryUrl)
+                    )
+                )
+                .returning({ id: segmentRepositories.id });
+
+            if (deleted.length > 0) {
+                // Update the segment's updated_at timestamp
+                await db
+                    .update(segments)
+                    .set({ updated_at: new Date() })
+                    .where(eq(segments.id, parseInt(segmentId)));
+                
+                return true;
+            }
+
+            return false;
+        } catch (error) {
+            console.error(`Error removing repository ${repositoryUrl} from segment ${segmentId}:`, error);
+            throw new Error(`Failed to remove repository from segment`);
+        }
+    }
+}
+
+/**
+ * Factory function to create a Drizzle segments storage instance
+ */
+export function createDrizzleSegmentsStorage(): SegmentsStorage {
+    return new DrizzleSegmentsStorage();
+} 

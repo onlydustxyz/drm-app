@@ -1,4 +1,106 @@
-export default async function SegmentPage({ params }: { params: Promise<{ id: string }> }) {
-	const { id } = await params;
-	return <div>Segment {id}</div>;
+"use client";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSegment } from "@/lib/react-query/segments";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+
+export default function SegmentPage({ params }: { params: { id: string } }) {
+	const { data: segment, isLoading, error } = useSegment(params.id);
+
+	if (isLoading) {
+		return (
+			<div className="container mx-auto py-6">
+				<div className="mb-6">
+					<Skeleton className="h-10 w-40" />
+				</div>
+				<Card>
+					<CardHeader>
+						<Skeleton className="h-8 w-1/3 mb-2" />
+						<Skeleton className="h-4 w-2/3" />
+					</CardHeader>
+					<CardContent>
+						<Skeleton className="h-4 w-full mb-4" />
+						<Skeleton className="h-4 w-full mb-4" />
+						<Skeleton className="h-4 w-2/3" />
+					</CardContent>
+				</Card>
+			</div>
+		);
+	}
+
+	if (error || !segment) {
+		return (
+			<div className="container mx-auto py-6">
+				<div className="mb-6">
+					<Link href="/segments" passHref>
+						<Button variant="outline">
+							<ArrowLeft className="h-4 w-4 mr-2" />
+							Back to Segments
+						</Button>
+					</Link>
+				</div>
+				<Card className="bg-red-50">
+					<CardHeader>
+						<CardTitle className="text-red-600">Error</CardTitle>
+						<CardDescription>
+							{error ? error.message : "Segment not found"}
+						</CardDescription>
+					</CardHeader>
+				</Card>
+			</div>
+		);
+	}
+
+	return (
+		<div className="container mx-auto py-6">
+			<div className="mb-6">
+				<Link href="/segments" passHref>
+					<Button variant="outline">
+						<ArrowLeft className="h-4 w-4 mr-2" />
+						Back to Segments
+					</Button>
+				</Link>
+			</div>
+
+			<div className="grid gap-6">
+				<Card>
+					<CardHeader>
+						<CardTitle>{segment.name}</CardTitle>
+						<CardDescription>{segment.description}</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<div className="grid grid-cols-2 gap-4">
+							<div>
+								<h3 className="text-lg font-semibold mb-2">Contributors</h3>
+								{segment.contributors && segment.contributors.length > 0 ? (
+									<ul className="list-disc pl-5">
+										{segment.contributors.map((contributorId: string) => (
+											<li key={contributorId}>Contributor ID: {contributorId}</li>
+										))}
+									</ul>
+								) : (
+									<p className="text-muted-foreground">No contributors added yet</p>
+								)}
+							</div>
+							<div>
+								<h3 className="text-lg font-semibold mb-2">Repositories</h3>
+								{segment.repositories && segment.repositories.length > 0 ? (
+									<ul className="list-disc pl-5">
+										{segment.repositories.map((repoId: string) => (
+											<li key={repoId}>Repository ID: {repoId}</li>
+										))}
+									</ul>
+								) : (
+									<p className="text-muted-foreground">No repositories added yet</p>
+								)}
+							</div>
+						</div>
+					</CardContent>
+				</Card>
+			</div>
+		</div>
+	);
 }
