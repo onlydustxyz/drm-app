@@ -239,8 +239,6 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
                     <div 
                       key={week} 
                       className="w-6 text-xs text-center"
-                      onMouseEnter={() => setHoveredWeek(week)}
-                      onMouseLeave={() => setHoveredWeek(null)}
                     >
                       {index % 4 === 0 ? week.split('-')[1] : ''}
                     </div>
@@ -307,49 +305,14 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
                         {contributor.weeklyActivity.map(activity => {
                           const prCount = activity.prCount;
                           
-                          // Get repository breakdown for tooltip
-                          const repoBreakdown = activity.repos.filter(r => r.prCount > 0);
-                          
                           return (
-                            <TooltipProvider key={activity.week}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div 
-                                    className={cn(
-                                      "w-6 h-6 m-0.5 border border-gray-200 rounded-sm transition-transform hover:scale-110",
-                                      getActivityColor(prCount),
-                                      hoveredWeek === activity.week ? "ring-2 ring-primary ring-offset-1" : ""
-                                    )}
-                                    onMouseEnter={() => setHoveredWeek(activity.week)}
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent className="p-0 overflow-hidden">
-                                  <div className="p-3 max-w-xs">
-                                    <div className="font-medium text-sm mb-1 bg-gray-50 -m-3 mb-2 p-2 border-b">
-                                      {formatWeek(activity.week)}
-                                    </div>
-                                    <p className="mb-2 flex items-center gap-1.5">
-                                      <GitPullRequestIcon className="h-4 w-4 text-green-600" />
-                                      <span className="font-medium">{prCount} PR{prCount !== 1 ? 's' : ''} merged</span>
-                                    </p>
-                                    
-                                    {repoBreakdown.length > 0 && (
-                                      <div className="mt-2 pt-2 border-t border-gray-200">
-                                        <p className="font-medium text-xs mb-1.5 text-gray-500">Repositories:</p>
-                                        <ul className="space-y-1">
-                                          {repoBreakdown.map(repo => (
-                                            <li key={repo.name} className="flex justify-between text-sm">
-                                              <span className="text-gray-700">{repo.name}:</span>
-                                              <span className="ml-2 font-medium">{repo.prCount} PR{repo.prCount !== 1 ? 's' : ''}</span>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <div 
+                              key={activity.week}
+                              className={cn(
+                                "w-6 h-6 m-0.5 border border-gray-200 rounded-sm",
+                                getActivityColor(prCount)
+                              )}
+                            />
                           );
                         })}
                       </div>
@@ -373,13 +336,6 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
           </tbody>
         </table>
       </div>
-      
-      {/* Week indicator */}
-      {hoveredWeek && (
-        <div className="text-sm text-gray-500 italic mt-2">
-          Viewing: Week {hoveredWeek.split('-')[1]}, {hoveredWeek.split('-')[0]}
-        </div>
-      )}
     </div>
   );
   
@@ -399,8 +355,6 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
                     <div 
                       key={week} 
                       className="w-6 text-xs text-center"
-                      onMouseEnter={() => setHoveredWeek(week)}
-                      onMouseLeave={() => setHoveredWeek(null)}
                     >
                       {index % 4 === 0 ? week.split('-')[1] : ''}
                     </div>
@@ -463,49 +417,14 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
                         {project.weeklyActivity.map(activity => {
                           const prCount = activity.prCount;
                           
-                          // Get repository breakdown for tooltip
-                          const repoBreakdown = activity.repos;
-                          
                           return (
-                            <TooltipProvider key={activity.week}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div 
-                                    className={cn(
-                                      "w-6 h-6 m-0.5 border border-gray-200 rounded-sm transition-transform hover:scale-110",
-                                      getActivityColor(prCount),
-                                      hoveredWeek === activity.week ? "ring-2 ring-primary ring-offset-1" : ""
-                                    )}
-                                    onMouseEnter={() => setHoveredWeek(activity.week)}
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent className="p-0 overflow-hidden">
-                                  <div className="p-3 max-w-xs">
-                                    <div className="font-medium text-sm mb-1 bg-gray-50 -m-3 mb-2 p-2 border-b">
-                                      {formatWeek(activity.week)}
-                                    </div>
-                                    <p className="mb-2 flex items-center gap-1.5">
-                                      <GitPullRequestIcon className="h-4 w-4 text-green-600" />
-                                      <span className="font-medium">{prCount} PR{prCount !== 1 ? 's' : ''} merged</span>
-                                    </p>
-                                    
-                                    {repoBreakdown.length > 0 && (
-                                      <div className="mt-2 pt-2 border-t border-gray-200">
-                                        <p className="font-medium text-xs mb-1.5 text-gray-500">Repositories:</p>
-                                        <ul className="space-y-1">
-                                          {repoBreakdown.map(repo => (
-                                            <li key={repo.name} className="flex justify-between text-sm">
-                                              <span className="text-gray-700">{repo.name}:</span>
-                                              <span className="ml-2 font-medium">{repo.prCount} PR{repo.prCount !== 1 ? 's' : ''}</span>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                    )}
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                            <div 
+                              key={activity.week}
+                              className={cn(
+                                "w-6 h-6 m-0.5 border border-gray-200 rounded-sm",
+                                getActivityColor(prCount)
+                              )}
+                            />
                           );
                         })}
                       </div>
@@ -529,13 +448,6 @@ export function GitHubActivityGraph({ data }: GitHubActivityGraphProps) {
           </tbody>
         </table>
       </div>
-      
-      {/* Week indicator */}
-      {hoveredWeek && (
-        <div className="text-sm text-gray-500 italic mt-2">
-          Viewing: Week {hoveredWeek.split('-')[1]}, {hoveredWeek.split('-')[0]}
-        </div>
-      )}
     </div>
   );
   
