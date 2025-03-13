@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,15 +32,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/components/ui/use-toast";
-import {
-	ContributorSublist,
-	createContributorSublist,
-	getContributorSublists,
-	updateContributorSublist,
-} from "@/lib/services/contributor-sublists-service";
-import { Contributor, getContributors } from "@/lib/services/contributors-service";
+import { ContributorSublist } from "@/lib/services/contributor-sublists-service";
+import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+	AlertCircle,
 	Building,
 	ChevronDown,
 	Code,
@@ -48,6 +46,7 @@ import {
 	Github,
 	Globe,
 	Linkedin,
+	Loader2,
 	MapPin,
 	PlusCircle,
 	Search,
@@ -59,11 +58,63 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+// API fetch functions
+const fetchContributors = async (): Promise<Contributor[]> => {
+	const response = await fetch("/api/contributors");
+	if (!response.ok) {
+		throw new Error("Failed to fetch contributors");
+	}
+	return response.json();
+};
+
+const fetchContributorSublists = async (): Promise<ContributorSublist[]> => {
+	const response = await fetch("/api/contributor-sublists");
+	if (!response.ok) {
+		throw new Error("Failed to fetch contributor sublists");
+	}
+	return response.json();
+};
+
+const createContributorSublist = async (data: {
+	name: string;
+	description: string;
+	contributorIds: string[];
+}): Promise<ContributorSublist> => {
+	const response = await fetch("/api/contributor-sublists", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(data),
+	});
+	if (!response.ok) {
+		throw new Error("Failed to create sublist");
+	}
+	return response.json();
+};
+
+const updateContributorSublist = async (
+	id: string,
+	data: { contributorIds: string[] }
+): Promise<ContributorSublist> => {
+	const response = await fetch(`/api/contributor-sublists/${id}`, {
+		method: "PATCH",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify(data),
+	});
+	if (!response.ok) {
+		throw new Error("Failed to update sublist");
+	}
+	return response.json();
+};
+
 export default function ContributorsPage() {
-	const [contributors, setContributors] = useState<Contributor[]>([]);
+	const queryClient = useQueryClient();
+
 	const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isLoading, setIsLoading] = useState(true);
 	const [sortConfig, setSortConfig] = useState<{
 		key: keyof Contributor | null;
 		direction: "ascending" | "descending";
@@ -77,7 +128,6 @@ export default function ContributorsPage() {
 
 	// Selection states
 	const [selectedContributors, setSelectedContributors] = useState<string[]>([]);
-	const [sublists, setSublists] = useState<ContributorSublist[]>([]);
 	const [isAddToListDialogOpen, setIsAddToListDialogOpen] = useState(false);
 	const [newListName, setNewListName] = useState("");
 	const [newListDescription, setNewListDescription] = useState("");
@@ -96,6 +146,74 @@ export default function ContributorsPage() {
 	// Add new state for expanded rows
 	const [expandedRows, setExpandedRows] = useState<string[]>([]);
 
+	// Use React Query for data fetching
+	const {
+		data: contributors = [],
+		isLoading: isLoadingContributors,
+		error: contributorsError,
+	} = useQuery({
+		queryKey: ["contributors"],
+		queryFn: fetchContributors,
+	});
+
+	const {
+		data: sublists = [],
+		isLoading: isLoadingSublists,
+		error: sublistsError,
+	} = useQuery({
+		queryKey: ["contributor-sublists"],
+		queryFn: fetchContributorSublists,
+	});
+
+	// Mutations
+	const createSublistMutation = useMutation({
+		mutationFn: createContributorSublist,
+		onSuccess: (newSublist) => {
+			queryClient.invalidateQueries({ queryKey: ["contributor-sublists"] });
+			setNewListName("");
+			setNewListDescription("");
+			setSelectedContributors([]);
+			setIsAddToListDialogOpen(false);
+
+			toast({
+				title: "List created",
+				description: `New list "${newSublist.name}" created with ${selectedContributors.length} contributors`,
+			});
+		},
+		onError: (error) => {
+			toast({
+				title: "Error",
+				description: `Failed to create list: ${error instanceof Error ? error.message : "Unknown error"}`,
+				variant: "destructive",
+			});
+		},
+	});
+
+	const updateSublistMutation = useMutation({
+		mutationFn: ({ id, data }: { id: string; data: { contributorIds: string[] } }) =>
+			updateContributorSublist(id, data),
+		onSuccess: (updatedSublist) => {
+			queryClient.invalidateQueries({ queryKey: ["contributor-sublists"] });
+
+			toast({
+				title: "Contributors added",
+				description: `${selectedContributors.length} contributors added to "${updatedSublist.name}"`,
+			});
+
+			// Clear selection
+			setSelectedContributors([]);
+		},
+		onError: (error) => {
+			toast({
+				title: "Error",
+				description: `Failed to add contributors to list: ${
+					error instanceof Error ? error.message : "Unknown error"
+				}`,
+				variant: "destructive",
+			});
+		},
+	});
+
 	// Toggle row expansion
 	const toggleRowExpansion = (contributorId: string) => {
 		setExpandedRows((prev) =>
@@ -103,27 +221,10 @@ export default function ContributorsPage() {
 		);
 	};
 
-	// Fetch contributors data
-	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				setIsLoading(true);
-				const [data, sublistsData] = await Promise.all([getContributors(), getContributorSublists()]);
-				setContributors(data);
-				setFilteredContributors(data);
-				setSublists(sublistsData);
-			} catch (error) {
-				console.error("Error fetching contributors:", error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchData();
-	}, []);
-
 	// Apply all filters
 	useEffect(() => {
+		if (!contributors.length) return;
+
 		let filtered = [...contributors];
 		let activeFilters = 0;
 
@@ -223,29 +324,12 @@ export default function ContributorsPage() {
 			// Create a new set to avoid duplicates
 			const updatedContributorIds = Array.from(new Set([...sublist.contributorIds, ...selectedContributors]));
 
-			const updatedSublist = await updateContributorSublist(sublistId, {
-				contributorIds: updatedContributorIds,
+			updateSublistMutation.mutate({
+				id: sublistId,
+				data: { contributorIds: updatedContributorIds },
 			});
-
-			if (updatedSublist) {
-				// Update the local state
-				setSublists((prev) => prev.map((s) => (s.id === sublistId ? updatedSublist : s)));
-
-				toast({
-					title: "Contributors added",
-					description: `${selectedContributors.length} contributors added to "${sublist.name}"`,
-				});
-
-				// Clear selection
-				setSelectedContributors([]);
-			}
 		} catch (error) {
 			console.error("Error adding contributors to list:", error);
-			toast({
-				title: "Error",
-				description: "Failed to add contributors to list",
-				variant: "destructive",
-			});
 		}
 	};
 
@@ -365,9 +449,10 @@ export default function ContributorsPage() {
 
 		// Add new contributors to the contributors list
 		if (newContributors.length > 0) {
-			const updatedContributors = [...contributors, ...newContributors];
-			setContributors(updatedContributors);
-			setFilteredContributors(updatedContributors);
+			// Update the queryClient cache
+			queryClient.setQueryData(["contributors"], (oldData: Contributor[] | undefined) =>
+				oldData ? [...oldData, ...newContributors] : newContributors
+			);
 		}
 
 		// Combine matched and new contributors
@@ -405,7 +490,7 @@ export default function ContributorsPage() {
 					const contributorIds = allAddedContributors.map((c) => c.id);
 
 					// Process each selected list
-					const updatePromises = selectedListsForNewContributors.map(async (listId) => {
+					const updatePromises = selectedListsForNewContributors.map((listId) => {
 						const sublist = sublists.find((s) => s.id === listId);
 						if (!sublist) return null;
 
@@ -414,30 +499,16 @@ export default function ContributorsPage() {
 							new Set([...sublist.contributorIds, ...contributorIds])
 						);
 
-						return updateContributorSublist(listId, {
-							contributorIds: updatedContributorIds,
+						return updateSublistMutation.mutate({
+							id: listId,
+							data: { contributorIds: updatedContributorIds },
 						});
 					});
 
-					const updatedSublists = await Promise.all(updatePromises);
-					const validUpdatedSublists = updatedSublists.filter(Boolean) as ContributorSublist[];
-
-					if (validUpdatedSublists.length > 0) {
-						// Update the local state
-						setSublists((prev) =>
-							prev.map((s) => {
-								const updated = validUpdatedSublists.find((u) => u.id === s.id);
-								return updated || s;
-							})
-						);
-
-						toast({
-							title: "Contributors added to lists",
-							description: `${contributorIds.length} contributors added to ${
-								validUpdatedSublists.length
-							} list${validUpdatedSublists.length === 1 ? "" : "s"}`,
-						});
-					}
+					toast({
+						title: "Contributors added to lists",
+						description: `${contributorIds.length} contributors added to selected lists`,
+					});
 				} catch (error) {
 					console.error("Error adding contributors to lists:", error);
 					toast({
@@ -471,15 +542,22 @@ export default function ContributorsPage() {
 		setNewListDescription("");
 	};
 
-	// Get tenure color - no longer needed with default badges
-	const getTenureColor = (tenure: string) => {
-		return "";
-	};
+	// Check for loading and error states
+	const isLoading = isLoadingContributors || isLoadingSublists;
+	const error = contributorsError || sublistsError;
 
-	// Get type color - no longer needed with default badges
-	const getTypeColor = (type: string) => {
-		return "";
-	};
+	if (error) {
+		return (
+			<div className="w-full max-w-full py-6">
+				<Alert variant="destructive">
+					<AlertCircle className="h-4 w-4" />
+					<AlertDescription>
+						{error instanceof Error ? error.message : "An unknown error occurred"}
+					</AlertDescription>
+				</Alert>
+			</div>
+		);
+	}
 
 	return (
 		<div className="w-full max-w-full py-6">
@@ -627,6 +705,7 @@ export default function ContributorsPage() {
 				<CardContent>
 					{isLoading ? (
 						<div className="flex justify-center items-center h-40">
+							<Loader2 className="h-8 w-8 animate-spin mr-2" />
 							<p>Loading contributors data...</p>
 						</div>
 					) : (
@@ -1002,13 +1081,13 @@ export default function ContributorsPage() {
 								if (!newListName.trim()) return;
 
 								try {
-									const newSublist = await createContributorSublist({
+									const newSublist = await createSublistMutation.mutateAsync({
 										name: newListName,
 										description: newListDescription,
 										contributorIds: selectedContributors,
 									});
 
-									setSublists([...sublists, newSublist]);
+									// No need to manually update the state, React Query will handle it
 									setNewListName("");
 									setNewListDescription("");
 									setSelectedContributors([]);
@@ -1281,13 +1360,13 @@ export default function ContributorsPage() {
 								if (!newListName.trim() || newContributorsToAdd.length === 0) return;
 
 								try {
-									const newSublist = await createContributorSublist({
+									const newSublist = await createSublistMutation.mutateAsync({
 										name: newListName,
 										description: newListDescription,
 										contributorIds: newContributorsToAdd.map((c) => c.id),
 									});
 
-									setSublists([...sublists, newSublist]);
+									// No need to manually update the state, React Query will handle it
 									setNewListName("");
 									setNewListDescription("");
 									setIsCreateListFromImportOpen(false);
