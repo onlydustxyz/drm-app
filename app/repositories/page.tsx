@@ -26,20 +26,21 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/components/ui/use-toast";
-import { Repository, getRepositories } from "@/lib/services/repositories-service";
-import { RepositorySublist, createRepositorySublist } from "@/lib/services/repository-sublists-service";
+import { useCreateRepositorySublist, useRepositories, useRepositorySublists } from "@/lib/react-query/repositories";
+import { Repository } from "@/lib/services/repositories-service";
 import { formatDate } from "@/lib/utils";
 import { ChevronDown, PlusCircle, Search, SlidersHorizontal, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function RepositoriesPage() {
-	const [repositories, setRepositories] = useState<Repository[]>([]);
+	const { data: repositories = [], isLoading, error } = useRepositories();
+	const { data: sublists = [] } = useRepositorySublists();
+	const createSublist = useCreateRepositorySublist();
+
 	const [filteredRepositories, setFilteredRepositories] = useState<Repository[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [isLoading, setIsLoading] = useState(true);
 	const [selectedRepositories, setSelectedRepositories] = useState<string[]>([]);
-	const [sublists, setSublists] = useState<RepositorySublist[]>([]);
 	const [isAddToListDialogOpen, setIsAddToListDialogOpen] = useState(false);
 	const [newListName, setNewListName] = useState("");
 	const [newListDescription, setNewListDescription] = useState("");
@@ -56,36 +57,26 @@ export default function RepositoriesPage() {
 	const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 	const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
 
-	// Fetch repositories data
+	// Extract unique languages when repositories data changes
 	useEffect(() => {
-		const fetchData = async () => {
-			try {
-				setIsLoading(true);
-				const data = await getRepositories();
-				setRepositories(data);
-				setFilteredRepositories(data);
-
-				// Extract unique languages
-				const languages = new Set<string>();
-				data.forEach((repo: Repository) => {
-					if (repo.languages && Array.isArray(repo.languages) && repo.languages.length > 0) {
-						const langName = (repo.languages[0] as { name: string }).name;
-						if (langName) languages.add(langName);
-					}
-				});
-				setAvailableLanguages(Array.from(languages));
-			} catch (error) {
-				console.error("Error fetching repositories:", error);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-
-		fetchData();
-	}, []);
+		if (repositories.length > 0) {
+			// Extract unique languages
+			const languages = new Set<string>();
+			repositories.forEach((repo: Repository) => {
+				if (repo.languages && Array.isArray(repo.languages) && repo.languages.length > 0) {
+					const langName = (repo.languages[0] as { name: string }).name;
+					if (langName) languages.add(langName);
+				}
+			});
+			setAvailableLanguages(Array.from(languages));
+			setFilteredRepositories(repositories);
+		}
+	}, [repositories]);
 
 	// Apply all filters
 	useEffect(() => {
+		if (repositories.length === 0) return;
+
 		let filtered = [...repositories];
 		let activeFilters = 0;
 
@@ -183,6 +174,36 @@ export default function RepositoriesPage() {
 			setSelectedRepositories([]);
 		} else {
 			setSelectedRepositories(filteredRepositories.map((c) => c.id));
+		}
+	};
+
+	// Handle creating a new repository sublist
+	const handleCreateSublist = async () => {
+		if (!newListName.trim()) return;
+
+		try {
+			await createSublist.mutateAsync({
+				name: newListName,
+				description: newListDescription,
+				repositoryIds: selectedRepositories,
+			});
+
+			setNewListName("");
+			setNewListDescription("");
+			setSelectedRepositories([]);
+			setIsAddToListDialogOpen(false);
+
+			toast({
+				title: "List created",
+				description: `New list "${newListName}" created with ${selectedRepositories.length} repositories`,
+			});
+		} catch (error) {
+			console.error("Error creating list:", error);
+			toast({
+				title: "Error",
+				description: "Failed to create list",
+				variant: "destructive",
+			});
 		}
 	};
 
@@ -351,6 +372,10 @@ export default function RepositoriesPage() {
 					{isLoading ? (
 						<div className="flex justify-center items-center h-40">
 							<p>Loading repositories data...</p>
+						</div>
+					) : error ? (
+						<div className="flex justify-center items-center h-40 text-red-500">
+							<p>Error loading repositories: {(error as Error).message}</p>
 						</div>
 					) : (
 						<div className="rounded-md border">
@@ -531,39 +556,8 @@ export default function RepositoriesPage() {
 						<Button variant="outline" onClick={() => setIsAddToListDialogOpen(false)}>
 							Cancel
 						</Button>
-						<Button
-							onClick={async () => {
-								if (!newListName.trim()) return;
-
-								try {
-									const newSublist = await createRepositorySublist({
-										name: newListName,
-										description: newListDescription,
-										repositoryIds: selectedRepositories,
-									});
-
-									setSublists([...sublists, newSublist]);
-									setNewListName("");
-									setNewListDescription("");
-									setSelectedRepositories([]);
-									setIsAddToListDialogOpen(false);
-
-									toast({
-										title: "List created",
-										description: `New list "${newListName}" created with ${selectedRepositories.length} repositories`,
-									});
-								} catch (error) {
-									console.error("Error creating list:", error);
-									toast({
-										title: "Error",
-										description: "Failed to create list",
-										variant: "destructive",
-									});
-								}
-							}}
-							disabled={!newListName.trim()}
-						>
-							Create List
+						<Button onClick={handleCreateSublist} disabled={!newListName.trim() || createSublist.isPending}>
+							{createSublist.isPending ? "Creating..." : "Create List"}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
