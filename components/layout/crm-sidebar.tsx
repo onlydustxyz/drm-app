@@ -24,16 +24,9 @@ export function CrmSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 			name: "Contributors",
 			href: "/contributors",
 			icon: GitPullRequest,
-			subItems: [
-				{
-					name: "Contributor Sublists",
-					href: "/contributors/sublists",
-					icon: ListFilter,
-				}
-			]
 		},
 		{
-			name: "Ecosystem Repos",
+			name: "Repositories",
 			href: "/ecosystems",
 			icon: Code2,
 		},
