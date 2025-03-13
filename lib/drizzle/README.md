@@ -66,7 +66,5 @@ The following npm scripts are available for database migrations:
 Ensure the following environment variables are set in your `.env.local` file:
 
 ```
-SUPABASE_URL=postgresql://username:password@host:port/database
+DATABASE_URL=postgresql://username:password@host:port/database
 ```
-
-This URL should point to your Supabase PostgreSQL database.

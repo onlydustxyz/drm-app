@@ -6,9 +6,9 @@ import { Sidebar, SidebarProvider } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Menu } from "lucide-react";
 import { useState } from "react";
-import { CrmSidebar } from "./crm-sidebar";
+import { AppSidebar } from "./app-sidebar";
 
-export function CrmLayout({ children }: { children: React.ReactNode }) {
+export function AppLayout({ children }: { children: React.ReactNode }) {
 	const isMobile = useIsMobile();
 	const [isOpen, setIsOpen] = useState(false);
 
@@ -25,7 +25,7 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
 							</Button>
 						</SheetTrigger>
 						<SheetContent side="left" className="w-72 p-0">
-							<CrmSidebar setIsOpen={setIsOpen} />
+							<AppSidebar setIsOpen={setIsOpen} />
 						</SheetContent>
 					</Sheet>
 					<div className="flex-1">
@@ -42,7 +42,7 @@ export function CrmLayout({ children }: { children: React.ReactNode }) {
 		<SidebarProvider>
 			<div className="flex min-h-screen w-full">
 				<Sidebar className="hidden border-r lg:block">
-					<CrmSidebar />
+					<AppSidebar />
 				</Sidebar>
 				<div className="flex flex-col flex-1 w-full max-w-full">
 					<header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background px-6 w-full">

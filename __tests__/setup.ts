@@ -1,7 +1,7 @@
 // import { db } from "@/lib/drizzle";
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
+// import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 // import { sql } from "drizzle-orm";
-import path from "path";
+// import path from "path";
 import { createServer } from "http";
 import { NextRequest, NextResponse } from "next/server";
 // Increase timeout for tests since we're working with containers
@@ -55,7 +55,7 @@ export const createTestServer = (handler: (req: NextRequest) => Promise<NextResp
 
 // beforeAll(async () => {
 // 	// Start PostgreSQL container
-// 	let source = path.resolve(process.cwd(), "supabase/migrations");
+// 	let source = path.resolve(process.cwd(), "postgres/migrations");
 // 	container = new PostgreSqlContainer("postgres:16.4")
 // 		.withDatabase("test_db")
 // 		.withUsername("test_user")

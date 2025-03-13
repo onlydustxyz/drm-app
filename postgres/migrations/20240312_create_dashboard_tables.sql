@@ -95,16 +95,6 @@ CREATE INDEX idx_monthly_commits_date ON monthly_commits(date);
 CREATE INDEX idx_monthly_prs_merged_date ON monthly_prs_merged(date);
 CREATE INDEX idx_dev_activity_date ON dev_activity(date);
 
--- Enable RLS (Row Level Security)
-ALTER TABLE dashboard_kpis ENABLE ROW LEVEL SECURITY;
-ALTER TABLE developer_activity ENABLE ROW LEVEL SECURITY;
-ALTER TABLE developers_by_chain ENABLE ROW LEVEL SECURITY;
-ALTER TABLE developer_locations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE commits_by_dev_type ENABLE ROW LEVEL SECURITY;
-ALTER TABLE monthly_commits ENABLE ROW LEVEL SECURITY;
-ALTER TABLE monthly_prs_merged ENABLE ROW LEVEL SECURITY;
-ALTER TABLE dev_activity ENABLE ROW LEVEL SECURITY;
-
 -- Create triggers to automatically update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
