@@ -679,33 +679,9 @@ export default function ContributorsPage() {
 										<TableHead className="text-center">
 											<button
 												className="flex items-center justify-center gap-1 w-full"
-												onClick={() => requestSort("activityScore")}
-											>
-												<span>Activity{getSortDirectionIndicator("activityScore")}</span>
-											</button>
-										</TableHead>
-										<TableHead className="text-center">
-											<button
-												className="flex items-center justify-center gap-1 w-full"
-												onClick={() => requestSort("reputationScore")}
-											>
-												<span>Reputation{getSortDirectionIndicator("reputationScore")}</span>
-											</button>
-										</TableHead>
-										<TableHead className="text-center">
-											<button
-												className="flex items-center justify-center gap-1 w-full"
 												onClick={() => requestSort("stars")}
 											>
 												<span>Stars{getSortDirectionIndicator("stars")}</span>
-											</button>
-										</TableHead>
-										<TableHead className="text-center">
-											<button
-												className="flex items-center justify-center gap-1 w-full"
-												onClick={() => requestSort("followers")}
-											>
-												<span>Followers{getSortDirectionIndicator("followers")}</span>
 											</button>
 										</TableHead>
 										<TableHead className="text-center">
@@ -780,22 +756,7 @@ export default function ContributorsPage() {
 													</TableCell>
 													<TableCell className="text-center">
 														<div className="flex items-center justify-center gap-1">
-															<span>{contributor.activityScore}</span>
-														</div>
-													</TableCell>
-													<TableCell className="text-center">
-														<div className="flex items-center justify-center gap-1">
-															<span>{contributor.reputationScore}</span>
-														</div>
-													</TableCell>
-													<TableCell className="text-center">
-														<div className="flex items-center justify-center gap-1">
 															<span>{contributor.stars}</span>
-														</div>
-													</TableCell>
-													<TableCell className="text-center">
-														<div className="flex items-center justify-center gap-1">
-															<span>{contributor.followers}</span>
 														</div>
 													</TableCell>
 													<TableCell className="text-center">
