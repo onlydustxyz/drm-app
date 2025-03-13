@@ -44,11 +44,6 @@ export async function getDeveloperActivity() {
 	return await db.select().from(schema.developerActivity);
 }
 
-// Example query to get developers by chain
-export async function getDevelopersByChain() {
-	return await db.select().from(schema.developersByChain).orderBy(schema.developersByChain.date);
-}
-
 // Example query to get developer locations
 export async function getDeveloperLocations() {
 	return await db.select().from(schema.developerLocations);

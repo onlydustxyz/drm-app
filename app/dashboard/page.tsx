@@ -3,7 +3,6 @@ import { ServerCommitsByDevTypeSection } from "@/components/dashboard/sections/c
 import { ServerDevActivitySection } from "@/components/dashboard/sections/dev-activity/server";
 import { ServerDeveloperActivitySection } from "@/components/dashboard/sections/developer-activity/server";
 import { ServerDeveloperLocationsSection } from "@/components/dashboard/sections/developer-locations/server";
-import { ServerDevelopersByChainSection } from "@/components/dashboard/sections/developers-by-chain/server";
 import { ServerKPISection } from "@/components/dashboard/sections/kpi/server";
 import { ServerMonthlyCommitsSection } from "@/components/dashboard/sections/monthly-commits/server";
 import { ServerMonthlyPRsMergedSection } from "@/components/dashboard/sections/monthly-prs-merged/server";
@@ -32,29 +31,23 @@ export default function DashboardPage() {
 					<ServerDeveloperActivitySection />
 				</Suspense>
 				<Suspense fallback={<ChartLoading />}>
-					<ServerDevelopersByChainSection />
+					<ServerDeveloperLocationsSection />
 				</Suspense>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 w-full">
-				<Suspense fallback={<ChartLoading />}>
-					<ServerDeveloperLocationsSection />
-				</Suspense>
 				<Suspense fallback={<ChartLoading />}>
 					<ServerCommitsByDevTypeSection />
 				</Suspense>
+				<Suspense fallback={<ChartLoading />}>
+					<ServerMonthlyCommitsSection />
+				</Suspense>
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 w-full">
 				<Suspense fallback={<ChartLoading />}>
-					<ServerMonthlyCommitsSection />
-				</Suspense>
-				<Suspense fallback={<ChartLoading />}>
 					<ServerMonthlyPRsMergedSection />
 				</Suspense>
-			</div>
-
-			<div className="w-full">
 				<Suspense fallback={<ChartLoading />}>
 					<ServerDevActivitySection />
 				</Suspense>

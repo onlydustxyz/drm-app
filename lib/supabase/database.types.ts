@@ -180,33 +180,6 @@ export type Database = {
 				};
 				Relationships: [];
 			};
-			developers_by_chain: {
-				Row: {
-					id: number;
-					date: string;
-					single_chain: number;
-					multi_chain: number;
-					created_at: string;
-					updated_at: string;
-				};
-				Insert: {
-					id?: number;
-					date: string;
-					single_chain: number;
-					multi_chain: number;
-					created_at?: string;
-					updated_at?: string;
-				};
-				Update: {
-					id?: number;
-					date?: string;
-					single_chain?: number;
-					multi_chain?: number;
-					created_at?: string;
-					updated_at?: string;
-				};
-				Relationships: [];
-			};
 			developer_locations: {
 				Row: {
 					id: number;

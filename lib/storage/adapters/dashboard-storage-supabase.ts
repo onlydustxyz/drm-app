@@ -6,7 +6,6 @@ import {
 	DevActivity,
 	DeveloperActivity,
 	DeveloperLocation,
-	DevelopersByChain,
 	MonthlyCommits,
 	MonthlyPRsMerged,
 } from "../../services/dashboard-service";
@@ -28,7 +27,6 @@ export class SupabaseDashboardStorage implements DashboardStorage {
 		const [
 			kpis,
 			developerActivity,
-			developersByChain,
 			developerLocations,
 			commitsByDevType,
 			monthlyCommits,
@@ -37,7 +35,6 @@ export class SupabaseDashboardStorage implements DashboardStorage {
 		] = await Promise.all([
 			this.getDashboardKPIs(),
 			this.getDeveloperActivity(),
-			this.getDevelopersByChain(),
 			this.getDeveloperLocations(),
 			this.getCommitsByDevType(),
 			this.getMonthlyCommits(),
@@ -48,7 +45,6 @@ export class SupabaseDashboardStorage implements DashboardStorage {
 		return {
 			kpis,
 			developerActivity,
-			developersByChain,
 			developerLocations,
 			commitsByDevType,
 			monthlyCommits,
@@ -100,24 +96,6 @@ export class SupabaseDashboardStorage implements DashboardStorage {
 			fullTime: item.full_time,
 			partTime: item.part_time,
 			onTime: item.on_time,
-		}));
-	}
-
-	async getDevelopersByChain(): Promise<DevelopersByChain[]> {
-		const { data, error } = await this.supabase
-			.from("developers_by_chain")
-			.select("*")
-			.order("date", { ascending: true });
-
-		if (error) {
-			console.error("Error fetching developers by chain:", error);
-			throw new Error("Failed to fetch developers by chain");
-		}
-
-		return data.map((item) => ({
-			date: item.date,
-			singleChain: item.single_chain,
-			multiChain: item.multi_chain,
 		}));
 	}
 
