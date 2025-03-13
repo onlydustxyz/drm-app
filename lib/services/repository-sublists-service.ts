@@ -1,5 +1,6 @@
 // Repository sublists data types
 import { Repository, getRepositories } from "./repositories-service";
+import { ContributorActivity } from "@/components/charts/github-activity-graph";
 
 export interface RepositorySublist {
   id: string;
@@ -8,6 +9,13 @@ export interface RepositorySublist {
   repositoryIds: string[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface RepositoryRetention {
+  month: string;
+  activeCount: number;
+  totalCount: number;
+  retentionRate: number;
 }
 
 // Mock data implementation
@@ -41,76 +49,73 @@ export interface RepositorySublistsService {
 
 // Mock implementation of the repository sublists service
 export class MockRepositorySublistsService implements RepositorySublistsService {
-  private sublists: RepositorySublist[] = [...mockRepositorySublists];
-  
   async getSublists(): Promise<RepositorySublist[]> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
-    return this.sublists;
+    // Return mock data for now
+    return mockRepositorySublists;
   }
 
   async getSublist(id: string): Promise<RepositorySublist | undefined> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Ensure we're comparing strings
-    const stringId = String(id);
-    return this.sublists.find(sublist => String(sublist.id) === stringId);
+    // Find and return the sublist with the matching ID
+    return mockRepositorySublists.find(sublist => sublist.id === id);
   }
 
   async createSublist(sublist: Omit<RepositorySublist, 'id' | 'createdAt' | 'updatedAt'>): Promise<RepositorySublist> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 700));
     
-    const now = new Date().toISOString().split('T')[0];
+    // Create a new sublist with a generated ID and timestamps
     const newSublist: RepositorySublist = {
+      id: (mockRepositorySublists.length + 1).toString(),
       ...sublist,
-      id: (this.sublists.length + 1).toString(),
-      createdAt: now,
-      updatedAt: now
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     
-    this.sublists.push(newSublist);
+    // Add to mock data
+    mockRepositorySublists.push(newSublist);
+    
     return newSublist;
   }
 
   async updateSublist(id: string, sublist: Partial<Omit<RepositorySublist, 'id' | 'createdAt' | 'updatedAt'>>): Promise<RepositorySublist | undefined> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 400));
+    await new Promise(resolve => setTimeout(resolve, 600));
     
-    // Ensure we're comparing strings
-    const stringId = String(id);
-    const index = this.sublists.findIndex(s => String(s.id) === stringId);
+    // Find the sublist to update
+    const index = mockRepositorySublists.findIndex(s => s.id === id);
+    if (index === -1) return undefined;
     
-    if (index === -1) {
-      return undefined;
-    }
-    
-    const now = new Date().toISOString().split('T')[0];
+    // Update the sublist
     const updatedSublist: RepositorySublist = {
-      ...this.sublists[index],
+      ...mockRepositorySublists[index],
       ...sublist,
-      updatedAt: now
+      updatedAt: new Date().toISOString()
     };
     
-    // Ensure repository IDs are strings
-    if (updatedSublist.repositoryIds) {
-      updatedSublist.repositoryIds = updatedSublist.repositoryIds.map(id => String(id));
-    }
+    // Replace in mock data
+    mockRepositorySublists[index] = updatedSublist;
     
-    this.sublists[index] = updatedSublist;
     return updatedSublist;
   }
 
   async deleteSublist(id: string): Promise<boolean> {
     // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 400));
     
-    const initialLength = this.sublists.length;
-    this.sublists = this.sublists.filter(sublist => sublist.id !== id);
+    // Find the sublist to delete
+    const index = mockRepositorySublists.findIndex(s => s.id === id);
+    if (index === -1) return false;
     
-    return this.sublists.length < initialLength;
+    // Remove from mock data
+    mockRepositorySublists.splice(index, 1);
+    
+    return true;
   }
 }
 
@@ -136,4 +141,93 @@ export async function updateRepositorySublist(id: string, sublist: Partial<Omit<
 
 export async function deleteRepositorySublist(id: string): Promise<boolean> {
   return repositorySublistsService.deleteSublist(id);
+}
+
+// Mock activity data for repositories
+export async function getRepositoryActivityData(sublistId: string): Promise<ContributorActivity[]> {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // Get the sublist
+  const sublist = await getRepositorySublist(sublistId);
+  if (!sublist) return [];
+  
+  // Generate mock activity data
+  const currentDate = new Date();
+  const weeks: string[] = [];
+  
+  // Generate weeks for the last 52 weeks
+  for (let i = 0; i < 52; i++) {
+    const weekDate = new Date(currentDate);
+    weekDate.setDate(currentDate.getDate() - (i * 7));
+    weeks.push(weekDate.toISOString().split('T')[0]);
+  }
+  
+  // Get repositories in the sublist
+  const allRepositories = await getRepositories();
+  const repositories = allRepositories.filter(repo => 
+    sublist.repositoryIds.includes(repo.id)
+  );
+  
+  // Generate data for each repository with weekly activity
+  return repositories.map(repo => {
+    const weeklyActivity = weeks.map(week => {
+      // Generate random PR count
+      const prCount = Math.floor(Math.random() * 10);
+      
+      // Generate random repos data
+      const repos = [
+        {
+          name: "main-repo",
+          prCount: Math.floor(prCount * 0.7) // 70% of PRs in main repo
+        },
+        {
+          name: "secondary-repo",
+          prCount: Math.floor(prCount * 0.3) // 30% of PRs in secondary repo
+        }
+      ].filter(r => r.prCount > 0); // Only include repos with PRs
+      
+      return {
+        week,
+        prCount,
+        repos
+      };
+    });
+    
+    return {
+      id: repo.id,
+      name: repo.name,
+      avatar: `https://github.com/${repo.name.split('/')[0]}.png`,
+      projects: ["Project A", "Project B"],
+      weeklyActivity
+    };
+  });
+}
+
+// Mock retention data for repositories
+export async function getRepositoryRetentionData(sublistId: string): Promise<RepositoryRetention[]> {
+  // Simulate API delay
+  await new Promise(resolve => setTimeout(resolve, 600));
+  
+  // Get the sublist
+  const sublist = await getRepositorySublist(sublistId);
+  if (!sublist) return [];
+  
+  // Generate mock retention data
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  
+  return months.map((month, index) => {
+    // Generate some mock retention data based on the month
+    const totalCount = Math.floor(Math.random() * 20) + 10; // Random total between 10-30
+    // Simulate some fluctuation in active repositories
+    const activeCount = Math.max(1, Math.floor(totalCount * (0.7 + Math.sin(index / 2) * 0.3)));
+    const retentionRate = (activeCount / totalCount) * 100;
+    
+    return {
+      month,
+      activeCount,
+      totalCount,
+      retentionRate
+    };
+  });
 } 
