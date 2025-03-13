@@ -21,7 +21,7 @@ export interface ContributorRetention {
 
 // Service interface for contributor sublists
 export interface ContributorSublistsServiceInterface {
-	getContributorSublists(): Promise<ContributorSublist[]>;
+	getContributorSublists(search?: string): Promise<ContributorSublist[]>;
 	getContributorSublist(id: string): Promise<ContributorSublist | undefined>;
 	createContributorSublist(
 		sublist: Omit<ContributorSublist, "id" | "createdAt" | "updatedAt">
@@ -180,8 +180,8 @@ export class ContributorSublistsService implements ContributorSublistsServiceInt
 	}
 
 	// Methods using the storage implementation
-	async getContributorSublists(): Promise<ContributorSublist[]> {
-		return this.storage.getSublists();
+	async getContributorSublists(search?: string): Promise<ContributorSublist[]> {
+		return this.storage.getSublists(search);
 	}
 
 	async getContributorSublist(id: string): Promise<ContributorSublist | undefined> {
@@ -216,8 +216,8 @@ export class ContributorSublistsService implements ContributorSublistsServiceInt
 const contributorSublistsService = new ContributorSublistsService();
 
 // Export functions that use the service for backward compatibility
-export async function getContributorSublists(): Promise<ContributorSublist[]> {
-	return contributorSublistsService.getContributorSublists();
+export async function getContributorSublists(search?: string): Promise<ContributorSublist[]> {
+	return contributorSublistsService.getContributorSublists(search);
 }
 
 export async function getContributorSublist(id: string): Promise<ContributorSublist | undefined> {

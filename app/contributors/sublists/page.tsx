@@ -26,7 +26,8 @@ import { formatDate } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, ChevronRight, Import, Loader2, Plus, Search, Trash2, Users } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { debounce } from "lodash-es";
 
 // API fetch functions
 const fetchContributors = async (): Promise<Contributor[]> => {
@@ -37,8 +38,15 @@ const fetchContributors = async (): Promise<Contributor[]> => {
 	return response.json();
 };
 
-const fetchSublists = async (): Promise<ContributorSublist[]> => {
-	const response = await fetch("/api/contributor-sublists");
+const fetchSublists = async (searchQuery?: string): Promise<ContributorSublist[]> => {
+	const params = new URLSearchParams();
+
+	if (searchQuery && searchQuery.trim() !== "") {
+		params.append("search", searchQuery.trim());
+	}
+
+	const url = `/api/contributor-sublists${params.toString() ? `?${params.toString()}` : ""}`;
+	const response = await fetch(url);
 	if (!response.ok) {
 		throw new Error("Failed to fetch sublists");
 	}
@@ -79,6 +87,7 @@ export default function ContributorSublistsPage() {
 
 	// State for UI
 	const [searchQuery, setSearchQuery] = useState("");
+	const [inputValue, setInputValue] = useState("");
 	const [isCreating, setIsCreating] = useState(false);
 	const [newSublistName, setNewSublistName] = useState("");
 	const [newSublistDescription, setNewSublistDescription] = useState("");
@@ -91,6 +100,22 @@ export default function ContributorSublistsPage() {
 		key: keyof ContributorSublist | null;
 		direction: "ascending" | "descending";
 	}>({ key: null, direction: "descending" });
+
+	// Create debounced search function with lodash
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	const debouncedSearch = useCallback(
+		debounce((value: string) => {
+			setSearchQuery(value);
+		}, 300),
+		[]
+	);
+
+	// Cleanup debounced function on unmount
+	useEffect(() => {
+		return () => {
+			debouncedSearch.cancel();
+		};
+	}, [debouncedSearch]);
 
 	// Queries
 	const {
@@ -107,8 +132,10 @@ export default function ContributorSublistsPage() {
 		isLoading: isLoadingSublists,
 		error: sublistsError,
 	} = useQuery({
-		queryKey: ["sublists"],
-		queryFn: fetchSublists,
+		queryKey: ["sublists", searchQuery],
+		queryFn: () => fetchSublists(searchQuery),
+		// Debounce search queries to avoid excessive API calls
+		refetchOnWindowFocus: false,
 	});
 
 	// Mutations
@@ -308,8 +335,8 @@ export default function ContributorSublistsPage() {
 		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
 	};
 
-	// Sort the filtered sublists based on the sort config
-	const sortedSublists = [...filteredSublists].sort((a, b) => {
+	// Use sorted sublists directly from the API response, no client filtering needed
+	const sortedSublists = [...sublists].sort((a, b) => {
 		if (!sortConfig.key) return 0;
 
 		if (a[sortConfig.key] < b[sortConfig.key]) {
@@ -533,8 +560,11 @@ export default function ContributorSublistsPage() {
 								<Input
 									placeholder="Search sublists..."
 									className="pl-8"
-									value={searchQuery}
-									onChange={(e) => setSearchQuery(e.target.value)}
+									value={inputValue}
+									onChange={(e) => {
+										setInputValue(e.target.value);
+										debouncedSearch(e.target.value);
+									}}
 								/>
 							</div>
 						</div>
@@ -546,7 +576,7 @@ export default function ContributorSublistsPage() {
 							<Loader2 className="h-8 w-8 animate-spin mr-2" />
 							<span>Loading sublists...</span>
 						</div>
-					) : filteredSublists.length === 0 ? (
+					) : sublists.length === 0 ? (
 						<div className="flex flex-col items-center justify-center py-12">
 							<Users className="h-12 w-12 text-muted-foreground mb-4" />
 							<h3 className="text-xl font-medium mb-2">No Sublists Found</h3>

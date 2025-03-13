@@ -3,7 +3,12 @@ import { getContributorSublists, createContributorSublist } from "@/lib/services
 
 export async function GET(request: Request) {
 	try {
-		const sublists = await getContributorSublists();
+		// Get URL object to parse query parameters
+		const url = new URL(request.url);
+		const searchQuery = url.searchParams.get("search") || undefined;
+
+		// Pass search query to service
+		const sublists = await getContributorSublists(searchQuery);
 		return NextResponse.json(sublists);
 	} catch (error) {
 		console.error("Error fetching contributor sublists:", error);

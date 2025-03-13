@@ -5,7 +5,7 @@ import {
 	ContributorSublist,
 	generateRetentionData,
 } from "@/lib/services/contributor-sublists-service";
-import { eq } from "drizzle-orm";
+import { eq, or, ilike } from "drizzle-orm";
 import { ContributorSublistsStorage } from "../contributor-sublists-storage";
 
 /**
@@ -16,9 +16,20 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 		// No additional setup needed for Drizzle as it uses the singleton db instance
 	}
 
-	async getSublists(): Promise<ContributorSublist[]> {
+	async getSublists(search?: string): Promise<ContributorSublist[]> {
 		try {
-			const result = await db.select().from(contributorSublists).orderBy(contributorSublists.created_at);
+			let query = db.select().from(contributorSublists);
+
+			// Apply search filter if provided
+			if (search && search.trim() !== "") {
+				const searchTerm = `%${search.trim()}%`;
+				query = query.where(
+					or(ilike(contributorSublists.name, searchTerm), ilike(contributorSublists.description, searchTerm))
+				);
+			}
+
+			// Apply ordering
+			const result = await query.orderBy(contributorSublists.created_at);
 
 			return result.map((item) => ({
 				id: item.id.toString(),
