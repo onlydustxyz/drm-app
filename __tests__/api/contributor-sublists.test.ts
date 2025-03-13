@@ -1,21 +1,53 @@
 // import { db } from "@/lib/drizzle";
-import { contributorSublists } from "@/lib/drizzle/schema/contributor-sublists";
-import { eq, sql } from "drizzle-orm";
 import { createServer } from "http";
-import { NextApiHandler, NextApiRequest, NextApiResponse } from "next";
+import { NextRequest, NextResponse } from "next/server";
 import request from "supertest";
 
-// Create a test server
-const createTestServer = (handler: NextApiHandler) => {
-	const server = createServer((req, res) => {
-		return handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
+// Create a test server that works with App Router handlers
+const createTestServer = (handler: (req: NextRequest) => Promise<NextResponse>) => {
+	const server = createServer(async (req, res) => {
+		// Collect the request body data
+		let body = "";
+		req.on("data", (chunk) => {
+			body += chunk.toString();
+		});
+
+		req.on("end", async () => {
+			// Create a NextRequest with the body
+			const nextReq = new NextRequest(
+				new Request(`http://localhost:3000${req.url}`, {
+					method: req.method,
+					headers: req.headers as HeadersInit,
+					body: body.length > 0 ? body : undefined,
+				})
+			);
+
+			try {
+				// Call the handler with our NextRequest
+				const response = await handler(nextReq);
+
+				// Set status code
+				res.statusCode = response.status;
+
+				// Set headers
+				response.headers.forEach((value, key) => {
+					res.setHeader(key, value);
+				});
+
+				// Send response body
+				const responseBody = await response.json();
+				res.end(JSON.stringify(responseBody));
+			} catch (error) {
+				console.error("Error in test server:", error);
+				res.statusCode = 500;
+				res.end(JSON.stringify({ error: "Internal server error in test" }));
+			}
+		});
 	});
 	return server;
 };
 
-
 describe("Contributor Sublists API", () => {
-
 	describe("POST /api/contributor-sublists", () => {
 		it("should create a new contributor sublist", async () => {
 			const newSublist = {
@@ -40,8 +72,6 @@ describe("Contributor Sublists API", () => {
 		});
 	});
 });
-
-
 
 // describe("Contributor Sublists API", () => {
 //
