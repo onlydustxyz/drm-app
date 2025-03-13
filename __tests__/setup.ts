@@ -55,7 +55,7 @@ export const createTestServer = (handler: (req: NextRequest) => Promise<NextResp
 
 // beforeAll(async () => {
 // 	// Start PostgreSQL container
-// 	let source = path.resolve(process.cwd(), "lib/drizzle/migrations");
+// 	let source = path.resolve(process.cwd(), "postgres/migrations");
 // 	container = new PostgreSqlContainer("postgres:16.4")
 // 		.withDatabase("test_db")
 // 		.withUsername("test_user")
