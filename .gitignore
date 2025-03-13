@@ -8,6 +8,7 @@ out/
 # Environment variables
 .env*.local
 !.env.local.example
+.env
 
 # Build outputs
 *.log

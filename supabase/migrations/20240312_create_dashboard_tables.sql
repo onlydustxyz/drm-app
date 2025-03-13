@@ -105,58 +105,6 @@ ALTER TABLE monthly_commits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE monthly_prs_merged ENABLE ROW LEVEL SECURITY;
 ALTER TABLE dev_activity ENABLE ROW LEVEL SECURITY;
 
--- Create policies for authenticated users
--- These policies allow only authenticated users to view the dashboard data
-CREATE POLICY "Dashboard data is viewable by authenticated users" ON dashboard_kpis
-    FOR SELECT USING (auth.role() = 'authenticated');
-    
-CREATE POLICY "Developer activity is viewable by authenticated users" ON developer_activity
-    FOR SELECT USING (auth.role() = 'authenticated');
-    
-CREATE POLICY "Developers by chain is viewable by authenticated users" ON developers_by_chain
-    FOR SELECT USING (auth.role() = 'authenticated');
-    
-CREATE POLICY "Developer locations is viewable by authenticated users" ON developer_locations
-    FOR SELECT USING (auth.role() = 'authenticated');
-    
-CREATE POLICY "Commits by dev type is viewable by authenticated users" ON commits_by_dev_type
-    FOR SELECT USING (auth.role() = 'authenticated');
-    
-CREATE POLICY "Monthly commits is viewable by authenticated users" ON monthly_commits
-    FOR SELECT USING (auth.role() = 'authenticated');
-    
-CREATE POLICY "Monthly PRs merged is viewable by authenticated users" ON monthly_prs_merged
-    FOR SELECT USING (auth.role() = 'authenticated');
-    
-CREATE POLICY "Dev activity is viewable by authenticated users" ON dev_activity
-    FOR SELECT USING (auth.role() = 'authenticated');
-
--- Create update policies for service role
--- These policies allow the service role to update the dashboard data
-CREATE POLICY "Dashboard data is editable by service role" ON dashboard_kpis
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-    
-CREATE POLICY "Developer activity is editable by service role" ON developer_activity
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-    
-CREATE POLICY "Developers by chain is editable by service role" ON developers_by_chain
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-    
-CREATE POLICY "Developer locations is editable by service role" ON developer_locations
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-    
-CREATE POLICY "Commits by dev type is editable by service role" ON commits_by_dev_type
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-    
-CREATE POLICY "Monthly commits is editable by service role" ON monthly_commits
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-    
-CREATE POLICY "Monthly PRs merged is editable by service role" ON monthly_prs_merged
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-    
-CREATE POLICY "Dev activity is editable by service role" ON dev_activity
-    FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
-
 -- Create triggers to automatically update the updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -196,4 +144,4 @@ FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 CREATE TRIGGER update_dev_activity_updated_at
 BEFORE UPDATE ON dev_activity
-FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column(); 
+FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
