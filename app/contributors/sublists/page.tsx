@@ -38,11 +38,22 @@ const fetchContributors = async (): Promise<Contributor[]> => {
 	return response.json();
 };
 
-const fetchSublists = async (searchQuery?: string): Promise<ContributorSublist[]> => {
+const fetchSublists = async (options?: {
+	search?: string;
+	sort?: {
+		key?: keyof ContributorSublist;
+		direction?: "ascending" | "descending";
+	};
+}): Promise<ContributorSublist[]> => {
 	const params = new URLSearchParams();
 
-	if (searchQuery && searchQuery.trim() !== "") {
-		params.append("search", searchQuery.trim());
+	if (options?.search && options.search.trim() !== "") {
+		params.append("search", options.search.trim());
+	}
+
+	if (options?.sort?.key) {
+		params.append("sortKey", options.sort.key);
+		params.append("sortDirection", options.sort.direction || "ascending");
 	}
 
 	const url = `/api/contributor-sublists${params.toString() ? `?${params.toString()}` : ""}`;
@@ -132,8 +143,17 @@ export default function ContributorSublistsPage() {
 		isLoading: isLoadingSublists,
 		error: sublistsError,
 	} = useQuery({
-		queryKey: ["sublists", searchQuery],
-		queryFn: () => fetchSublists(searchQuery),
+		queryKey: ["sublists", searchQuery, sortConfig.key, sortConfig.direction],
+		queryFn: () =>
+			fetchSublists({
+				search: searchQuery,
+				sort: sortConfig.key
+					? {
+							key: sortConfig.key,
+							direction: sortConfig.direction,
+					  }
+					: undefined,
+			}),
 		// Debounce search queries to avoid excessive API calls
 		refetchOnWindowFocus: false,
 	});
@@ -325,8 +345,7 @@ export default function ContributorSublistsPage() {
 		}
 
 		setSortConfig({ key, direction });
-
-		// Sorting is now handled in the render phase, no need to mutate the filtered array
+		// Server-side sorting is now handled via the queryKey change
 	};
 
 	// Get sort direction indicator
@@ -335,18 +354,8 @@ export default function ContributorSublistsPage() {
 		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
 	};
 
-	// Use sorted sublists directly from the API response, no client filtering needed
-	const sortedSublists = [...sublists].sort((a, b) => {
-		if (!sortConfig.key) return 0;
-
-		if (a[sortConfig.key] < b[sortConfig.key]) {
-			return sortConfig.direction === "ascending" ? -1 : 1;
-		}
-		if (a[sortConfig.key] > b[sortConfig.key]) {
-			return sortConfig.direction === "ascending" ? 1 : -1;
-		}
-		return 0;
-	});
+	// No need for client-side sorting anymore since API handles it
+	const sortedSublists = sublists;
 
 	// Loading and error states
 	const isLoading = isLoadingContributors || isLoadingSublists;

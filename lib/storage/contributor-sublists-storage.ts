@@ -5,7 +5,13 @@ import { DrizzleContributorSublistsStorage } from "./adapters/contributor-sublis
  * Interface for accessing contributor sublists data from storage
  */
 export interface ContributorSublistsStorage {
-	getSublists(search?: string): Promise<ContributorSublist[]>;
+	getSublists(options?: {
+		search?: string;
+		sort?: {
+			key?: keyof ContributorSublist;
+			direction?: "ascending" | "descending";
+		};
+	}): Promise<ContributorSublist[]>;
 	getSublist(id: string): Promise<ContributorSublist | undefined>;
 	createSublist(sublist: Omit<ContributorSublist, "id" | "createdAt" | "updatedAt">): Promise<ContributorSublist>;
 	updateSublist(

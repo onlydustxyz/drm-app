@@ -21,7 +21,13 @@ export interface ContributorRetention {
 
 // Service interface for contributor sublists
 export interface ContributorSublistsServiceInterface {
-	getContributorSublists(search?: string): Promise<ContributorSublist[]>;
+	getContributorSublists(options?: {
+		search?: string;
+		sort?: {
+			key?: keyof ContributorSublist;
+			direction?: "ascending" | "descending";
+		};
+	}): Promise<ContributorSublist[]>;
 	getContributorSublist(id: string): Promise<ContributorSublist | undefined>;
 	createContributorSublist(
 		sublist: Omit<ContributorSublist, "id" | "createdAt" | "updatedAt">
@@ -180,8 +186,14 @@ export class ContributorSublistsService implements ContributorSublistsServiceInt
 	}
 
 	// Methods using the storage implementation
-	async getContributorSublists(search?: string): Promise<ContributorSublist[]> {
-		return this.storage.getSublists(search);
+	async getContributorSublists(options?: {
+		search?: string;
+		sort?: {
+			key?: keyof ContributorSublist;
+			direction?: "ascending" | "descending";
+		};
+	}): Promise<ContributorSublist[]> {
+		return this.storage.getSublists(options);
 	}
 
 	async getContributorSublist(id: string): Promise<ContributorSublist | undefined> {
@@ -216,8 +228,22 @@ export class ContributorSublistsService implements ContributorSublistsServiceInt
 const contributorSublistsService = new ContributorSublistsService();
 
 // Export functions that use the service for backward compatibility
-export async function getContributorSublists(search?: string): Promise<ContributorSublist[]> {
-	return contributorSublistsService.getContributorSublists(search);
+export async function getContributorSublists(
+	options?:
+		| string
+		| {
+				search?: string;
+				sort?: {
+					key?: keyof ContributorSublist;
+					direction?: "ascending" | "descending";
+				};
+		  }
+): Promise<ContributorSublist[]> {
+	// Handle the legacy string parameter for backward compatibility
+	if (typeof options === "string") {
+		return contributorSublistsService.getContributorSublists({ search: options });
+	}
+	return contributorSublistsService.getContributorSublists(options);
 }
 
 export async function getContributorSublist(id: string): Promise<ContributorSublist | undefined> {

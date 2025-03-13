@@ -6,9 +6,19 @@ export async function GET(request: Request) {
 		// Get URL object to parse query parameters
 		const url = new URL(request.url);
 		const searchQuery = url.searchParams.get("search") || undefined;
+		const sortKey = url.searchParams.get("sortKey") || undefined;
+		const sortDirection = url.searchParams.get("sortDirection") || undefined;
 
-		// Pass search query to service
-		const sublists = await getContributorSublists(searchQuery);
+		// Pass search query and sort parameters to service
+		const sublists = await getContributorSublists({
+			search: searchQuery,
+			sort: sortKey
+				? {
+						key: sortKey,
+						direction: sortDirection === "descending" ? "descending" : "ascending",
+				  }
+				: undefined,
+		});
 		return NextResponse.json(sublists);
 	} catch (error) {
 		console.error("Error fetching contributor sublists:", error);
