@@ -1,4 +1,4 @@
-import { index, integer, jsonb, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgTable, serial, text, timestamp, varchar, primaryKey, bigint } from "drizzle-orm/pg-core";
 
 // Define the contributor sublists table schema
 export const contributorSublists = pgTable(
@@ -7,7 +7,6 @@ export const contributorSublists = pgTable(
 		id: serial("id").primaryKey(),
 		name: varchar("name", { length: 255 }).notNull(),
 		description: text("description"),
-		contributor_ids: jsonb("contributor_ids").$type<string[]>().notNull().default([]),
 		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 		updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 	},
@@ -15,6 +14,22 @@ export const contributorSublists = pgTable(
 		return {
 			nameIdx: index("idx_contributor_sublists_name").on(table.name),
 			createdAtIdx: index("idx_contributor_sublists_created_at").on(table.created_at),
+		};
+	}
+);
+
+// Define the join table for contributor sublists and contributors
+export const contributorSublistsContributors = pgTable(
+	"contributor_sublists_contributors",
+	{
+		sublistId: integer("sublist_id").notNull().references(() => contributorSublists.id, { onDelete: "cascade" }),
+		contributorId: bigint("contributor_id", { mode: "number" }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+	},
+	(table) => {
+		return {
+			pk: primaryKey({ columns: [table.sublistId, table.contributorId] }),
+			contributorIdIdx: index("idx_contributor_sublists_contributors_contributor_id").on(table.contributorId),
 		};
 	}
 );

@@ -1,11 +1,12 @@
 import { db } from "@/lib/drizzle";
 import { contributorRetention, contributorSublists } from "@/lib/drizzle/schema/contributor-sublists";
+import { contributorSublistsContributors } from "@/lib/drizzle/schema/contributor-sublists";
 import {
 	ContributorRetention,
 	ContributorSublist,
 	generateRetentionData,
 } from "@/lib/services/contributor-sublists-service";
-import { asc, desc, eq, ilike, or } from "drizzle-orm";
+import { asc, desc, eq, ilike, or, inArray } from "drizzle-orm";
 import { ContributorSublistsStorage } from "../contributor-sublists-storage";
 
 /**
@@ -41,7 +42,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 					id: contributorSublists.id,
 					name: contributorSublists.name,
 					description: contributorSublists.description,
-					contributorIds: contributorSublists.contributor_ids,
+					contributorIds: [], // Keep this for backwards compatibility
 					createdAt: contributorSublists.created_at,
 					updatedAt: contributorSublists.updated_at,
 				};
@@ -61,14 +62,44 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 
 			const result = await query;
 
-			return result.map((item) => ({
-				id: item.id.toString(),
-				name: item.name,
-				description: item.description || "",
-				contributorIds: item.contributor_ids.map((id) => String(id)),
-				createdAt: new Date(item.created_at).toISOString().split("T")[0],
-				updatedAt: new Date(item.updated_at).toISOString().split("T")[0],
-			}));
+			// Create a map of sublist ID to ContributorSublist object
+			const sublistMap = new Map<number, ContributorSublist>();
+
+			// Initialize sublists with empty contributor arrays
+			result.forEach(item => {
+				sublistMap.set(item.id, {
+					id: item.id.toString(),
+					name: item.name,
+					description: item.description || "",
+					contributorIds: [],
+					createdAt: new Date(item.created_at).toISOString().split("T")[0],
+					updatedAt: new Date(item.updated_at).toISOString().split("T")[0],
+				});
+			});
+
+			// If we have results, get all contributors for these sublists in a single query
+			if (result.length > 0) {
+				const sublistIds = result.map(item => item.id);
+
+				const contributors = await db
+					.select({
+						sublistId: contributorSublistsContributors.sublistId,
+						contributorId: contributorSublistsContributors.contributorId,
+					})
+					.from(contributorSublistsContributors)
+					.where(inArray(contributorSublistsContributors.sublistId, sublistIds));
+
+				// Populate contributor IDs for each sublist
+				contributors.forEach(({ sublistId, contributorId }) => {
+					const sublist = sublistMap.get(sublistId);
+					if (sublist) {
+						sublist.contributorIds.push(contributorId.toString());
+					}
+				});
+			}
+
+			// Return all sublists as an array
+			return Array.from(sublistMap.values());
 		} catch (error) {
 			console.error("Error fetching contributor sublists:", error);
 			throw new Error("Failed to fetch contributor sublists");
@@ -77,6 +108,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 
 	async getSublist(id: string): Promise<ContributorSublist | undefined> {
 		try {
+			// Get the sublist record
 			const result = await db
 				.select()
 				.from(contributorSublists)
@@ -88,11 +120,21 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 			}
 
 			const item = result[0];
+
+			// Get the contributors from the join table
+			const contributors = await db
+				.select({ contributorId: contributorSublistsContributors.contributorId })
+				.from(contributorSublistsContributors)
+				.where(eq(contributorSublistsContributors.sublistId, item.id));
+
+			// Extract contributor IDs
+			const contributorIds = contributors.map(c => c.contributorId.toString());
+
 			return {
 				id: item.id.toString(),
 				name: item.name,
 				description: item.description || "",
-				contributorIds: item.contributor_ids.map((id) => String(id)),
+				contributorIds: contributorIds,
 				createdAt: new Date(item.created_at).toISOString().split("T")[0],
 				updatedAt: new Date(item.updated_at).toISOString().split("T")[0],
 			};
@@ -106,31 +148,42 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 		sublist: Omit<ContributorSublist, "id" | "createdAt" | "updatedAt">
 	): Promise<ContributorSublist> {
 		try {
-			const now = new Date();
-			const result = await db
-				.insert(contributorSublists)
-				.values({
-					name: sublist.name,
-					description: sublist.description,
-					contributor_ids: sublist.contributorIds.map((id) => String(id)),
-					created_at: now,
-					updated_at: now,
-				})
-				.returning();
+			// Start a transaction to ensure atomicity
+			return await db.transaction(async (tx) => {
+				const now = new Date();
+				// Create the sublist record without storing contributor IDs
+				const [createdSublist] = await tx
+					.insert(contributorSublists)
+					.values({
+						name: sublist.name,
+						description: sublist.description,
+						created_at: now,
+						updated_at: now,
+					})
+					.returning();
 
-			if (result.length === 0) {
-				throw new Error("Failed to create contributor sublist: No result returned");
-			}
+				// Insert entries into the join table for each contributor
+				if (sublist.contributorIds.length > 0) {
+					await tx
+						.insert(contributorSublistsContributors)
+						.values(
+							sublist.contributorIds.map(contributorId => ({
+								sublistId: createdSublist.id,
+								contributorId: parseInt(contributorId),
+							}))
+						);
+				}
 
-			const item = result[0];
-			return {
-				id: item.id.toString(),
-				name: item.name,
-				description: item.description || "",
-				contributorIds: item.contributor_ids.map((id) => String(id)),
-				createdAt: new Date(item.created_at).toISOString().split("T")[0],
-				updatedAt: new Date(item.updated_at).toISOString().split("T")[0],
-			};
+				// Return the created sublist with the contributorIds for API consistency
+				return {
+					id: createdSublist.id.toString(),
+					name: createdSublist.name,
+					description: createdSublist.description || "",
+					contributorIds: sublist.contributorIds,
+					createdAt: new Date(createdSublist.created_at).toISOString().split("T")[0],
+					updatedAt: new Date(createdSublist.updated_at).toISOString().split("T")[0],
+				};
+			});
 		} catch (error) {
 			console.error("Error creating contributor sublist:", error);
 			throw new Error("Failed to create contributor sublist");
@@ -148,36 +201,60 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 				return undefined;
 			}
 
-			// Build update object with only the provided fields
-			const updateObj: any = {
-				updated_at: new Date(),
-			};
+			return await db.transaction(async (tx) => {
+				// Build update object with only the provided fields
+				const updateObj: any = {
+					updated_at: new Date(),
+				};
 
-			if (sublist.name !== undefined) updateObj.name = sublist.name;
-			if (sublist.description !== undefined) updateObj.description = sublist.description;
-			if (sublist.contributorIds !== undefined) {
-				updateObj.contributor_ids = sublist.contributorIds.map((id) => String(id));
-			}
+				if (sublist.name !== undefined) updateObj.name = sublist.name;
+				if (sublist.description !== undefined) updateObj.description = sublist.description;
 
-			const result = await db
-				.update(contributorSublists)
-				.set(updateObj)
-				.where(eq(contributorSublists.id, parseInt(id)))
-				.returning();
+				// Update the main sublist record
+				const [updatedSublist] = await tx
+					.update(contributorSublists)
+					.set(updateObj)
+					.where(eq(contributorSublists.id, parseInt(id)))
+					.returning();
 
-			if (result.length === 0) {
-				return undefined;
-			}
+				// If contributorIds are provided, update the join table
+				if (sublist.contributorIds !== undefined) {
+					// First delete all existing relationships
+					await tx
+						.delete(contributorSublistsContributors)
+						.where(eq(contributorSublistsContributors.sublistId, parseInt(id)));
 
-			const item = result[0];
-			return {
-				id: item.id.toString(),
-				name: item.name,
-				description: item.description || "",
-				contributorIds: item.contributor_ids.map((id) => String(id)),
-				createdAt: new Date(item.created_at).toISOString().split("T")[0],
-				updatedAt: new Date(item.updated_at).toISOString().split("T")[0],
-			};
+					// Then insert the new relationships
+					if (sublist.contributorIds.length > 0) {
+						await tx
+							.insert(contributorSublistsContributors)
+							.values(
+								sublist.contributorIds.map(contributorId => ({
+									sublistId: parseInt(id),
+									contributorId: parseInt(contributorId),
+								}))
+							);
+					}
+				}
+
+				// Get all contributor IDs for this sublist
+				const contributors = await tx
+					.select({ contributorId: contributorSublistsContributors.contributorId })
+					.from(contributorSublistsContributors)
+					.where(eq(contributorSublistsContributors.sublistId, parseInt(id)));
+
+				const contributorIds = contributors.map(c => c.contributorId.toString());
+
+				// Return the updated sublist
+				return {
+					id: updatedSublist.id.toString(),
+					name: updatedSublist.name,
+					description: updatedSublist.description || "",
+					contributorIds: contributorIds,
+					createdAt: new Date(updatedSublist.created_at).toISOString().split("T")[0],
+					updatedAt: new Date(updatedSublist.updated_at).toISOString().split("T")[0],
+				};
+			});
 		} catch (error) {
 			console.error("Error updating contributor sublist:", error);
 			throw new Error("Failed to update contributor sublist");
@@ -186,6 +263,8 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 
 	async deleteSublist(id: string): Promise<boolean> {
 		try {
+			// Delete the sublist record - this will cascade delete all entries in the join table
+			// due to the foreign key constraint with onDelete: "cascade"
 			const result = await db
 				.delete(contributorSublists)
 				.where(eq(contributorSublists.id, parseInt(id)))
@@ -200,19 +279,17 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 
 	async getRetentionData(contributorIds: string[]): Promise<ContributorRetention[]> {
 		try {
-			// Convert to array of strings if not already
-			const stringContributorIds = contributorIds.map((id) => String(id));
+			// Convert to array of numbers for database queries
+			const numericContributorIds = contributorIds.map(id => parseInt(id));
 
 			// Try to get data from database first
-			// In Drizzle we would need a way to query JsonB arrays with overlap
-			// For now, we'll check if ANY of the IDs match (simplified approach)
-			// In a real implementation, you might use a more sophisticated query
 			const result = await db.select().from(contributorRetention).orderBy(contributorRetention.month);
 
 			// Filter results to only include those with at least one matching contributor ID
+			// Note: This is a simplification - ideally we would query directly with a DB-specific JSON array overlap operator
 			const filteredResults = result.filter((item) => {
 				// Check if any of the stringContributorIds is in item.contributor_ids
-				return item.contributor_ids.some((id) => stringContributorIds.includes(String(id)));
+				return item.contributor_ids.some((id) => contributorIds.includes(String(id)));
 			});
 
 			if (filteredResults.length > 0) {
@@ -225,7 +302,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 			}
 
 			// Fall back to generated data if no data found in database
-			return generateRetentionData(stringContributorIds);
+			return generateRetentionData(contributorIds);
 		} catch (error) {
 			console.error("Error fetching contributor retention data:", error);
 			// Fall back to generated data if there's an error
