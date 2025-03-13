@@ -1,3 +1,4 @@
-export default function SegmentDataPage({ params }: { params: { id: string } }) {
-	return <div>Segment Data {params.id}</div>;
+export default async function SegmentDataPage({ params }: { params: Promise<{ id: string }> }) {
+	const { id } = await params;
+	return <div>Segment Data {id}</div>;
 }

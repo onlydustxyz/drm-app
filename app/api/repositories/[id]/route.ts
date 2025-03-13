@@ -1,9 +1,14 @@
 import { deleteRepository, getRepository, updateRepository } from "@/lib/services/repositories-service";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+interface Params {
+	params: Promise<{ id: string }>;
+}
+
+export async function GET(request: NextRequest, { params }: Params) {
 	try {
-		const repository = await getRepository(params.id);
+		const { id } = await params;
+		const repository = await getRepository(id);
 
 		if (!repository) {
 			return NextResponse.json({ error: "Repository not found" }, { status: 404 });
@@ -11,15 +16,17 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
 		return NextResponse.json(repository);
 	} catch (error) {
-		console.error(`Error fetching repository ${params.id}:`, error);
+		const { id } = await params;
+		console.error(`Error fetching repository ${id}:`, error);
 		return NextResponse.json({ error: "Failed to fetch repository" }, { status: 500 });
 	}
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: Params) {
 	try {
 		const body = await request.json();
-		const repository = await updateRepository(params.id, body);
+		const { id } = await params;
+		const repository = await updateRepository(id, body);
 
 		if (!repository) {
 			return NextResponse.json({ error: "Repository not found" }, { status: 404 });
@@ -27,14 +34,16 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
 		return NextResponse.json(repository);
 	} catch (error) {
-		console.error(`Error updating repository ${params.id}:`, error);
+		const { id } = await params;
+		console.error(`Error updating repository ${id}:`, error);
 		return NextResponse.json({ error: "Failed to update repository" }, { status: 500 });
 	}
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: Params) {
 	try {
-		const success = await deleteRepository(params.id);
+		const { id } = await params;
+		const success = await deleteRepository(id);
 
 		if (!success) {
 			return NextResponse.json({ error: "Repository not found" }, { status: 404 });
@@ -42,7 +51,8 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
 		return NextResponse.json({ success: true });
 	} catch (error) {
-		console.error(`Error deleting repository ${params.id}:`, error);
+		const { id } = await params;
+		console.error(`Error deleting repository ${id}:`, error);
 		return NextResponse.json({ error: "Failed to delete repository" }, { status: 500 });
 	}
 }
