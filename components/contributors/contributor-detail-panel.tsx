@@ -5,7 +5,18 @@ import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useContributor } from "@/lib/react-query/contributors";
 import { formatDate } from "@/lib/utils";
-import { Calendar, ExternalLink, GitBranch, GitCommit, GitPullRequest, Star } from "lucide-react";
+import {
+	Building,
+	Calendar,
+	ExternalLink,
+	GitBranch,
+	GitCommit,
+	GitPullRequest,
+	Link as LinkIcon,
+	MapPin,
+	Star,
+	Users,
+} from "lucide-react";
 
 interface ContributorDetailPanelProps {
 	contributorId: string | null;
@@ -96,6 +107,88 @@ export function ContributorDetailPanel({ contributorId, isOpen, onOpenChange }: 
 									<div className="mt-1 text-sm font-medium">
 										{formatDate(selectedContributor.lastActive)}
 									</div>
+								</div>
+							</div>
+
+							{/* Personal Information */}
+							<div>
+								<h3 className="text-md font-medium mb-3">Personal Information</h3>
+								<div className="space-y-3 bg-muted/30 rounded-lg p-4">
+									{selectedContributor.location && (
+										<div className="flex items-center gap-2">
+											<MapPin className="h-4 w-4 text-muted-foreground" />
+											<span className="text-sm">{selectedContributor.location}</span>
+										</div>
+									)}
+
+									{selectedContributor.socialLinks && (
+										<div className="flex items-start gap-2">
+											<LinkIcon className="h-4 w-4 text-muted-foreground mt-0.5" />
+											<div className="flex flex-col gap-1">
+												{selectedContributor.socialLinks.github && (
+													<a
+														href={selectedContributor.socialLinks.github}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-sm text-primary hover:underline"
+													>
+														GitHub
+													</a>
+												)}
+												{selectedContributor.socialLinks.twitter && (
+													<a
+														href={selectedContributor.socialLinks.twitter}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-sm text-primary hover:underline"
+													>
+														Twitter
+													</a>
+												)}
+												{selectedContributor.socialLinks.linkedin && (
+													<a
+														href={selectedContributor.socialLinks.linkedin}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-sm text-primary hover:underline"
+													>
+														LinkedIn
+													</a>
+												)}
+												{selectedContributor.socialLinks.website && (
+													<a
+														href={selectedContributor.socialLinks.website}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-sm text-primary hover:underline"
+													>
+														Website
+													</a>
+												)}
+											</div>
+										</div>
+									)}
+
+									{selectedContributor.organizations &&
+										selectedContributor.organizations.length > 0 && (
+											<div className="flex items-start gap-2">
+												<Building className="h-4 w-4 text-muted-foreground mt-0.5" />
+												<div className="flex flex-col gap-1">
+													{selectedContributor.organizations.map((org, index) => (
+														<span key={index} className="text-sm">
+															{org}
+														</span>
+													))}
+												</div>
+											</div>
+										)}
+
+									{selectedContributor.followers !== undefined && (
+										<div className="flex items-center gap-2">
+											<Users className="h-4 w-4 text-muted-foreground" />
+											<span className="text-sm">{selectedContributor.followers} followers</span>
+										</div>
+									)}
 								</div>
 							</div>
 
