@@ -45,9 +45,7 @@ export default function SegmentPage({ params }: { params: { id: string } }) {
 				<Card className="bg-red-50">
 					<CardHeader>
 						<CardTitle className="text-red-600">Error</CardTitle>
-						<CardDescription>
-							{error ? error.message : "Segment not found"}
-						</CardDescription>
+						<CardDescription>{error ? error.message : "Segment not found"}</CardDescription>
 					</CardHeader>
 				</Card>
 			</div>
@@ -56,37 +54,24 @@ export default function SegmentPage({ params }: { params: { id: string } }) {
 
 	return (
 		<div className="container mx-auto py-6">
-			<div className="mb-6">
-				<Link href="/segments" passHref>
-					<Button variant="outline">
-						<ArrowLeft className="h-4 w-4 mr-2" />
-						Back to Segments
-					</Button>
-				</Link>
-			</div>
-
 			<div className="grid gap-6">
 				<Card>
-					<CardHeader>
-						<CardTitle>{segment.name}</CardTitle>
-						<CardDescription>{segment.description}</CardDescription>
-					</CardHeader>
 					<CardContent>
 						<div className="grid grid-cols-2 gap-4">
 							<div>
 								<h3 className="text-lg font-semibold mb-2">Contributors</h3>
-								{segment.contributors && segment.contributors.length > 0 ? (
+								{segment.github_user_logins && segment.github_user_logins.length > 0 ? (
 									<ul className="list-disc pl-5">
-										{segment.contributors.map((githubLogin: string) => (
+										{segment.github_user_logins.map((githubLogin: string) => (
 											<li key={githubLogin}>
-												<a 
-													href={`https://github.com/${githubLogin}`} 
-													target="_blank" 
+												<a
+													href={`https://github.com/${githubLogin}`}
+													target="_blank"
 													rel="noopener noreferrer"
 													className="text-blue-600 hover:underline flex items-center"
 												>
-													<img 
-														src={`https://github.com/${githubLogin}.png`} 
+													<img
+														src={`https://github.com/${githubLogin}.png`}
 														alt={`${githubLogin}'s avatar`}
 														className="w-6 h-6 rounded-full mr-2"
 													/>
