@@ -18,9 +18,6 @@ export async function GET() {
         
         // Get repository IDs for the authenticated user's segments
         const repoIds = await getAuthenticatedUserRepositoryIds();
-        
-        // Get developer activity data
-        console.log("repoIds", repoIds);
         const developerActivity = await getDeveloperActivity(repoIds);
         
         return NextResponse.json(developerActivity);

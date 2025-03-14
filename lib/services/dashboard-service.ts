@@ -10,8 +10,6 @@ export interface DashboardKPI {
 	totalReposGrowth: number;
 	totalCommits: number;
 	totalCommitsGrowth: number;
-	totalProjects: number;
-	totalProjectsGrowth: number;
 }
 
 export interface DeveloperActivity {
@@ -58,52 +56,36 @@ export interface DevActivity {
 	reactivated: number;
 }
 
-export interface DashboardData {
-	kpis: DashboardKPI;
-	developerActivity: DeveloperActivity[];
-	commitsByDevType: CommitsByDevType[];
-	monthlyCommits: MonthlyCommits[];
-	monthlyPRsMerged: MonthlyPRsMerged[];
-	devActivity: DevActivity[];
-}
-
 // Dashboard service interface
 export interface DashboardService {
-	getDashboardData(): Promise<DashboardData>;
-	getDashboardKPIs(): Promise<DashboardKPI>;
+	getDashboardKPIs(repoIds?: number[]): Promise<DashboardKPI>;
 	getDeveloperActivity(repoIds: number[]): Promise<DeveloperActivity[]>;
-	getCommitsByDevType(): Promise<CommitsByDevType[]>;
-	getMonthlyCommits(): Promise<MonthlyCommits[]>;
-	getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]>;
-	getDevActivity(): Promise<DevActivity[]>;
+	getCommitsByDevType(repoIds?: number[]): Promise<CommitsByDevType[]>;
+	getMonthlyCommits(repoIds?: number[]): Promise<MonthlyCommits[]>;
+	getMonthlyPRsMerged(repoIds?: number[]): Promise<MonthlyPRsMerged[]>;
+	getDevActivity(repoIds?: string[]): Promise<DevActivity[]>;
 }
 
-
-// Export functions that use the storage directly
-export async function getDashboardData(): Promise<DashboardData> {
-	return getDashboardStorage().getDashboardData();
-}
-
-export async function getDashboardKPIs(): Promise<DashboardKPI> {
-	return getDashboardStorage().getDashboardKPIs();
+export async function getDashboardKPIs(repoIds: number[] = []): Promise<DashboardKPI> {
+	return getDashboardStorage().getDashboardKPIs(repoIds);
 }
 
 export async function getDeveloperActivity(repoIds: number[]): Promise<DeveloperActivity[]> {
 	return getDashboardStorage().getDeveloperActivity(repoIds);
 }
 
-export async function getCommitsByDevType(): Promise<CommitsByDevType[]> {
-	return getDashboardStorage().getCommitsByDevType();
+export async function getCommitsByDevType(repoIds: number[] = []): Promise<CommitsByDevType[]> {
+	return getDashboardStorage().getCommitsByDevType(repoIds);
 }
 
-export async function getMonthlyCommits(): Promise<MonthlyCommits[]> {
-	return getDashboardStorage().getMonthlyCommits();
+export async function getMonthlyCommits(repoIds: number[] = []): Promise<MonthlyCommits[]> {
+	return getDashboardStorage().getMonthlyCommits(repoIds);
 }
 
-export async function getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]> {
-	return getDashboardStorage().getMonthlyPRsMerged();
+export async function getMonthlyPRsMerged(repoIds: number[] = []): Promise<MonthlyPRsMerged[]> {
+	return getDashboardStorage().getMonthlyPRsMerged(repoIds);
 }
 
-export async function getDevActivity(): Promise<DevActivity[]> {
-	return getDashboardStorage().getDevActivity();
+export async function getDevActivity(repoIds?: string[]): Promise<DevActivity[]> {
+	return getDashboardStorage().getDevActivity(repoIds);
 }

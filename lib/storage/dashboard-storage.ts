@@ -1,26 +1,23 @@
 import {
 	CommitsByDevType,
-	DashboardData,
 	DashboardKPI,
 	DevActivity,
 	DeveloperActivity,
-	DeveloperLocation,
 	MonthlyCommits,
 	MonthlyPRsMerged,
 } from "@/lib/services/dashboard-service";
-import { DrizzleDashboardStorage } from "@/lib/storage/adapters/dashboard-storage-drizzle";
+import {DrizzleDashboardStorage} from "@/lib/storage/adapters/dashboard-storage-drizzle";
 
 /**
  * Interface for accessing dashboard data from storage
  */
 export interface DashboardStorage {
-	getDashboardData(): Promise<DashboardData>;
-	getDashboardKPIs(): Promise<DashboardKPI>;
+	getDashboardKPIs(repoIds?: number[]): Promise<DashboardKPI>;
 	getDeveloperActivity(repoIds?: number[]): Promise<DeveloperActivity[]>;
-	getCommitsByDevType(): Promise<CommitsByDevType[]>;
-	getMonthlyCommits(): Promise<MonthlyCommits[]>;
-	getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]>;
-	getDevActivity(): Promise<DevActivity[]>;
+	getCommitsByDevType(repoIds?: number[]): Promise<CommitsByDevType[]>;
+	getMonthlyCommits(repoIds?: number[]): Promise<MonthlyCommits[]>;
+	getMonthlyPRsMerged(repoIds?: number[]): Promise<MonthlyPRsMerged[]>;
+	getDevActivity(repoIds?: string[]): Promise<DevActivity[]>;
 }
 
 // Create a singleton instance using Drizzle implementation

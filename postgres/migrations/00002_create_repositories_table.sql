@@ -28,3 +28,4 @@ BEFORE UPDATE ON repositories
 FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 create type user_type as enum ('ONE_TIME', 'PART_TIME', 'FULL_TIME');
+create type activity_status as enum ('NEW', 'CHURNED', 'REACTIVATED', 'ACTIVE');

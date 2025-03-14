@@ -1,7 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import {useQuery} from "@tanstack/react-query";
 import {
     CommitsByDevType,
-    DashboardData,
     DashboardKPI,
     DevActivity,
     DeveloperActivity,
@@ -12,7 +11,6 @@ import {
 // Query keys for dashboard
 export const dashboardKeys = {
     all: ["dashboard"] as const,
-    data: () => [...dashboardKeys.all, "data"] as const,
     kpis: () => [...dashboardKeys.all, "kpis"] as const,
     developerActivity: () => [...dashboardKeys.all, "developerActivity"] as const,
     devActivity: () => [...dashboardKeys.all, "devActivity"] as const,
@@ -20,15 +18,6 @@ export const dashboardKeys = {
     monthlyCommits: () => [...dashboardKeys.all, "monthlyCommits"] as const,
     monthlyPRsMerged: () => [...dashboardKeys.all, "monthlyPRsMerged"] as const,
 };
-
-// Fetch functions
-async function fetchDashboardData(): Promise<DashboardData> {
-    const response = await fetch("/api/dashboard");
-    if (!response.ok) {
-        throw new Error("Failed to fetch dashboard data");
-    }
-    return response.json();
-}
 
 async function fetchDashboardKPIs(): Promise<DashboardKPI> {
     const response = await fetch("/api/dashboard/kpis");
@@ -78,14 +67,6 @@ async function fetchMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]> {
     return response.json();
 }
 
-// Hooks
-export function useDashboardData() {
-    return useQuery({
-        queryKey: dashboardKeys.data(),
-        queryFn: fetchDashboardData,
-    });
-}
-
 export function useDashboardKPIs() {
     return useQuery({
         queryKey: dashboardKeys.kpis(),
@@ -126,4 +107,4 @@ export function useMonthlyPRsMerged() {
         queryKey: dashboardKeys.monthlyPRsMerged(),
         queryFn: fetchMonthlyPRsMerged,
     });
-} 
+}
