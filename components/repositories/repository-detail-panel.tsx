@@ -15,21 +15,26 @@ interface RepositoryDetailPanelProps {
 
 export function RepositoryDetailPanel({ repositoryId, isOpen, onOpenChange }: RepositoryDetailPanelProps) {
 	// Fetch selected repository details
-	const { data: selectedRepository, isLoading: isLoadingDetails } = useRepository(repositoryId || "");
+	const { data: selectedRepository, isLoading: isLoadingDetails } = useRepository(repositoryId ?? "", {
+		enabled: !!repositoryId && isOpen,
+	});
 
 	return (
 		<Sheet open={isOpen} onOpenChange={onOpenChange}>
 			<SheetContent className="sm:max-w-md md:max-w-lg overflow-y-auto">
 				{isLoadingDetails ? (
-					<div className="flex flex-col gap-4 mt-8">
-						<div className="h-6 bg-muted rounded animate-pulse w-2/3"></div>
-						<div className="h-4 bg-muted rounded animate-pulse w-full"></div>
-						<div className="h-20 bg-muted rounded animate-pulse w-full mt-4"></div>
-						<div className="grid grid-cols-2 gap-4 mt-4">
-							<div className="h-16 bg-muted rounded animate-pulse"></div>
-							<div className="h-16 bg-muted rounded animate-pulse"></div>
+					<>
+						<SheetTitle className="sr-only">Loading...</SheetTitle>
+						<div className="flex flex-col gap-4 mt-8">
+							<div className="h-6 bg-muted rounded animate-pulse w-2/3"></div>
+							<div className="h-4 bg-muted rounded animate-pulse w-full"></div>
+							<div className="h-20 bg-muted rounded animate-pulse w-full mt-4"></div>
+							<div className="grid grid-cols-2 gap-4 mt-4">
+								<div className="h-16 bg-muted rounded animate-pulse"></div>
+								<div className="h-16 bg-muted rounded animate-pulse"></div>
+							</div>
 						</div>
-					</div>
+					</>
 				) : selectedRepository ? (
 					<>
 						<SheetHeader className="mb-6">

@@ -1,6 +1,6 @@
 import { Repository, RepositorySort } from "@/lib/services/repositories-service";
 import { RepositorySublist } from "@/lib/services/repository-sublists-service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 
 // Filter interface for repositories
 export interface RepositoryFilter {
@@ -152,11 +152,18 @@ export function useRepositories(filter?: RepositoryFilter, sort?: RepositorySort
 	});
 }
 
-export function useRepository(id: string) {
+export function useRepository(
+	id: string,
+	options?: Omit<
+		UseQueryOptions<Repository, Error, Repository, ReturnType<typeof repositoryKeys.details>>,
+		"queryKey" | "queryFn"
+	>
+) {
 	return useQuery({
 		queryKey: repositoryKeys.details(id),
 		queryFn: () => fetchRepository(id),
 		enabled: !!id,
+		...options,
 	});
 }
 
