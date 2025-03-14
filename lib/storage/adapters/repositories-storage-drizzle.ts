@@ -176,7 +176,7 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 					   coalesce(iss.open_count, 0)       as open_issue_count,
 					   coalesce(cs.commit_count, 0)      as commit_count,
 					   coalesce(cs.contributor_count, 0) as contributor_count,
-					   r.updated_at                      as last_updated_at
+					   j.finished_at                     as last_updated_at
 				from segment_repositories sr
 				join indexer_exp.github_repos r on r.html_url = sr.repository_url
 						 left join indexer.repo_public_events_indexing_jobs j on j.repo_owner = r.owner_login and j.repo_name = r.name
