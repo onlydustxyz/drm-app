@@ -1,35 +1,47 @@
-import { Repository } from "@/lib/services/repositories-service";
+import { Repository, RepositorySort } from "@/lib/services/repositories-service";
 import { RepositorySublist } from "@/lib/services/repository-sublists-service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Filter interface for repositories
 export interface RepositoryFilter {
 	names?: string[];
+	search?: string;
 }
 
-// Keys for React Query caching
-export const repositoryKeys = {
+// Query keys for repositories
+const repositoryKeys = {
 	all: ["repositories"] as const,
 	lists: () => [...repositoryKeys.all, "list"] as const,
-	list: (filters: RepositoryFilter = {}) => [...repositoryKeys.lists(), { filters }] as const,
-	details: (id: string) => [...repositoryKeys.all, "detail", id] as const,
-	sublists: {
-		all: ["repository-sublists"] as const,
-		lists: () => [...repositoryKeys.sublists.all, "list"] as const,
-		list: (filters: string) => [...repositoryKeys.sublists.lists(), { filters }] as const,
-		details: (id: string) => [...repositoryKeys.sublists.all, "detail", id] as const,
-		activity: (id: string) => [...repositoryKeys.sublists.all, "activity", id] as const,
-		retention: (id: string) => [...repositoryKeys.sublists.all, "retention", id] as const,
-	},
+	list: (filters: RepositoryFilter) => [...repositoryKeys.lists(), filters] as const,
+	details: (repositoryId: string) => [...repositoryKeys.all, "detail", repositoryId] as const,
+};
+
+// Query keys for repository sublists
+const repositorySublistKeys = {
+	all: ["repository-sublists"] as const,
+	lists: () => [...repositorySublistKeys.all, "list"] as const,
+	list: (filters: any) => [...repositorySublistKeys.lists(), filters] as const,
+	details: (sublistId: string) => [...repositorySublistKeys.all, "detail", sublistId] as const,
 };
 
 // API Client functions
-async function fetchRepositories(filter: RepositoryFilter = {}): Promise<Repository[]> {
+async function fetchRepositories(filter: RepositoryFilter = {}, sort?: RepositorySort): Promise<Repository[]> {
 	// Build URL with query parameters
 	const url = new URL("/api/repositories", window.location.origin);
 
+	// Add filter parameters
 	if (filter.names && filter.names.length > 0) {
 		url.searchParams.append("names", filter.names.join(","));
+	}
+
+	if (filter.search) {
+		url.searchParams.append("search", filter.search);
+	}
+
+	// Add sort parameters
+	if (sort) {
+		url.searchParams.append("sortBy", sort.field);
+		url.searchParams.append("sortDirection", sort.direction);
 	}
 
 	const response = await fetch(url.toString());
@@ -133,10 +145,10 @@ async function createRepositorySublistMutation(
 }
 
 // Hooks
-export function useRepositories(filter?: RepositoryFilter) {
+export function useRepositories(filter?: RepositoryFilter, sort?: RepositorySort) {
 	return useQuery({
-		queryKey: repositoryKeys.list(filter || {}),
-		queryFn: () => fetchRepositories(filter),
+		queryKey: [...repositoryKeys.lists(), filter, sort],
+		queryFn: () => fetchRepositories(filter, sort),
 	});
 }
 
@@ -185,14 +197,14 @@ export function useDeleteRepository() {
 
 export function useRepositorySublists() {
 	return useQuery({
-		queryKey: repositoryKeys.sublists.lists(),
+		queryKey: repositorySublistKeys.lists(),
 		queryFn: fetchRepositorySublists,
 	});
 }
 
 export function useRepositorySublist(id: string) {
 	return useQuery({
-		queryKey: repositoryKeys.sublists.details(id),
+		queryKey: repositorySublistKeys.details(id),
 		queryFn: () => fetchRepositorySublist(id),
 		enabled: !!id,
 	});
@@ -204,7 +216,7 @@ export function useCreateRepositorySublist() {
 	return useMutation({
 		mutationFn: createRepositorySublistMutation,
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: repositoryKeys.sublists.lists() });
+			queryClient.invalidateQueries({ queryKey: repositorySublistKeys.lists() });
 		},
 	});
 }

@@ -1,17 +1,51 @@
-import { createRepository, getRepositories } from "@/lib/services/repositories-service";
+import {
+	RepositoryFilter,
+	RepositorySort,
+	createRepository,
+	getRepositories,
+} from "@/lib/services/repositories-service";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
 	try {
 		// Get the search parameters from the request URL
 		const searchParams = request.nextUrl.searchParams;
-		const namesParam = searchParams.get("names");
+
+		// Build filter parameters
+		const filter: RepositoryFilter = {};
 
 		// Parse names if provided (comma-separated list)
-		const names = namesParam ? namesParam.split(",") : undefined;
+		const namesParam = searchParams.get("names");
+		if (namesParam) {
+			filter.names = namesParam.split(",");
+		}
 
-		// Pass the filter parameters to getRepositories
-		const repositories = await getRepositories(names && names.length > 0 ? { names } : undefined);
+		// Parse text search parameter
+		const search = searchParams.get("search");
+		if (search) {
+			filter.search = search;
+		}
+
+		// Build sort parameters
+		let sort: RepositorySort | undefined;
+		const sortField = searchParams.get("sortBy");
+		const sortDirection = searchParams.get("sortDirection");
+
+		if (sortField) {
+			// Validate sort field
+			const validSortFields = ["name", "stars", "forks", "updated_at", "created_at"];
+			const field = validSortFields.includes(sortField as any)
+				? (sortField as "name" | "stars" | "forks" | "updated_at" | "created_at")
+				: "name";
+
+			// Validate sort direction
+			const direction = sortDirection === "desc" ? "desc" : "asc";
+
+			sort = { field, direction };
+		}
+
+		// Fetch repositories with filter and sort
+		const repositories = await getRepositories(Object.keys(filter).length > 0 ? filter : undefined, sort);
 
 		return NextResponse.json(repositories);
 	} catch (error) {

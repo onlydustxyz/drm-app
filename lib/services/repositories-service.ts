@@ -19,6 +19,17 @@ export interface Repository {
 	contributors: number;
 }
 
+// Filter and sort parameters interface
+export interface RepositoryFilter {
+	names?: string[];
+	search?: string; // Text search across name and description
+}
+
+export interface RepositorySort {
+	field: "name" | "stars" | "forks" | "updated_at" | "created_at";
+	direction: "asc" | "desc";
+}
+
 // Mock data implementation
 const mockRepositories: Repository[] = [
 	{
@@ -110,7 +121,7 @@ const mockRepositories: Repository[] = [
 
 // Repositories service interface
 export interface RepositoriesService {
-	getRepositories(filter?: { names?: string[] }): Promise<Repository[]>;
+	getRepositories(filter?: RepositoryFilter, sort?: RepositorySort): Promise<Repository[]>;
 	getRepository(id: string): Promise<Repository | undefined>;
 	createRepository(repository: Omit<Repository, "id">): Promise<Repository>;
 	updateRepository(id: string, repository: Partial<Omit<Repository, "id">>): Promise<Repository | undefined>;
@@ -119,15 +130,68 @@ export interface RepositoriesService {
 
 // Mock implementation of the repositories service
 export class MockRepositoriesService implements RepositoriesService {
-	async getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
+	async getRepositories(filter?: RepositoryFilter, sort?: RepositorySort): Promise<Repository[]> {
 		// Simulate API delay
 		await new Promise((resolve) => setTimeout(resolve, 500));
 
 		// Return mock data with optional filtering
 		let result = [...mockRepositories];
 
+		// Filter by names
 		if (filter?.names && filter.names.length > 0) {
 			result = result.filter((repo) => filter.names!.includes(repo.name));
+		}
+
+		// Text search in name and description
+		if (filter?.search) {
+			const searchLower = filter.search.toLowerCase();
+			result = result.filter(
+				(repo) =>
+					repo.name.toLowerCase().includes(searchLower) ||
+					repo.description.toLowerCase().includes(searchLower)
+			);
+		}
+
+		// Apply sorting
+		if (sort) {
+			result.sort((a, b) => {
+				let aVal, bVal;
+
+				switch (sort.field) {
+					case "name":
+						aVal = a.name;
+						bVal = b.name;
+						break;
+					case "stars":
+						aVal = a.stars;
+						bVal = b.stars;
+						break;
+					case "forks":
+						aVal = a.forks;
+						bVal = b.forks;
+						break;
+					case "updated_at":
+						aVal = new Date(a.last_updated_at).getTime();
+						bVal = new Date(b.last_updated_at).getTime();
+						break;
+					case "created_at":
+						// For mock data we don't have created_at field, so using last_updated_at as fallback
+						aVal = new Date(a.last_updated_at).getTime();
+						bVal = new Date(b.last_updated_at).getTime();
+						break;
+					default:
+						aVal = a.name;
+						bVal = b.name;
+				}
+
+				const modifier = sort.direction === "desc" ? -1 : 1;
+
+				if (typeof aVal === "string") {
+					return modifier * aVal.localeCompare(bVal as string);
+				} else {
+					return modifier * ((aVal as number) - (bVal as number));
+				}
+			});
 		}
 
 		return result;
@@ -193,9 +257,9 @@ export class MockRepositoriesService implements RepositoriesService {
 }
 
 export class RepositoriesService implements RepositoriesService {
-	async getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
+	async getRepositories(filter?: RepositoryFilter, sort?: RepositorySort): Promise<Repository[]> {
 		const storage = getRepositoriesStorage();
-		return storage.getRepositories(filter);
+		return storage.getRepositories(filter, sort);
 	}
 
 	async getRepository(id: string): Promise<Repository | undefined> {
@@ -224,8 +288,8 @@ const repositoriesService: RepositoriesService =
 	process.env.NODE_ENV === "production" ? new RepositoriesService() : new MockRepositoriesService();
 
 // Export functions that use the service
-export async function getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
-	return repositoriesService.getRepositories(filter);
+export async function getRepositories(filter?: RepositoryFilter, sort?: RepositorySort): Promise<Repository[]> {
+	return repositoriesService.getRepositories(filter, sort);
 }
 
 export async function getRepository(id: string): Promise<Repository | undefined> {

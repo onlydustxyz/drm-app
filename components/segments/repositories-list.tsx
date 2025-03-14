@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RepositoryFilter, useRepositories } from "@/lib/react-query/repositories";
-import { Repository } from "@/lib/services/repositories-service";
+import { Repository, RepositorySort } from "@/lib/services/repositories-service";
 import { formatDate } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -14,71 +14,79 @@ interface RepositoriesListProps {
 }
 
 export function RepositoriesList({ names }: RepositoriesListProps) {
+	// State for search and sort
+	const [searchQuery, setSearchQuery] = useState("");
+	const [sort, setSort] = useState<RepositorySort | undefined>();
+
+	// Debounced search query for API requests
+	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+	// Debounce search query to avoid too many API requests
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			setDebouncedSearchQuery(searchQuery);
+		}, 300);
+
+		return () => clearTimeout(timeoutId);
+	}, [searchQuery]);
+
+	// Build filter parameters for the API
 	const filter: RepositoryFilter = {};
 	if (names && names.length > 0) filter.names = names;
+	if (debouncedSearchQuery) filter.search = debouncedSearchQuery;
 
-	const { data: repositories = [], isLoading, error } = useRepositories(filter);
-
-	const [filteredRepositories, setFilteredRepositories] = useState<Repository[]>([]);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [sortConfig, setSortConfig] = useState<{
-		key: keyof Repository | null;
-		direction: "ascending" | "descending";
-	}>({ key: null, direction: "descending" });
-
-	// Set initial filtered repositories when data loads
-	useEffect(() => {
-		if (repositories.length > 0) {
-			setFilteredRepositories(repositories);
-		}
-	}, [repositories]);
-
-	// Apply search filter
-	useEffect(() => {
-		if (repositories.length === 0) return;
-
-		let filtered = [...repositories];
-
-		// Apply search filter
-		if (searchQuery.trim() !== "") {
-			const lowercaseQuery = searchQuery.toLowerCase();
-			filtered = filtered.filter(
-				(repository) =>
-					repository.name.toLowerCase().includes(lowercaseQuery) ||
-					repository.description.toLowerCase().includes(lowercaseQuery)
-			);
-		}
-
-		setFilteredRepositories(filtered);
-	}, [searchQuery, repositories]);
+	// Fetch repositories with API-based filtering and sorting
+	const { data: repositories = [], isLoading, error } = useRepositories(filter, sort);
 
 	// Handle sorting
 	const requestSort = (key: keyof Repository) => {
-		let direction: "ascending" | "descending" = "ascending";
+		// Map component sort fields to API sort fields
+		const apiSortFieldMap: Record<string, any> = {
+			name: "name",
+			stars: "stars",
+			forks: "forks",
+			last_updated_at: "updated_at",
+		};
 
-		if (sortConfig.key === key && sortConfig.direction === "ascending") {
-			direction = "descending";
+		// Only use sortable fields that the API supports
+		if (!apiSortFieldMap[key]) {
+			// For fields not supported by the API, we won't do anything
+			// Fields like prMerged, prOpened, etc. are not sortable via API
+			return;
 		}
 
-		setSortConfig({ key, direction });
+		const apiSortField = apiSortFieldMap[key] as "name" | "stars" | "forks" | "updated_at" | "created_at";
 
-		const sortedData = [...filteredRepositories].sort((a, b) => {
-			if (a[key] < b[key]) {
-				return direction === "ascending" ? -1 : 1;
-			}
-			if (a[key] > b[key]) {
-				return direction === "ascending" ? 1 : -1;
-			}
-			return 0;
-		});
-
-		setFilteredRepositories(sortedData);
+		// Toggle sort direction or set initial sort
+		if (sort && sort.field === apiSortField) {
+			// Toggle direction if same field
+			setSort({
+				field: apiSortField,
+				direction: sort.direction === "asc" ? "desc" : "asc",
+			});
+		} else {
+			// Default to descending for new sort field
+			setSort({
+				field: apiSortField,
+				direction: "desc",
+			});
+		}
 	};
 
 	// Get sort direction indicator
 	const getSortDirectionIndicator = (key: keyof Repository) => {
-		if (sortConfig.key !== key) return null;
-		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
+		// Map component fields to API fields
+		const apiFieldMap: Record<string, any> = {
+			name: "name",
+			stars: "stars",
+			forks: "forks",
+			last_updated_at: "updated_at",
+		};
+
+		const apiField = apiFieldMap[key];
+
+		if (!apiField || !sort || sort.field !== apiField) return null;
+		return sort.direction === "asc" ? " ↑" : " ↓";
 	};
 
 	return (
@@ -193,14 +201,14 @@ export function RepositoriesList({ names }: RepositoriesListProps) {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{filteredRepositories.length === 0 ? (
+								{repositories.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={8} className="h-24 text-center">
 											No repositories found.
 										</TableCell>
 									</TableRow>
 								) : (
-									filteredRepositories.map((repo) => (
+									repositories.map((repo) => (
 										<TableRow key={repo.id}>
 											<TableCell className="font-medium">
 												<div className="flex flex-col">
