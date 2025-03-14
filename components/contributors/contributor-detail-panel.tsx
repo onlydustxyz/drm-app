@@ -9,6 +9,7 @@ import {
 	Building,
 	Calendar,
 	ExternalLink,
+	FolderGit,
 	GitBranch,
 	GitCommit,
 	GitPullRequest,
@@ -17,6 +18,7 @@ import {
 	Star,
 	Users,
 } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 interface ContributorDetailPanelProps {
 	contributorId: string | null;
@@ -24,11 +26,30 @@ interface ContributorDetailPanelProps {
 	onOpenChange: (open: boolean) => void;
 }
 
+// Define types for the activity data
+interface WeeklyActivity {
+	week: number;
+	commits: number;
+	prs: number;
+}
+
 export function ContributorDetailPanel({ contributorId, isOpen, onOpenChange }: ContributorDetailPanelProps) {
 	// Fetch selected contributor details
 	const { data: selectedContributor, isLoading: isLoadingDetails } = useContributor(contributorId ?? "", {
 		enabled: !!contributorId && isOpen,
 	});
+
+	// Sample weekly activity data - replace with actual data from API when available
+	const weeklyActivityData: WeeklyActivity[] = [
+		{ week: 1, commits: 12, prs: 3 },
+		{ week: 2, commits: 8, prs: 2 },
+		{ week: 3, commits: 15, prs: 4 },
+		{ week: 4, commits: 10, prs: 1 },
+		{ week: 5, commits: 5, prs: 2 },
+		{ week: 6, commits: 7, prs: 2 },
+		{ week: 7, commits: 13, prs: 3 },
+		{ week: 8, commits: 9, prs: 1 },
+	];
 
 	return (
 		<Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -85,28 +106,101 @@ export function ContributorDetailPanel({ contributorId, isOpen, onOpenChange }: 
 							</div>
 
 							{/* Overview Stats */}
-							<div className="grid grid-cols-2 gap-4">
-								<div className="bg-muted/50 rounded-lg p-4 flex flex-col items-center justify-center text-center">
-									<GitPullRequest className="h-6 w-6 mb-2 text-primary" />
-									<div className="text-sm text-muted-foreground">PRs Merged</div>
-									<div className="mt-1 text-lg font-semibold">{selectedContributor.prMerged}</div>
+							<div className="grid grid-cols-3 gap-3">
+								<div className="bg-muted/50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+									<GitCommit className="h-5 w-5 mb-1 text-primary" />
+									<div className="text-xs text-muted-foreground">Commits</div>
+									<div className="text-base font-semibold">{selectedContributor.commits}</div>
 								</div>
-								<div className="bg-muted/50 rounded-lg p-4 flex flex-col items-center justify-center text-center">
-									<GitCommit className="h-6 w-6 mb-2 text-primary" />
-									<div className="text-sm text-muted-foreground">Commits</div>
-									<div className="mt-1 text-lg font-semibold">{selectedContributor.commits}</div>
+								<div className="bg-muted/50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+									<GitPullRequest className="h-5 w-5 mb-1 text-primary" />
+									<div className="text-xs text-muted-foreground">PRs Merged</div>
+									<div className="text-base font-semibold">{selectedContributor.prMerged}</div>
 								</div>
-								<div className="bg-muted/50 rounded-lg p-4 flex flex-col items-center justify-center text-center">
-									<Star className="h-6 w-6 mb-2 text-amber-500" />
-									<div className="text-sm text-muted-foreground">Stars</div>
-									<div className="mt-1 text-lg font-semibold">{selectedContributor.stars}</div>
+								<div className="bg-muted/50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+									<GitPullRequest className="h-5 w-5 mb-1 text-yellow-500" />
+									<div className="text-xs text-muted-foreground">Open PRs</div>
+									<div className="text-base font-semibold">
+										{(selectedContributor as any)?.openPRs || 0}
+									</div>
 								</div>
-								<div className="bg-muted/50 rounded-lg p-4 flex flex-col items-center justify-center text-center">
-									<Calendar className="h-6 w-6 mb-2 text-blue-500" />
-									<div className="text-sm text-muted-foreground">Last Active</div>
-									<div className="mt-1 text-sm font-medium">
+								<div className="bg-muted/50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+									<FolderGit className="h-5 w-5 mb-1 text-green-500" />
+									<div className="text-xs text-muted-foreground">Repositories</div>
+									<div className="text-base font-semibold">
+										{selectedContributor.repositories?.length || 0}
+									</div>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+									<Star className="h-5 w-5 mb-1 text-amber-500" />
+									<div className="text-xs text-muted-foreground">Stars</div>
+									<div className="text-base font-semibold">{selectedContributor.stars}</div>
+								</div>
+								<div className="bg-muted/50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+									<Calendar className="h-5 w-5 mb-1 text-blue-500" />
+									<div className="text-xs text-muted-foreground">Last Active</div>
+									<div className="text-xs font-medium">
 										{formatDate(selectedContributor.lastActive)}
 									</div>
+								</div>
+							</div>
+
+							{/* Activity Graph */}
+							<div>
+								<h3 className="text-md font-medium mb-3">Activity Trends</h3>
+								<div className="bg-muted/30 rounded-lg p-4">
+									<ResponsiveContainer width="100%" height={200}>
+										<AreaChart
+											data={weeklyActivityData}
+											margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+										>
+											<defs>
+												<linearGradient id="colorCommits" x1="0" y1="0" x2="0" y2="1">
+													<stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+													<stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+												</linearGradient>
+												<linearGradient id="colorPRs" x1="0" y1="0" x2="0" y2="1">
+													<stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+													<stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+												</linearGradient>
+											</defs>
+											<XAxis
+												dataKey="week"
+												tick={{ fontSize: 12 }}
+												tickFormatter={(week) => `W${week}`}
+											/>
+											<YAxis tick={{ fontSize: 12 }} />
+											<CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+											<Tooltip
+												contentStyle={{
+													backgroundColor: "hsl(var(--card))",
+													borderColor: "hsl(var(--border))",
+													borderRadius: "0.5rem",
+												}}
+											/>
+											<Legend
+												wrapperStyle={{ paddingTop: "10px" }}
+												iconType="circle"
+												fontSize={12}
+											/>
+											<Area
+												type="monotone"
+												dataKey="commits"
+												name="Commits"
+												stroke="#3b82f6"
+												fillOpacity={1}
+												fill="url(#colorCommits)"
+											/>
+											<Area
+												type="monotone"
+												dataKey="prs"
+												name="PRs Merged"
+												stroke="#10b981"
+												fillOpacity={1}
+												fill="url(#colorPRs)"
+											/>
+										</AreaChart>
+									</ResponsiveContainer>
 								</div>
 							</div>
 
@@ -120,6 +214,18 @@ export function ContributorDetailPanel({ contributorId, isOpen, onOpenChange }: 
 											<span className="text-sm">{selectedContributor.location}</span>
 										</div>
 									)}
+
+									<div className="flex items-center gap-2">
+										<ExternalLink className="h-4 w-4 text-muted-foreground" />
+										<a
+											href={`https://github.com/${selectedContributor.handle}`}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="text-sm text-primary hover:underline"
+										>
+											GitHub Profile
+										</a>
+									</div>
 
 									{selectedContributor.socialLinks && (
 										<div className="flex items-start gap-2">
