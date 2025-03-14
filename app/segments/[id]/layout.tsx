@@ -7,21 +7,24 @@ import { useSegment } from "@/lib/react-query/segments";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { use } from "react";
 
 export default function SegmentDetailLayout({
 	children,
 	params,
 }: {
 	children: React.ReactNode;
-	params: { id: string };
+	params: Promise<{ id: string }>;
 }) {
-	const { data: segment, isLoading } = useSegment(params.id);
+	// Use React's `use` function to handle the Promise in client component
+	const resolvedParams = use(params);
+	const { data: segment, isLoading } = useSegment(resolvedParams.id);
 	const pathname = usePathname();
 	const router = useRouter();
 
 	// Function to determine which tab is active
 	const getActiveTab = () => {
-		if (pathname.endsWith(`/${params.id}`)) return "overview";
+		if (pathname.endsWith(`/${resolvedParams.id}`)) return "overview";
 		if (pathname.includes("/contributors")) return "contributors";
 		if (pathname.includes("/retention")) return "retention";
 		return "overview";
@@ -30,9 +33,9 @@ export default function SegmentDetailLayout({
 	// Function to handle tab change
 	const handleTabChange = (value: string) => {
 		if (value === "overview") {
-			router.push(`/segments/${params.id}`);
+			router.push(`/segments/${resolvedParams.id}`);
 		} else {
-			router.push(`/segments/${params.id}/${value}`);
+			router.push(`/segments/${resolvedParams.id}/${value}`);
 		}
 	};
 

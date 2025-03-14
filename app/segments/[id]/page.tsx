@@ -6,9 +6,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSegment } from "@/lib/react-query/segments";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { use } from "react";
 
-export default function SegmentPage({ params }: { params: { id: string } }) {
-	const { data: segment, isLoading, error } = useSegment(params.id);
+export default function SegmentPage({ params }: { params: Promise<{ id: string }> }) {
+	const resolvedParams = use(params);
+
+	const { data: segment, isLoading, error } = useSegment(resolvedParams.id);
 
 	if (isLoading) {
 		return (
