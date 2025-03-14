@@ -11,25 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import {
-	AlertCircle,
-	Building,
-	Code,
-	ExternalLink,
-	GitCommit,
-	Github,
-	Globe,
-	Linkedin,
-	Loader2,
-	MapPin,
-	Search,
-	SlidersHorizontal,
-	Twitter,
-} from "lucide-react";
+import { AlertCircle, Loader2, Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // API fetch functions
@@ -58,18 +43,6 @@ export default function ContributorsPage() {
 	// Selection states
 	const [selectedContributors, setSelectedContributors] = useState<string[]>([]);
 
-	// Add contributors by GitHub handles states
-	const [isAddContributorsDialogOpen, setIsAddContributorsDialogOpen] = useState(false);
-	const [githubHandles, setGithubHandles] = useState("");
-	const [importError, setImportError] = useState("");
-	const [importSuccess, setImportSuccess] = useState("");
-	const [selectedListsForNewContributors, setSelectedListsForNewContributors] = useState<string[]>([]);
-
-	const [newContributorsToAdd, setNewContributorsToAdd] = useState<Contributor[]>([]);
-
-	// Add new state for expanded rows
-	const [expandedRows, setExpandedRows] = useState<string[]>([]);
-
 	// Use React Query for data fetching
 	const {
 		data: contributors = [],
@@ -79,13 +52,6 @@ export default function ContributorsPage() {
 		queryKey: ["contributors"],
 		queryFn: fetchContributors,
 	});
-
-	// Toggle row expansion
-	const toggleRowExpansion = (contributorId: string) => {
-		setExpandedRows((prev) =>
-			prev.includes(contributorId) ? prev.filter((id) => id !== contributorId) : [...prev, contributorId]
-		);
-	};
 
 	// Apply all filters
 	useEffect(() => {
@@ -179,16 +145,6 @@ export default function ContributorsPage() {
 		} else {
 			setSelectedContributors(filteredContributors.map((c) => c.id));
 		}
-	};
-
-	// Handle adding contributors by GitHub handles
-	const handleAddContributors = () => {
-		setIsAddContributorsDialogOpen(true);
-		setGithubHandles("");
-		setImportError("");
-		setImportSuccess("");
-		setSelectedListsForNewContributors([]);
-		setNewContributorsToAdd([]);
 	};
 
 	// Check for loading and error states
@@ -390,221 +346,45 @@ export default function ContributorsPage() {
 									</TableRow>
 								) : (
 									filteredContributors.map((contributor) => (
-										<>
-											<TableRow
-												key={contributor.id}
-												className={
-													selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""
-												}
-												onClick={() => toggleRowExpansion(contributor.id)}
-												style={{ cursor: "pointer" }}
-											>
-												<TableCell onClick={(e) => e.stopPropagation()}>
-													<Checkbox
-														checked={selectedContributors.includes(contributor.id)}
-														onCheckedChange={() =>
-															toggleContributorSelection(contributor.id)
-														}
-														aria-label={`Select ${contributor.name}`}
-													/>
-												</TableCell>
-												<TableCell>
-													<div className="flex items-center gap-2">
-														<Avatar className="h-8 w-8">
-															<img src={contributor.avatar} alt={contributor.name} />
-														</Avatar>
-														<span className="font-medium">{contributor.name}</span>
-													</div>
-												</TableCell>
-												<TableCell>@{contributor.handle}</TableCell>
-												<TableCell>
-													<Badge variant="secondary">{contributor.type}</Badge>
-												</TableCell>
-												<TableCell>
-													<Badge variant="outline">{contributor.tenure}</Badge>
-												</TableCell>
-												<TableCell className="text-center">
-													<div className="flex items-center justify-center gap-1">
-														<span>{contributor.stars}</span>
-													</div>
-												</TableCell>
-												<TableCell className="text-center">{contributor.prMerged}</TableCell>
-												<TableCell className="text-center">{contributor.commits}</TableCell>
-												<TableCell className="text-right">
-													{formatDate(contributor.lastActive)}
-												</TableCell>
-											</TableRow>
-											{expandedRows.includes(contributor.id) && (
-												<TableRow className="bg-muted/20">
-													<TableCell colSpan={12} className="p-4">
-														<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-															<div>
-																<h3 className="text-lg font-medium mb-2">Profile</h3>
-																<div className="space-y-2">
-																	<div>
-																		<span className="text-sm text-muted-foreground">
-																			Description:
-																		</span>
-																		<p>{contributor.description}</p>
-																	</div>
-																	<div className="flex items-center gap-1">
-																		<MapPin className="h-4 w-4 text-muted-foreground" />
-																		<span>{contributor.location}</span>
-																	</div>
-																	{contributor.organizations.length > 0 && (
-																		<div className="flex items-center gap-1">
-																			<Building className="h-4 w-4 text-muted-foreground" />
-																			<div className="flex flex-wrap gap-1">
-																				{contributor.organizations.map(
-																					(org: string, index: number) => (
-																						<Badge
-																							key={index}
-																							variant="outline"
-																						>
-																							{org}
-																						</Badge>
-																					)
-																				)}
-																			</div>
-																		</div>
-																	)}
-																	<div className="flex items-center gap-2">
-																		{contributor.socialLinks.github && (
-																			<TooltipProvider>
-																				<Tooltip>
-																					<TooltipTrigger asChild>
-																						<a
-																							href={
-																								contributor.socialLinks
-																									.github
-																							}
-																							target="_blank"
-																							rel="noopener noreferrer"
-																						>
-																							<Github className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
-																						</a>
-																					</TooltipTrigger>
-																					<TooltipContent>
-																						<p>GitHub</p>
-																					</TooltipContent>
-																				</Tooltip>
-																			</TooltipProvider>
-																		)}
-																		{contributor.socialLinks.twitter && (
-																			<TooltipProvider>
-																				<Tooltip>
-																					<TooltipTrigger asChild>
-																						<a
-																							href={
-																								contributor.socialLinks
-																									.twitter
-																							}
-																							target="_blank"
-																							rel="noopener noreferrer"
-																						>
-																							<Twitter className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
-																						</a>
-																					</TooltipTrigger>
-																					<TooltipContent>
-																						<p>Twitter</p>
-																					</TooltipContent>
-																				</Tooltip>
-																			</TooltipProvider>
-																		)}
-																		{contributor.socialLinks.linkedin && (
-																			<TooltipProvider>
-																				<Tooltip>
-																					<TooltipTrigger asChild>
-																						<a
-																							href={
-																								contributor.socialLinks
-																									.linkedin
-																							}
-																							target="_blank"
-																							rel="noopener noreferrer"
-																						>
-																							<Linkedin className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
-																						</a>
-																					</TooltipTrigger>
-																					<TooltipContent>
-																						<p>LinkedIn</p>
-																					</TooltipContent>
-																				</Tooltip>
-																			</TooltipProvider>
-																		)}
-																		{contributor.socialLinks.website && (
-																			<TooltipProvider>
-																				<Tooltip>
-																					<TooltipTrigger asChild>
-																						<a
-																							href={
-																								contributor.socialLinks
-																									.website
-																							}
-																							target="_blank"
-																							rel="noopener noreferrer"
-																						>
-																							<Globe className="h-4 w-4 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200" />
-																						</a>
-																					</TooltipTrigger>
-																					<TooltipContent>
-																						<p>Website</p>
-																					</TooltipContent>
-																				</Tooltip>
-																			</TooltipProvider>
-																		)}
-																	</div>
-																</div>
-															</div>
-															<div>
-																<h3 className="text-lg font-medium mb-2">Activity</h3>
-																<div className="space-y-2">
-																	<div>
-																		<span className="text-sm text-muted-foreground">
-																			Latest Commit:
-																		</span>
-																		<div className="flex items-center gap-1 mt-1">
-																			<GitCommit className="h-4 w-4 text-muted-foreground" />
-																			<a
-																				href={contributor.latestCommit.url}
-																				target="_blank"
-																				rel="noopener noreferrer"
-																				className="text-sm hover:underline flex items-center gap-1"
-																			>
-																				{contributor.latestCommit.message}
-																				<ExternalLink className="h-3 w-3" />
-																			</a>
-																		</div>
-																		<div className="text-xs text-muted-foreground mt-1">
-																			{formatDate(contributor.latestCommit.date)}
-																		</div>
-																	</div>
-																	<div>
-																		<span className="text-sm text-muted-foreground">
-																			Languages:
-																		</span>
-																		<div className="flex flex-wrap gap-1 mt-1">
-																			{contributor.languages.map(
-																				(lang: any, index: number) => (
-																					<Badge
-																						key={index}
-																						variant="outline"
-																						className="flex items-center gap-1 text-slate-700 dark:text-slate-300"
-																					>
-																						<Code className="h-3 w-3" />
-																						{lang.name} ({lang.percentage}%)
-																					</Badge>
-																				)
-																			)}
-																		</div>
-																	</div>
-																</div>
-															</div>
-														</div>
-													</TableCell>
-												</TableRow>
-											)}
-										</>
+										<TableRow
+											key={contributor.id}
+											className={
+												selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""
+											}
+										>
+											<TableCell>
+												<Checkbox
+													checked={selectedContributors.includes(contributor.id)}
+													onCheckedChange={() => toggleContributorSelection(contributor.id)}
+													aria-label={`Select ${contributor.name}`}
+												/>
+											</TableCell>
+											<TableCell>
+												<div className="flex items-center gap-2">
+													<Avatar className="h-8 w-8">
+														<img src={contributor.avatar} alt={contributor.name} />
+													</Avatar>
+													<span className="font-medium">{contributor.name}</span>
+												</div>
+											</TableCell>
+											<TableCell>@{contributor.handle}</TableCell>
+											<TableCell>
+												<Badge variant="secondary">{contributor.type}</Badge>
+											</TableCell>
+											<TableCell>
+												<Badge variant="outline">{contributor.tenure}</Badge>
+											</TableCell>
+											<TableCell className="text-center">
+												<div className="flex items-center justify-center gap-1">
+													<span>{contributor.stars}</span>
+												</div>
+											</TableCell>
+											<TableCell className="text-center">{contributor.prMerged}</TableCell>
+											<TableCell className="text-center">{contributor.commits}</TableCell>
+											<TableCell className="text-right">
+												{formatDate(contributor.lastActive)}
+											</TableCell>
+										</TableRow>
 									))
 								)}
 							</TableBody>
