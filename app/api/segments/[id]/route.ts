@@ -3,6 +3,7 @@ import {
     getSegment,
     updateSegment
 } from "@/lib/services/segments-service";
+import { getAuthenticatedUser } from "@/lib/services/authentication-service";
 import { NextRequest, NextResponse } from "next/server";
 
 interface RouteParams {
@@ -13,6 +14,13 @@ interface RouteParams {
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
     try {
+        // Get the authenticated user
+        const user = await getAuthenticatedUser();
+        
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        
         const id = params.id;
         const segment = await getSegment(id);
 
@@ -29,6 +37,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {
     try {
+        // Get the authenticated user
+        const user = await getAuthenticatedUser();
+        
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        
         const id = params.id;
         const body = await request.json();
         const segment = await updateSegment(id, body);
@@ -46,6 +61,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
     try {
+        // Get the authenticated user
+        const user = await getAuthenticatedUser();
+        
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        
         const id = params.id;
         const success = await deleteSegment(id);
 

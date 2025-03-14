@@ -1,4 +1,5 @@
 import { deleteRepository, getRepository, updateRepository } from "@/lib/services/repositories-service";
+import { getAuthenticatedUser } from "@/lib/services/authentication-service";
 import { NextRequest, NextResponse } from "next/server";
 
 interface Params {
@@ -7,6 +8,13 @@ interface Params {
 
 export async function GET(request: NextRequest, { params }: Params) {
 	try {
+		// Get the authenticated user
+		const user = await getAuthenticatedUser();
+		
+		if (!user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+		
 		const { id } = await params;
 		const repository = await getRepository(id);
 
@@ -24,6 +32,13 @@ export async function GET(request: NextRequest, { params }: Params) {
 
 export async function PUT(request: NextRequest, { params }: Params) {
 	try {
+		// Get the authenticated user
+		const user = await getAuthenticatedUser();
+		
+		if (!user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+		
 		const body = await request.json();
 		const { id } = await params;
 		const repository = await updateRepository(id, body);
@@ -42,6 +57,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 export async function DELETE(request: NextRequest, { params }: Params) {
 	try {
+		// Get the authenticated user
+		const user = await getAuthenticatedUser();
+		
+		if (!user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+		
 		const { id } = await params;
 		const success = await deleteRepository(id);
 

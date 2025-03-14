@@ -26,3 +26,5 @@ CREATE INDEX idx_repositories_created_at ON repositories(created_at);
 CREATE TRIGGER update_repositories_updated_at
 BEFORE UPDATE ON repositories
 FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+create type user_type as enum ('ONE_TIME', 'PART_TIME', 'FULL_TIME');

@@ -1,8 +1,16 @@
 import { createSegment, getSegments } from "@/lib/services/segments-service";
+import { getAuthenticatedUser } from "@/lib/services/authentication-service";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
     try {
+        // Get the authenticated user
+        const user = await getAuthenticatedUser();
+        
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        
         const segments = await getSegments();
         return NextResponse.json(segments);
     } catch (error) {
@@ -13,6 +21,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
     try {
+        // Get the authenticated user
+        const user = await getAuthenticatedUser();
+        
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+        
         const body = await request.json();
         const segment = await createSegment(body);
         return NextResponse.json(segment, { status: 201 });

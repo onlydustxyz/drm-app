@@ -1,8 +1,16 @@
 import { createRepository, getRepositories } from "@/lib/services/repositories-service";
+import { getAuthenticatedUser } from "@/lib/services/authentication-service";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
 	try {
+		// Get the authenticated user
+		const user = await getAuthenticatedUser();
+		
+		if (!user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+
 		// Get the search parameters from the request URL
 		const searchParams = request.nextUrl.searchParams;
 		const namesParam = searchParams.get("names");
@@ -22,6 +30,13 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
 	try {
+		// Get the authenticated user
+		const user = await getAuthenticatedUser();
+		
+		if (!user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+		
 		const body = await request.json();
 		const repository = await createRepository(body);
 		return NextResponse.json(repository, { status: 201 });
