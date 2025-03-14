@@ -1,49 +1,28 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
-import { ServerCommitsByDevTypeSection } from "@/components/dashboard/sections/commits-by-dev-type";
-import { ServerDevActivitySection } from "@/components/dashboard/sections/dev-activity";
-import { ServerDeveloperActivitySection } from "@/components/dashboard/sections/developer-activity";
-import { ServerDeveloperLocationsSection } from "@/components/dashboard/sections/developer-locations";
-import { KPICards, KPICardsSkeleton } from "@/components/dashboard/sections/kpi-cards";
-import { ServerMonthlyCommitsSection } from "@/components/dashboard/sections/monthly-commits";
-import { ServerMonthlyPRsMergedSection } from "@/components/dashboard/sections/monthly-prs-merged";
-import { Suspense } from "react";
-
-function ChartLoading() {
-	return <div className="h-80 animate-pulse bg-muted rounded-lg"></div>;
-}
+import { CommitsByDevTypeSection } from "@/components/dashboard/sections/commits-by-dev-type";
+import { DevActivitySection } from "@/components/dashboard/sections/dev-activity";
+import { DeveloperActivitySection } from "@/components/dashboard/sections/developer-activity";
+import { KPICards } from "@/components/dashboard/sections/kpi-cards";
+import { MonthlyCommitsSection } from "@/components/dashboard/sections/monthly-commits";
+import { MonthlyPRsMergedSection } from "@/components/dashboard/sections/monthly-prs-merged";
 
 export default function DashboardPage() {
 	return (
 		<DashboardLayout>
-			<Suspense fallback={<KPICardsSkeleton />}>
-				<KPICards />
-			</Suspense>
+			<KPICards />
 
 			<div className="grid gap-4 md:grid-cols-2 w-full">
-				<Suspense fallback={<ChartLoading />}>
-					<ServerDeveloperActivitySection />
-				</Suspense>
-				<Suspense fallback={<ChartLoading />}>
-					<ServerDeveloperLocationsSection />
-				</Suspense>
+				<DeveloperActivitySection />
+				<DevActivitySection />
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 w-full">
-				<Suspense fallback={<ChartLoading />}>
-					<ServerCommitsByDevTypeSection />
-				</Suspense>
-				<Suspense fallback={<ChartLoading />}>
-					<ServerMonthlyCommitsSection />
-				</Suspense>
+				<CommitsByDevTypeSection />
+				<MonthlyCommitsSection />
 			</div>
 
 			<div className="grid gap-4 md:grid-cols-2 w-full">
-				<Suspense fallback={<ChartLoading />}>
-					<ServerMonthlyPRsMergedSection />
-				</Suspense>
-				<Suspense fallback={<ChartLoading />}>
-					<ServerDevActivitySection />
-				</Suspense>
+				<MonthlyPRsMergedSection />
 			</div>
 		</DashboardLayout>
 	);

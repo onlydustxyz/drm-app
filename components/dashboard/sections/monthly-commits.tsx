@@ -1,12 +1,16 @@
-import { getMonthlyCommits } from "@/lib/services/dashboard-service";
-import { ServerChartSection } from "./chart-base/server-chart-section";
+"use client";
 
-export async function ServerMonthlyCommitsSection() {
-	// Fetch data on the server
-	const data = await getMonthlyCommits();
+import { ClientChartSection } from "./chart-base/client-chart-section";
+import { useMonthlyCommits } from "@/lib/react-query/dashboard";
+
+export function MonthlyCommitsSection() {
+	const { data, isLoading, error } = useMonthlyCommits();
+
+	if (isLoading) return <div className="h-80 animate-pulse bg-muted rounded-lg"></div>;
+	if (error || !data) return <div>Error loading monthly commits data</div>;
 
 	return (
-		<ServerChartSection
+		<ClientChartSection
 			title="Monthly Commits"
 			description="Commit volume trends over time"
 			data={data}

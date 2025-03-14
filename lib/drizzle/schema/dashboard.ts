@@ -28,35 +28,6 @@ export const developerActivity = pgTable("developer_activity", {
 	updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Developers by Chain table
-export const developersByChain = pgTable(
-	"developers_by_chain",
-	{
-		id: serial("id").primaryKey(),
-		date: date("date").notNull(),
-		single_chain: integer("single_chain").notNull(),
-		multi_chain: integer("multi_chain").notNull(),
-		created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-		updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-	},
-	(table) => {
-		return {
-			dateIdx: index("idx_developers_by_chain_date").on(table.date),
-		};
-	}
-);
-
-// Developer Locations table
-export const developerLocations = pgTable("developer_locations", {
-	id: serial("id").primaryKey(),
-	country: varchar("country", { length: 100 }).notNull(),
-	count: integer("count").notNull(),
-	latitude: decimal("latitude", { precision: 9, scale: 6 }).notNull(),
-	longitude: decimal("longitude", { precision: 9, scale: 6 }).notNull(),
-	created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-	updated_at: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
-
 // Commits by Developer Type table
 export const commitsByDevType = pgTable("commits_by_dev_type", {
 	id: serial("id").primaryKey(),
