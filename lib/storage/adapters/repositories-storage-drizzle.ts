@@ -1,8 +1,8 @@
 import { dbFactory } from "@/lib/drizzle";
 import { repositories } from "@/lib/drizzle/schema/repositories";
-import { Repository } from "@/lib/services/repositories-service";
+import { Repository, RepositoryFilter, RepositorySort } from "@/lib/services/repositories-service";
 import { RepositoriesStorage } from "@/lib/storage/repositories-storage";
-import { eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
 
 /**
  * Drizzle ORM implementation of the RepositoriesStorage interface
@@ -38,20 +38,72 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	/**
 	 * Get repositories with optional filtering by names
 	 * @param filter Optional filtering parameters
-	 * @param filter.names Array of repository names to filter by
+	 * @param sort Optional sorting parameters
 	 * @returns Array of repositories matching the filter criteria
 	 */
-	async getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
+	async getRepositories(filter?: RepositoryFilter, sort?: RepositorySort): Promise<Repository[]> {
 		try {
 			let query = dbFactory.getClient().select().from(repositories);
+			let whereConditions = [];
 
 			// Apply filters if provided
-			if (filter?.names && filter.names.length > 0) {
-				query = query.where(inArray(repositories.name, filter.names)) as any;
+			if (filter) {
+				// Filter by names
+				if (filter.names && filter.names.length > 0) {
+					whereConditions.push(inArray(repositories.name, filter.names));
+				}
+
+				// Text search in name and description
+				if (filter.search) {
+					whereConditions.push(
+						or(
+							ilike(repositories.name, `%${filter.search}%`),
+							ilike(repositories.description || "", `%${filter.search}%`)
+						)
+					);
+				}
 			}
 
-			// Always order by name
-			query = query.orderBy(repositories.name) as any;
+			// Apply where conditions if any exist
+			if (whereConditions.length > 0) {
+				query = query.where(and(...whereConditions)) as any;
+			}
+
+			// Apply sorting
+			if (sort) {
+				switch (sort.field) {
+					case "name":
+						query = query.orderBy(
+							sort.direction === "asc" ? asc(repositories.name) : desc(repositories.name)
+						) as any;
+						break;
+					case "stars":
+						query = query.orderBy(
+							sort.direction === "asc" ? asc(repositories.stars) : desc(repositories.stars)
+						) as any;
+						break;
+					case "forks":
+						query = query.orderBy(
+							sort.direction === "asc" ? asc(repositories.forks) : desc(repositories.forks)
+						) as any;
+						break;
+					case "updated_at":
+						query = query.orderBy(
+							sort.direction === "asc" ? asc(repositories.updated_at) : desc(repositories.updated_at)
+						) as any;
+						break;
+					case "created_at":
+						query = query.orderBy(
+							sort.direction === "asc" ? asc(repositories.created_at) : desc(repositories.created_at)
+						) as any;
+						break;
+					default:
+						query = query.orderBy(asc(repositories.name)) as any;
+				}
+			} else {
+				// Default sorting by name if no sort specified
+				query = query.orderBy(asc(repositories.name)) as any;
+			}
 
 			const dbRepos = await query;
 			return dbRepos.map(this.transformDbToModel);

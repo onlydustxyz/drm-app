@@ -1,11 +1,11 @@
-import { Repository } from "@/lib/services/repositories-service";
+import { Repository, RepositoryFilter, RepositorySort } from "@/lib/services/repositories-service";
 import { DrizzleRepositoriesStorage } from "@/lib/storage/adapters/repositories-storage-drizzle";
 
 /**
  * Interface for accessing repository data from storage
  */
 export interface RepositoriesStorage {
-	getRepositories(filter?: { names?: string[] }): Promise<Repository[]>;
+	getRepositories(filter?: RepositoryFilter, sort?: RepositorySort): Promise<Repository[]>;
 	getRepository(id: string): Promise<Repository | undefined>;
 	createRepository(repository: Omit<Repository, "id">): Promise<Repository>;
 	updateRepository(id: string, repository: Partial<Omit<Repository, "id">>): Promise<Repository | undefined>;

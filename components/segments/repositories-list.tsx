@@ -1,16 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RepositoryFilter, useRepositories } from "@/lib/react-query/repositories";
-import { Repository } from "@/lib/services/repositories-service";
+import { Repository, RepositorySort } from "@/lib/services/repositories-service";
 import { formatDate } from "@/lib/utils";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface RepositoriesListProps {
@@ -18,128 +14,79 @@ interface RepositoriesListProps {
 }
 
 export function RepositoriesList({ names }: RepositoriesListProps) {
+	// State for search and sort
+	const [searchQuery, setSearchQuery] = useState("");
+	const [sort, setSort] = useState<RepositorySort | undefined>();
+
+	// Debounced search query for API requests
+	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+	// Debounce search query to avoid too many API requests
+	useEffect(() => {
+		const timeoutId = setTimeout(() => {
+			setDebouncedSearchQuery(searchQuery);
+		}, 300);
+
+		return () => clearTimeout(timeoutId);
+	}, [searchQuery]);
+
+	// Build filter parameters for the API
 	const filter: RepositoryFilter = {};
 	if (names && names.length > 0) filter.names = names;
+	if (debouncedSearchQuery) filter.search = debouncedSearchQuery;
 
-	const { data: repositories = [], isLoading, error } = useRepositories(filter);
-
-	const [filteredRepositories, setFilteredRepositories] = useState<Repository[]>([]);
-	const [searchQuery, setSearchQuery] = useState("");
-	const [sortConfig, setSortConfig] = useState<{
-		key: keyof Repository | null;
-		direction: "ascending" | "descending";
-	}>({ key: null, direction: "descending" });
-
-	// Filter states
-	const [minStars, setMinStars] = useState<number | "">("");
-	const [minPRs, setMinPRs] = useState<number | "">("");
-	const [minCommits, setMinCommits] = useState<number | "">("");
-	const [selectedLanguage, setSelectedLanguage] = useState<string>("");
-	const [activeFiltersCount, setActiveFiltersCount] = useState(0);
-	const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
-
-	// Extract unique languages when repositories data changes
-	useEffect(() => {
-		if (repositories.length > 0) {
-			// Extract unique languages
-			const languages = new Set<string>();
-			repositories.forEach((repo: Repository) => {
-				if (repo.languages && Array.isArray(repo.languages) && repo.languages.length > 0) {
-					const langName = (repo.languages[0] as { name: string }).name;
-					if (langName) languages.add(langName);
-				}
-			});
-			setAvailableLanguages(Array.from(languages));
-			setFilteredRepositories(repositories);
-		}
-	}, [repositories]);
-
-	// Apply all filters
-	useEffect(() => {
-		if (repositories.length === 0) return;
-
-		let filtered = [...repositories];
-		let activeFilters = 0;
-
-		// Apply search filter
-		if (searchQuery.trim() !== "") {
-			const lowercaseQuery = searchQuery.toLowerCase();
-			filtered = filtered.filter(
-				(repository) =>
-					repository.name.toLowerCase().includes(lowercaseQuery) ||
-					repository.description.toLowerCase().includes(lowercaseQuery)
-			);
-		}
-
-		// Apply minimum stars filter
-		if (minStars !== "") {
-			filtered = filtered.filter((repository) => repository.stars >= Number(minStars));
-			activeFilters++;
-		}
-
-		// Apply minimum PRs filter
-		if (minPRs !== "") {
-			filtered = filtered.filter((repository) => repository.prMerged + repository.prOpened >= Number(minPRs));
-			activeFilters++;
-		}
-
-		// Apply minimum commits filter
-		if (minCommits !== "") {
-			filtered = filtered.filter((repository) => repository.commits >= Number(minCommits));
-			activeFilters++;
-		}
-
-		// Apply language filter
-		if (selectedLanguage !== "") {
-			filtered = filtered.filter((repository) => {
-				if (repository.languages && Array.isArray(repository.languages) && repository.languages.length > 0) {
-					const langName = (repository.languages[0] as { name: string }).name;
-					return langName === selectedLanguage;
-				}
-				return false;
-			});
-			activeFilters++;
-		}
-
-		setActiveFiltersCount(activeFilters);
-		setFilteredRepositories(filtered);
-	}, [searchQuery, repositories, minStars, minPRs, minCommits, selectedLanguage]);
+	// Fetch repositories with API-based filtering and sorting
+	const { data: repositories = [], isLoading, error } = useRepositories(filter, sort);
 
 	// Handle sorting
 	const requestSort = (key: keyof Repository) => {
-		let direction: "ascending" | "descending" = "ascending";
+		// Map component sort fields to API sort fields
+		const apiSortFieldMap: Record<string, any> = {
+			name: "name",
+			stars: "stars",
+			forks: "forks",
+			last_updated_at: "updated_at",
+		};
 
-		if (sortConfig.key === key && sortConfig.direction === "ascending") {
-			direction = "descending";
+		// Only use sortable fields that the API supports
+		if (!apiSortFieldMap[key]) {
+			// For fields not supported by the API, we won't do anything
+			// Fields like prMerged, prOpened, etc. are not sortable via API
+			return;
 		}
 
-		setSortConfig({ key, direction });
+		const apiSortField = apiSortFieldMap[key] as "name" | "stars" | "forks" | "updated_at" | "created_at";
 
-		const sortedData = [...filteredRepositories].sort((a, b) => {
-			if (a[key] < b[key]) {
-				return direction === "ascending" ? -1 : 1;
-			}
-			if (a[key] > b[key]) {
-				return direction === "ascending" ? 1 : -1;
-			}
-			return 0;
-		});
-
-		setFilteredRepositories(sortedData);
+		// Toggle sort direction or set initial sort
+		if (sort && sort.field === apiSortField) {
+			// Toggle direction if same field
+			setSort({
+				field: apiSortField,
+				direction: sort.direction === "asc" ? "desc" : "asc",
+			});
+		} else {
+			// Default to descending for new sort field
+			setSort({
+				field: apiSortField,
+				direction: "desc",
+			});
+		}
 	};
 
 	// Get sort direction indicator
 	const getSortDirectionIndicator = (key: keyof Repository) => {
-		if (sortConfig.key !== key) return null;
-		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
-	};
+		// Map component fields to API fields
+		const apiFieldMap: Record<string, any> = {
+			name: "name",
+			stars: "stars",
+			forks: "forks",
+			last_updated_at: "updated_at",
+		};
 
-	// Reset all filters
-	const resetFilters = () => {
-		setMinStars("");
-		setMinPRs("");
-		setMinCommits("");
-		setSelectedLanguage("");
+		const apiField = apiFieldMap[key];
+
+		if (!apiField || !sort || sort.field !== apiField) return null;
+		return sort.direction === "asc" ? " ↑" : " ↓";
 	};
 
 	return (
@@ -162,88 +109,6 @@ export function RepositoriesList({ names }: RepositoriesListProps) {
 								onChange={(e) => setSearchQuery(e.target.value)}
 							/>
 						</div>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button variant="outline" size="icon" className="shrink-0 relative">
-									<SlidersHorizontal className="h-4 w-4" />
-									{activeFiltersCount > 0 && (
-										<span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-											{activeFiltersCount}
-										</span>
-									)}
-									<span className="sr-only">Filters</span>
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-80">
-								<div className="space-y-4">
-									<div className="flex items-center justify-between">
-										<h4 className="font-medium">Filters</h4>
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={resetFilters}
-											disabled={!minStars && !minPRs && !minCommits && !selectedLanguage}
-										>
-											Reset
-										</Button>
-									</div>
-									<Separator />
-									<div className="space-y-2">
-										<Label htmlFor="min-stars">Minimum Stars</Label>
-										<Input
-											id="min-stars"
-											type="number"
-											min="0"
-											placeholder="Enter minimum stars"
-											value={minStars}
-											onChange={(e) => setMinStars(e.target.value ? Number(e.target.value) : "")}
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="min-prs">Minimum PRs (opened + merged)</Label>
-										<Input
-											id="min-prs"
-											type="number"
-											min="0"
-											placeholder="Enter minimum PRs"
-											value={minPRs}
-											onChange={(e) => setMinPRs(e.target.value ? Number(e.target.value) : "")}
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="min-commits">Minimum Commits</Label>
-										<Input
-											id="min-commits"
-											type="number"
-											min="0"
-											placeholder="Enter minimum commits"
-											value={minCommits}
-											onChange={(e) =>
-												setMinCommits(e.target.value ? Number(e.target.value) : "")
-											}
-										/>
-									</div>
-									{availableLanguages.length > 0 && (
-										<div className="space-y-2">
-											<Label htmlFor="language">Filter by Language</Label>
-											<select
-												id="language"
-												className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-												value={selectedLanguage}
-												onChange={(e) => setSelectedLanguage(e.target.value)}
-											>
-												<option value="">All Languages</option>
-												{availableLanguages.map((lang) => (
-													<option key={lang} value={lang}>
-														{lang}
-													</option>
-												))}
-											</select>
-										</div>
-									)}
-								</div>
-							</PopoverContent>
-						</Popover>
 					</div>
 				</div>
 			</CardHeader>
@@ -336,14 +201,14 @@ export function RepositoriesList({ names }: RepositoriesListProps) {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{filteredRepositories.length === 0 ? (
+								{repositories.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={8} className="h-24 text-center">
 											No repositories found.
 										</TableCell>
 									</TableRow>
 								) : (
-									filteredRepositories.map((repo) => (
+									repositories.map((repo) => (
 										<TableRow key={repo.id}>
 											<TableCell className="font-medium">
 												<div className="flex flex-col">
