@@ -1,5 +1,6 @@
 "use client";
 
+import ContributorsList from "@/components/segments/contributors-list";
 import { RepositoriesList } from "@/components/segments/repositories-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,7 +63,7 @@ export default function SegmentPage({ params }: { params: Promise<{ id: string }
 			{isRepositorySegment ? (
 				<RepositoriesList names={["onlydust/contracts", "onlydust/marketplace-api"]} />
 			) : (
-				<div>Not a repository segment</div>
+				<ContributorsList />
 			)}
 		</div>
 	);
