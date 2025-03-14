@@ -13,7 +13,7 @@ import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ContributorDetailPanel } from "../contributors/contributor-detail-panel";
 
-export default function ContributorsPage() {
+export default function ContributorsPage({ repoIds }: { repoIds?: string[] }) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 	const [sortConfig, setSortConfig] = useState<{
@@ -40,7 +40,7 @@ export default function ContributorsPage() {
 		data: contributors = [],
 		isLoading: isLoadingContributors,
 		error: contributorsError,
-	} = useContributors(debouncedSearchQuery || undefined, sortConfig.key || undefined, apiSortOrder);
+	} = useContributors(debouncedSearchQuery || undefined, sortConfig.key || undefined, apiSortOrder, repoIds);
 
 	// Handle sorting
 	const requestSort = (key: keyof Contributor) => {
