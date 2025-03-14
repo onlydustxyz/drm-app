@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
 	const sortBy = searchParams.get("sortBy") as keyof Contributor | undefined;
 	const sortOrder = (searchParams.get("sortOrder") as "asc" | "desc") || undefined;
 
+	// Get repository IDs for filtering
+	const repoIds = searchParams.getAll("repoId");
+
 	try {
 		// Get the URL object from the request
 		const url = new URL(request.url);
@@ -34,7 +37,12 @@ export async function GET(request: NextRequest) {
 		}
 
 		// Get all contributors with the provided filters
-		const contributors = await getContributors({ search, sortBy, sortOrder });
+		const contributors = await getContributors({
+			search,
+			sortBy,
+			sortOrder,
+			repoIds: repoIds.length > 0 ? repoIds : undefined,
+		});
 		return NextResponse.json(contributors);
 	} catch (error) {
 		console.error("Error fetching contributors:", error);

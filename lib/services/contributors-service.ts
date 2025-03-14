@@ -259,6 +259,7 @@ export interface ContributorsService {
 		search?: string;
 		sortBy?: keyof Contributor;
 		sortOrder?: "asc" | "desc";
+		repoIds?: string[];
 	}): Promise<Contributor[]>;
 	getContributor(id: string): Promise<Contributor | undefined>;
 }
@@ -272,6 +273,7 @@ export class MockContributorsService implements ContributorsService {
 		search?: string;
 		sortBy?: keyof Contributor;
 		sortOrder?: "asc" | "desc";
+		repoIds?: string[];
 	}): Promise<Contributor[]> {
 		// Simulate API delay
 		await new Promise((resolve) => setTimeout(resolve, 500));
@@ -327,6 +329,7 @@ const contributorsService =
 					search?: string;
 					sortBy?: keyof Contributor;
 					sortOrder?: "asc" | "desc";
+					repoIds?: string[];
 				}) {
 					return getContributorsStorage().getContributors(options);
 				},
@@ -341,6 +344,7 @@ export async function getContributors(options?: {
 	search?: string;
 	sortBy?: keyof Contributor;
 	sortOrder?: "asc" | "desc";
+	repoIds?: string[];
 }): Promise<Contributor[]> {
 	return contributorsService.getContributors(options);
 }

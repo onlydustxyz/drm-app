@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSegment } from "@/lib/react-query/segments";
 import { use } from "react";
 
-export default function ContributorsPage({ params }: { params: Promise<{ id: string }> }) {
+export default function LinkedContributorsPage({ params }: { params: Promise<{ id: string }> }) {
 	const resolvedParams = use(params);
 	const { data: segment, isLoading, error } = useSegment(resolvedParams.id);
 

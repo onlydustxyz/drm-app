@@ -9,6 +9,7 @@ export interface ContributorsStorage {
 		search?: string;
 		sortBy?: keyof Contributor;
 		sortOrder?: "asc" | "desc";
+		repoIds?: string[];
 	}): Promise<Contributor[]>;
 	getContributor(id: string): Promise<Contributor | undefined>;
 	createContributor(contributor: Omit<Contributor, "id">): Promise<Contributor>;

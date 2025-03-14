@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 export const fetchContributors = async (
 	search?: string,
 	sortBy?: keyof Contributor,
-	sortOrder?: "asc" | "desc"
+	sortOrder?: "asc" | "desc",
+	repoIds?: string[]
 ): Promise<Contributor[]> => {
 	// Build URL with query parameters
 	const url = new URL("/api/contributors", window.location.origin);
@@ -22,6 +23,13 @@ export const fetchContributors = async (
 
 	if (sortOrder) {
 		url.searchParams.append("sortOrder", sortOrder);
+	}
+
+	// Add repo IDs for filtering if provided
+	if (repoIds && repoIds.length > 0) {
+		repoIds.forEach((id) => {
+			url.searchParams.append("repoId", id);
+		});
 	}
 
 	const response = await fetch(url.toString());
@@ -48,10 +56,15 @@ export const fetchContributor = async (id: string): Promise<Contributor> => {
 };
 
 // React Query hook for contributors with search and sort
-export function useContributors(search?: string, sortBy?: keyof Contributor, sortOrder?: "asc" | "desc") {
+export function useContributors(
+	search?: string,
+	sortBy?: keyof Contributor,
+	sortOrder?: "asc" | "desc",
+	repoIds?: string[]
+) {
 	return useQuery({
-		queryKey: ["contributors", { search, sortBy, sortOrder }],
-		queryFn: () => fetchContributors(search, sortBy, sortOrder),
+		queryKey: ["contributors", { search, sortBy, sortOrder, repoIds }],
+		queryFn: () => fetchContributors(search, sortBy, sortOrder, repoIds),
 	});
 }
 

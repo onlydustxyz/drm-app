@@ -39,6 +39,7 @@ export class DrizzleContributorsStorage implements ContributorsStorage {
 			reputationScore: dbContributor.reputation_score,
 			stars: dbContributor.stars,
 			followers: dbContributor.followers,
+			repositories: dbContributor.repositories,
 		};
 	}
 
@@ -49,6 +50,7 @@ export class DrizzleContributorsStorage implements ContributorsStorage {
 		search?: string;
 		sortBy?: keyof Contributor;
 		sortOrder?: "asc" | "desc";
+		repoIds?: string[];
 	}): Promise<Contributor[]> {
 		try {
 			const db = dbFactory.getClient();
@@ -97,7 +99,19 @@ export class DrizzleContributorsStorage implements ContributorsStorage {
 				result = await db.select().from(contributors).orderBy(orderByColumn);
 			}
 
-			return result.map(this.transformDbToModel);
+			// Filter by repository IDs if provided
+			// Note: Since the database doesn't have a direct mapping between contributors and repositories,
+			// we're filtering in memory based on the repositories data in each contributor
+			if (options?.repoIds && options.repoIds.length > 0) {
+				result = result.filter((contributor: any) => {
+					// Check if the contributor has repositories
+					if (!contributor.repositories) return false;
+					// Check if any of the contributor's repositories match the requested repo IDs
+					return contributor.repositories.some((repo: any) => options.repoIds!.includes(repo.id));
+				});
+			}
+
+			return result.map((item: any) => this.transformDbToModel(item));
 		} catch (error) {
 			console.error("Error fetching contributors:", error);
 			throw new Error("Failed to fetch contributors");

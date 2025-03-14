@@ -25,7 +25,7 @@ export default function SegmentDetailLayout({
 	// Function to determine which tab is active
 	const getActiveTab = () => {
 		if (pathname.endsWith(`/${resolvedParams.id}`)) return "overview";
-		if (pathname.includes("/contributors")) return "contributors";
+		if (pathname.includes("/linked-contributors")) return "linked-contributors";
 		if (pathname.includes("/retention")) return "retention";
 		return "overview";
 	};
@@ -78,7 +78,9 @@ export default function SegmentDetailLayout({
 							}}
 						>
 							<TabsTrigger value="overview">Overview</TabsTrigger>
-							{isRepositorySegment && <TabsTrigger value="contributors">Contributors</TabsTrigger>}
+							{isRepositorySegment && (
+								<TabsTrigger value="linked-contributors">Linked Contributors</TabsTrigger>
+							)}
 							<TabsTrigger value="retention">Retention</TabsTrigger>
 						</TabsList>
 					</Tabs>
