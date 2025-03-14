@@ -1,4 +1,4 @@
-import { boolean, index, integer, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import {boolean, index, integer, pgTable, serial, text, timestamp, varchar} from "drizzle-orm/pg-core";
 
 // Define the repositories table schema
 export const repositories = pgTable(

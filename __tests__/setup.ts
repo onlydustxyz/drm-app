@@ -1,9 +1,9 @@
-// import { db } from "@/lib/drizzle";
-// import { PostgreSqlContainer, StartedPostgreSqlContainer } from "@testcontainers/postgresql";
-// import { sql } from "drizzle-orm";
-// import path from "path";
-import { createServer } from "http";
-import { NextRequest, NextResponse } from "next/server";
+import {dbFactory} from "@/lib/drizzle";
+import {PostgreSqlContainer, StartedPostgreSqlContainer} from "@testcontainers/postgresql";
+import path from "path";
+import {createServer} from "http";
+import {NextRequest, NextResponse} from "next/server";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
 // Increase timeout for tests since we're working with containers
 jest.setTimeout(30000);
 
@@ -50,30 +50,39 @@ export const createTestServer = (handler: (req: NextRequest) => Promise<NextResp
 	});
 	return server;
 };
-// let container: PostgreSqlContainer;
-// let startedContainer: StartedPostgreSqlContainer;
 
-// beforeAll(async () => {
-// 	// Start PostgreSQL container
-// 	let source = path.resolve(process.cwd(), "postgres/migrations");
-// 	container = new PostgreSqlContainer("postgres:16.4")
-// 		.withDatabase("test_db")
-// 		.withUsername("test_user")
-// 		.withPassword("test_password")
-// 		.withCopyDirectoriesToContainer([
-// 			{
-// 				source: source,
-// 				target: "/docker-entrypoint-initdb.d",
-// 			},
-// 		]);
+let container: PostgreSqlContainer;
+let startedContainer: StartedPostgreSqlContainer;
 
-// 	startedContainer = await container.start();
+beforeAll(async () => {
+	// Start PostgreSQL container
+	container = new PostgreSqlContainer("postgres:16.4")
+		.withDatabase("test_db")
+		.withUsername("test_user")
+		.withPassword("test_password");
 
-// 	// Set container startup timeout to 1 minute
-// 	container.withStartupTimeout(60000);
-// });
+	startedContainer = await container.start();
+	// Set timeout for container startup
+	jest.setTimeout(5000);
 
-// afterAll(async () => {
-// 	// Stop container after all tests
-// 	await startedContainer.stop();
-// });
+	// Set up database client with container URL
+	const databaseUrl = startedContainer.getConnectionUri();
+	dbFactory.setClient(databaseUrl);
+
+	// Run migrations using the same logic as in migrate.ts
+	console.log("Running migrations for test database...");
+	try {
+		const db = dbFactory.getClient();
+		await migrate(db, { migrationsFolder: process.cwd() + "/postgres/migrations" });
+		console.log("Migrations completed successfully for test database");
+	} catch (error) {
+		console.error("Error during test database migration:", error);
+		throw error; // This will fail the test setup
+	}
+	
+});
+
+afterAll(async () => {
+	// Stop container after all tests
+	await startedContainer.stop();
+});

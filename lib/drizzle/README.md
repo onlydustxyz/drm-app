@@ -8,16 +8,19 @@ This directory contains the Drizzle ORM setup for the DRM-App project. Drizzle i
 -   `schema/`: Contains the database schema definitions
     -   `repositories.ts`: Schema for the repositories table
     -   `dashboard.ts`: Schemas for dashboard-related tables
+    -   `segments.ts`: Schema for segments-related tables
+    -   `contributor-sublists.ts`: Schema for contributor sublist tables
     -   `index.ts`: Exports all schemas
--   `queries.ts`: Example query functions
+-   `migrations/`: Contains generated SQL migration files
+-   `migrate.ts`: Script to run migrations programmatically
 
 ## Usage
 
 ### Basic Query Examples
 
 ```typescript
-// Import the db client and schemas
-import { db } from "lib/drizzle";
+// Import the dbFactory client and schemas
+import { dbFactory } from "lib/drizzle";
 import * as schema from "lib/drizzle/schema";
 
 // Or import specific queries
@@ -38,13 +41,13 @@ export async function GET() {
 ### Building Custom Queries
 
 ```typescript
-import { db } from "lib/drizzle";
+import { dbFactory } from "lib/drizzle";
 import { repositories } from "lib/drizzle/schema";
 import { eq, like, desc } from "drizzle-orm";
 
 // Example: Search repositories by name
 async function searchRepositories(searchTerm: string) {
-	return await db
+	return await dbFactory.getClient()
 		.select()
 		.from(repositories)
 		.where(like(repositories.name, `%${searchTerm}%`))
@@ -53,13 +56,32 @@ async function searchRepositories(searchTerm: string) {
 }
 ```
 
-## Migration Commands
+## Migration System
 
-The following npm scripts are available for database migrations:
+Drizzle uses a file-based migration system for database schema changes:
 
--   `npm run db:generate`: Generate migration files based on schema changes
--   `npm run db:migrate`: Apply migrations to the database
--   `npm run db:studio`: Open Drizzle Studio to view and manage database data
+1. **Generating Migrations**: When your schema changes, generate migration files:
+   ```bash
+   npm run db:generate
+   ```
+   This will create SQL migration files in the `migrations` directory.
+
+2. **Applying Migrations**: To apply migrations to your database:
+   ```bash
+   npm run db:migrate
+   ```
+   This runs the `migrate.ts` script which applies all pending migrations.
+
+3. **Direct Schema Push** (for development):
+   ```bash
+   npm run db:push
+   ```
+   This pushes schema changes directly to the database without creating migration files.
+
+4. **Drizzle Studio**: For a visual interface to manage your database:
+   ```bash
+   npm run db:studio
+   ```
 
 ## Environment Setup
 

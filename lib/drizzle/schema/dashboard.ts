@@ -1,4 +1,4 @@
-import { date, decimal, index, integer, pgTable, serial, timestamp, varchar } from "drizzle-orm/pg-core";
+import {date, decimal, index, integer, pgTable, serial, timestamp, varchar} from "drizzle-orm/pg-core";
 
 // Dashboard KPIs table
 export const dashboardKpis = pgTable("dashboard_kpis", {

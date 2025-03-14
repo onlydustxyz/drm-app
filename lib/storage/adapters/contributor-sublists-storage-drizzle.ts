@@ -1,4 +1,4 @@
-import { db } from "@/lib/drizzle";
+import { dbFactory } from "@/lib/drizzle";
 import { contributorRetention, contributorSublists } from "@/lib/drizzle/schema/contributor-sublists";
 import { contributorSublistsContributors } from "@/lib/drizzle/schema/contributor-sublists";
 import {
@@ -25,7 +25,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 		};
 	}): Promise<ContributorSublist[]> {
 		try {
-			let query = db.select().from(contributorSublists);
+			let query = dbFactory.getClient().select().from(contributorSublists);
 
 			// Apply search filter if provided
 			if (options?.search && options.search.trim() !== "") {
@@ -81,7 +81,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 			if (result.length > 0) {
 				const sublistIds = result.map(item => item.id);
 
-				const contributors = await db
+				const contributors = await dbFactory.getClient()
 					.select({
 						sublistId: contributorSublistsContributors.sublistId,
 						contributorId: contributorSublistsContributors.contributorId,
@@ -109,7 +109,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 	async getSublist(id: string): Promise<ContributorSublist | undefined> {
 		try {
 			// Get the sublist record
-			const result = await db
+			const result = await dbFactory.getClient()
 				.select()
 				.from(contributorSublists)
 				.where(eq(contributorSublists.id, parseInt(id)))
@@ -122,7 +122,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 			const item = result[0];
 
 			// Get the contributors from the join table
-			const contributors = await db
+			const contributors = await dbFactory.getClient()
 				.select({ contributorId: contributorSublistsContributors.contributorId })
 				.from(contributorSublistsContributors)
 				.where(eq(contributorSublistsContributors.sublistId, item.id));
@@ -149,7 +149,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 	): Promise<ContributorSublist> {
 		try {
 			// Start a transaction to ensure atomicity
-			return await db.transaction(async (tx) => {
+			return await dbFactory.getClient().transaction(async (tx) => {
 				const now = new Date();
 				// Create the sublist record without storing contributor IDs
 				const [createdSublist] = await tx
@@ -201,7 +201,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 				return undefined;
 			}
 
-			return await db.transaction(async (tx) => {
+			return await dbFactory.getClient().transaction(async (tx) => {
 				// Build update object with only the provided fields
 				const updateObj: any = {
 					updated_at: new Date(),
@@ -265,7 +265,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 		try {
 			// Delete the sublist record - this will cascade delete all entries in the join table
 			// due to the foreign key constraint with onDelete: "cascade"
-			const result = await db
+			const result = await dbFactory.getClient()
 				.delete(contributorSublists)
 				.where(eq(contributorSublists.id, parseInt(id)))
 				.returning({ id: contributorSublists.id });
@@ -283,7 +283,7 @@ export class DrizzleContributorSublistsStorage implements ContributorSublistsSto
 			const numericContributorIds = contributorIds.map(id => parseInt(id));
 
 			// Try to get data from database first
-			const result = await db.select().from(contributorRetention).orderBy(contributorRetention.month);
+			const result = await dbFactory.getClient().select().from(contributorRetention).orderBy(contributorRetention.month);
 
 			// Filter results to only include those with at least one matching contributor ID
 			// Note: This is a simplification - ideally we would query directly with a DB-specific JSON array overlap operator

@@ -1,4 +1,4 @@
-import { db } from "@/lib/drizzle";
+import { dbFactory } from "@/lib/drizzle";
 import { repositories } from "@/lib/drizzle/schema/repositories";
 import { Repository } from "@/lib/services/repositories-service";
 import { RepositoriesStorage } from "@/lib/storage/repositories-storage";
@@ -40,7 +40,7 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	 */
 	async getRepositories(): Promise<Repository[]> {
 		try {
-			const dbRepos = await db.select().from(repositories).orderBy(repositories.name);
+			const dbRepos = await dbFactory.getClient().select().from(repositories).orderBy(repositories.name);
 			return dbRepos.map(this.transformDbToModel);
 		} catch (error) {
 			console.error("Error fetching repositories:", error);
@@ -53,7 +53,7 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	 */
 	async getRepository(id: string): Promise<Repository | undefined> {
 		try {
-			const dbRepo = await db
+			const dbRepo = await dbFactory.getClient()
 				.select()
 				.from(repositories)
 				.where(eq(repositories.id, parseInt(id)))
@@ -78,7 +78,7 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 			// Extract owner from the repository name (format: owner/repo)
 			const owner = repository.name.split("/")[0];
 
-			const created = await db
+			const created = await dbFactory.getClient()
 				.insert(repositories)
 				.values({
 					name: repository.name,
@@ -129,7 +129,7 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 				updates.owner = owner;
 			}
 
-			const updated = await db
+			const updated = await dbFactory.getClient()
 				.update(repositories)
 				.set(updates)
 				.where(eq(repositories.id, parseInt(id)))
@@ -151,7 +151,7 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	 */
 	async deleteRepository(id: string): Promise<boolean> {
 		try {
-			const deleted = await db
+			const deleted = await dbFactory.getClient()
 				.delete(repositories)
 				.where(eq(repositories.id, parseInt(id)))
 				.returning({ id: repositories.id });

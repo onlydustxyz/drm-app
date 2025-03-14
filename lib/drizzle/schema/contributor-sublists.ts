@@ -1,4 +1,15 @@
-import { index, integer, jsonb, pgTable, serial, text, timestamp, varchar, primaryKey, bigint } from "drizzle-orm/pg-core";
+import {
+	bigint,
+	index,
+	integer,
+	jsonb,
+	pgTable,
+	primaryKey,
+	serial,
+	text,
+	timestamp,
+	varchar
+} from "drizzle-orm/pg-core";
 
 // Define the contributor sublists table schema
 export const contributorSublists = pgTable(

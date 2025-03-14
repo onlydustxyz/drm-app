@@ -1,5 +1,4 @@
-import { index, integer, pgTable, serial, text, timestamp, unique, varchar } from "drizzle-orm/pg-core";
-import { repositories } from "./repositories";
+import {index, integer, pgTable, serial, text, timestamp, unique, varchar} from "drizzle-orm/pg-core";
 
 // Define the segments table schema
 export const segments = pgTable(
@@ -56,4 +55,4 @@ export const segmentRepositories = pgTable(
             uniqueIdx: unique("idx_segment_repositories_unique").on(table.segment_id, table.repository_url),
         };
     }
-); 
+);

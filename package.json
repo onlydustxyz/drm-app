@@ -7,9 +7,12 @@
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
+		"db:init": "ts-node --transpile-only lib/drizzle/init.ts",
 		"db:generate": "drizzle-kit generate:pg",
-		"db:migrate": "drizzle-kit migrate",
+		"db:push": "drizzle-kit push:pg",
 		"db:studio": "drizzle-kit studio",
+		"db:migrate": "ts-node --transpile-only lib/drizzle/migrate.ts",
+		"db:migrate:run": "npm run db:generate && npm run db:migrate",
 		"test": "jest",
 		"test:watch": "jest --watch"
 	},

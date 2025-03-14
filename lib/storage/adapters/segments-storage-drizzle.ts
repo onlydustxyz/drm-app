@@ -1,4 +1,4 @@
-import { db } from "@/lib/drizzle";
+import { dbFactory } from "@/lib/drizzle";
 import { and, eq, sql } from "drizzle-orm";
 import { Segment } from "@/lib/services/segments-service";
 import { SegmentsStorage } from "@/lib/storage/segments-storage";
@@ -40,7 +40,7 @@ async function createRepositoryIndexingJob(owner: string, name: string): Promise
     try {
         // Insert into the indexer.repo_public_events_indexing_jobs table
         // Using raw SQL here since we don't have a Drizzle schema for this table
-        await db.execute(sql`
+        await dbFactory.getClient().execute(sql`
             INSERT INTO indexer.repo_public_events_indexing_jobs 
             (repo_owner, repo_name, status) 
             VALUES (${owner}, ${name}, 'PENDING')
@@ -65,13 +65,13 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
      */
     private async transformDbToModel(dbSegment: any): Promise<Segment> {
         // Fetch associated contributors
-        const contributors = await db
+        const contributors = await dbFactory.getClient()
             .select({ contributor_github_login: segmentsContributors.contributor_github_login })
             .from(segmentsContributors)
             .where(eq(segmentsContributors.segment_id, dbSegment.id));
 
         // Fetch associated repositories
-        const repositories = await db
+        const repositories = await dbFactory.getClient()
             .select({ repository_url: segmentRepositories.repository_url })
             .from(segmentRepositories)
             .where(eq(segmentRepositories.segment_id, dbSegment.id));
@@ -92,7 +92,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
      */
     async getSegments(): Promise<Segment[]> {
         try {
-            const dbSegments = await db.select().from(segments);
+            const dbSegments = await dbFactory.getClient().select().from(segments);
             
             // Transform each segment to our service model
             const result: Segment[] = [];
@@ -113,7 +113,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
      */
     async getSegment(id: string): Promise<Segment | undefined> {
         try {
-            const dbSegment = await db
+            const dbSegment = await dbFactory.getClient()
                 .select()
                 .from(segments)
                 .where(eq(segments.id, parseInt(id)))
@@ -137,7 +137,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
         try {
             const now = new Date();
             
-            const created = await db
+            const created = await dbFactory.getClient()
                 .insert(segments)
                 .values({
                     name: segment.name,
@@ -193,7 +193,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             // Always update the updated_at timestamp
             updates.updated_at = new Date();
 
-            const updated = await db
+            const updated = await dbFactory.getClient()
                 .update(segments)
                 .set(updates)
                 .where(eq(segments.id, parseInt(id)))
@@ -206,7 +206,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             // Update contributors if provided
             if (segment.contributors) {
                 // First remove all existing contributors
-                await db
+                await dbFactory.getClient()
                     .delete(segmentsContributors)
                     .where(eq(segmentsContributors.segment_id, parseInt(id)));
 
@@ -219,7 +219,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             // Update repositories if provided
             if (segment.repositories) {
                 // First remove all existing repositories
-                await db
+                await dbFactory.getClient()
                     .delete(segmentRepositories)
                     .where(eq(segmentRepositories.segment_id, parseInt(id)));
 
@@ -242,7 +242,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     async deleteSegment(id: string): Promise<boolean> {
         try {
             // Note: Cascading delete will handle the joins automatically
-            const deleted = await db
+            const deleted = await dbFactory.getClient()
                 .delete(segments)
                 .where(eq(segments.id, parseInt(id)))
                 .returning({ id: segments.id });
@@ -260,7 +260,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     async addContributorToSegment(segmentId: string, contributorGithubLogin: string): Promise<boolean> {
         try {
             // Check if the segment exists
-            const segmentExists = await db
+            const segmentExists = await dbFactory.getClient()
                 .select({ id: segments.id })
                 .from(segments)
                 .where(eq(segments.id, parseInt(segmentId)))
@@ -271,7 +271,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             }
 
             // Check if the relationship already exists
-            const existing = await db
+            const existing = await dbFactory.getClient()
                 .select({ id: segmentsContributors.id })
                 .from(segmentsContributors)
                 .where(
@@ -288,14 +288,14 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             }
 
             // Create the relationship
-            await db.insert(segmentsContributors).values({
+            await dbFactory.getClient().insert(segmentsContributors).values({
                 segment_id: parseInt(segmentId),
                 contributor_github_login: contributorGithubLogin,
                 created_at: new Date()
             });
 
             // Update the segment's updated_at timestamp
-            await db
+            await dbFactory.getClient()
                 .update(segments)
                 .set({ updated_at: new Date() })
                 .where(eq(segments.id, parseInt(segmentId)));
@@ -313,7 +313,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     async removeContributorFromSegment(segmentId: string, contributorGithubLogin: string): Promise<boolean> {
         try {
             // Check if the relationship exists
-            const existing = await db
+            const existing = await dbFactory.getClient()
                 .select({ id: segmentsContributors.id })
                 .from(segmentsContributors)
                 .where(
@@ -326,7 +326,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
 
             if (existing.length > 0) {
                 // Delete the relationship
-                await db
+                await dbFactory.getClient()
                     .delete(segmentsContributors)
                     .where(
                         and(
@@ -336,7 +336,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                     );
 
                 // Update the segment's updated_at timestamp
-                await db
+                await dbFactory.getClient()
                     .update(segments)
                     .set({ updated_at: new Date() })
                     .where(eq(segments.id, parseInt(segmentId)));
@@ -357,7 +357,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     async addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
         try {
             // Check if the segment exists
-            const segmentExists = await db
+            const segmentExists = await dbFactory.getClient()
                 .select({ id: segments.id })
                 .from(segments)
                 .where(eq(segments.id, parseInt(segmentId)))
@@ -368,7 +368,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             }
 
             // Check if the relationship already exists
-            const existing = await db
+            const existing = await dbFactory.getClient()
                 .select({ id: segmentRepositories.id })
                 .from(segmentRepositories)
                 .where(
@@ -385,14 +385,14 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             }
 
             // Create the relationship
-            await db.insert(segmentRepositories).values({
+            await dbFactory.getClient().insert(segmentRepositories).values({
                 segment_id: parseInt(segmentId),
                 repository_url: repositoryUrl,
                 created_at: new Date()
             });
 
             // Update the segment's updated_at timestamp
-            await db
+            await dbFactory.getClient()
                 .update(segments)
                 .set({ updated_at: new Date() })
                 .where(eq(segments.id, parseInt(segmentId)));
@@ -415,7 +415,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
      */
     async removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
         try {
-            const deleted = await db
+            const deleted = await dbFactory.getClient()
                 .delete(segmentRepositories)
                 .where(
                     and(
@@ -427,7 +427,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
 
             if (deleted.length > 0) {
                 // Update the segment's updated_at timestamp
-                await db
+                await dbFactory.getClient()
                     .update(segments)
                     .set({ updated_at: new Date() })
                     .where(eq(segments.id, parseInt(segmentId)));

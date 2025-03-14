@@ -1,4 +1,4 @@
-import { db } from "@/lib/drizzle";
+import { dbFactory } from "@/lib/drizzle";
 import {
 	commitsByDevType,
 	dashboardKpis,
@@ -81,7 +81,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 
 	async getDashboardKPIs(): Promise<DashboardKPI> {
 		try {
-			const result = await db.select().from(dashboardKpis).orderBy(desc(dashboardKpis.created_at)).limit(1);
+			const result = await dbFactory.getClient().select().from(dashboardKpis).orderBy(desc(dashboardKpis.created_at)).limit(1);
 
 			const data = result[0];
 
@@ -109,7 +109,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 
 	async getDeveloperActivity(): Promise<DeveloperActivity[]> {
 		try {
-			const data = await db.select().from(developerActivity).orderBy(developerActivity.name);
+			const data = await dbFactory.getClient().select().from(developerActivity).orderBy(developerActivity.name);
 
 			return data.map((item: typeof developerActivity.$inferSelect) => ({
 				name: item.name,
@@ -125,7 +125,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 
 	async getDeveloperLocations(): Promise<DeveloperLocation[]> {
 		try {
-			const data = await db.select().from(developerLocations).orderBy(desc(developerLocations.count));
+			const data = await dbFactory.getClient().select().from(developerLocations).orderBy(desc(developerLocations.count));
 
 			return data.map((item: typeof developerLocations.$inferSelect) => ({
 				country: item.country,
@@ -141,7 +141,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 
 	async getCommitsByDevType(): Promise<CommitsByDevType[]> {
 		try {
-			const data = await db.select().from(commitsByDevType).orderBy(commitsByDevType.name);
+			const data = await dbFactory.getClient().select().from(commitsByDevType).orderBy(commitsByDevType.name);
 
 			return data.map((item: typeof commitsByDevType.$inferSelect) => ({
 				name: item.name,
@@ -157,7 +157,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 
 	async getMonthlyCommits(): Promise<MonthlyCommits[]> {
 		try {
-			const data = await db.select().from(monthlyCommits).orderBy(monthlyCommits.date);
+			const data = await dbFactory.getClient().select().from(monthlyCommits).orderBy(monthlyCommits.date);
 
 			return data.map((item: any) => ({
 				date: formatDateToYYYYMMDD(item.date),
@@ -171,7 +171,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 
 	async getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]> {
 		try {
-			const data = await db.select().from(monthlyPRsMerged).orderBy(monthlyPRsMerged.date);
+			const data = await dbFactory.getClient().select().from(monthlyPRsMerged).orderBy(monthlyPRsMerged.date);
 
 			return data.map((item: any) => ({
 				date: formatDateToYYYYMMDD(item.date),
@@ -185,7 +185,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 
 	async getDevActivity(): Promise<DevActivity[]> {
 		try {
-			const data = await db.select().from(devActivity).orderBy(devActivity.date);
+			const data = await dbFactory.getClient().select().from(devActivity).orderBy(devActivity.date);
 
 			return data.map((item: any) => ({
 				date: formatDateToYYYYMM(item.date),

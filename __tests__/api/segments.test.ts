@@ -1,7 +1,6 @@
 import request from "supertest";
 import {createTestServer} from "@/__tests__/setup";
-import {db} from "@/lib/drizzle";
-import {eq, and} from "drizzle-orm";
+import {dbFactory} from "@/lib/drizzle";
 
 describe("Segments API", () => {
     describe("POST /api/segments", () => {
@@ -36,7 +35,7 @@ describe("Segments API", () => {
                 const repoName = urlParts[urlParts.length - 1];
 
                 // Query the jobs table to check if a job was created
-                let pgRaw = await db.execute(
+                let pgRaw = await dbFactory.getClient().execute(
                     `select * from indexer.repo_public_events_indexing_jobs where repo_owner = '${repoOwner}' and repo_name = '${repoName}'`
                 );
 
