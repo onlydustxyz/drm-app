@@ -110,7 +110,7 @@ const mockRepositories: Repository[] = [
 
 // Repositories service interface
 export interface RepositoriesService {
-	getRepositories(): Promise<Repository[]>;
+	getRepositories(filter?: { names?: string[] }): Promise<Repository[]>;
 	getRepository(id: string): Promise<Repository | undefined>;
 	createRepository(repository: Omit<Repository, "id">): Promise<Repository>;
 	updateRepository(id: string, repository: Partial<Omit<Repository, "id">>): Promise<Repository | undefined>;
@@ -119,12 +119,18 @@ export interface RepositoriesService {
 
 // Mock implementation of the repositories service
 export class MockRepositoriesService implements RepositoriesService {
-	async getRepositories(): Promise<Repository[]> {
+	async getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
 		// Simulate API delay
 		await new Promise((resolve) => setTimeout(resolve, 500));
 
-		// Return mock data for now
-		return mockRepositories;
+		// Return mock data with optional filtering
+		let result = [...mockRepositories];
+
+		if (filter?.names && filter.names.length > 0) {
+			result = result.filter((repo) => filter.names!.includes(repo.name));
+		}
+
+		return result;
 	}
 
 	async getRepository(id: string): Promise<Repository | undefined> {
@@ -187,9 +193,9 @@ export class MockRepositoriesService implements RepositoriesService {
 }
 
 export class RepositoriesService implements RepositoriesService {
-	async getRepositories(): Promise<Repository[]> {
+	async getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
 		const storage = getRepositoriesStorage();
-		return storage.getRepositories();
+		return storage.getRepositories(filter);
 	}
 
 	async getRepository(id: string): Promise<Repository | undefined> {
@@ -218,8 +224,8 @@ const repositoriesService: RepositoriesService =
 	process.env.NODE_ENV === "production" ? new RepositoriesService() : new MockRepositoriesService();
 
 // Export functions that use the service
-export async function getRepositories(): Promise<Repository[]> {
-	return repositoriesService.getRepositories();
+export async function getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
+	return repositoriesService.getRepositories(filter);
 }
 
 export async function getRepository(id: string): Promise<Repository | undefined> {

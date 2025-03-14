@@ -7,14 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { useRepositories } from "@/lib/react-query/repositories";
+import { RepositoryFilter, useRepositories } from "@/lib/react-query/repositories";
 import { Repository } from "@/lib/services/repositories-service";
 import { formatDate } from "@/lib/utils";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function RepositoriesList() {
-	const { data: repositories = [], isLoading, error } = useRepositories();
+interface RepositoriesListProps {
+	names?: string[];
+}
+
+export function RepositoriesList({ names }: RepositoriesListProps) {
+	const filter: RepositoryFilter = {};
+	if (names && names.length > 0) filter.names = names;
+
+	const { data: repositories = [], isLoading, error } = useRepositories(filter);
 
 	const [filteredRepositories, setFilteredRepositories] = useState<Repository[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");

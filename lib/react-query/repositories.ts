@@ -2,11 +2,16 @@ import { Repository } from "@/lib/services/repositories-service";
 import { RepositorySublist } from "@/lib/services/repository-sublists-service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+// Filter interface for repositories
+export interface RepositoryFilter {
+	names?: string[];
+}
+
 // Keys for React Query caching
 export const repositoryKeys = {
 	all: ["repositories"] as const,
 	lists: () => [...repositoryKeys.all, "list"] as const,
-	list: (filters: string) => [...repositoryKeys.lists(), { filters }] as const,
+	list: (filters: RepositoryFilter = {}) => [...repositoryKeys.lists(), { filters }] as const,
 	details: (id: string) => [...repositoryKeys.all, "detail", id] as const,
 	sublists: {
 		all: ["repository-sublists"] as const,
@@ -19,8 +24,15 @@ export const repositoryKeys = {
 };
 
 // API Client functions
-async function fetchRepositories(): Promise<Repository[]> {
-	const response = await fetch("/api/repositories");
+async function fetchRepositories(filter: RepositoryFilter = {}): Promise<Repository[]> {
+	// Build URL with query parameters
+	const url = new URL("/api/repositories", window.location.origin);
+
+	if (filter.names && filter.names.length > 0) {
+		url.searchParams.append("names", filter.names.join(","));
+	}
+
+	const response = await fetch(url.toString());
 	if (!response.ok) {
 		throw new Error("Failed to fetch repositories");
 	}
@@ -121,10 +133,10 @@ async function createRepositorySublistMutation(
 }
 
 // Hooks
-export function useRepositories() {
+export function useRepositories(filter?: RepositoryFilter) {
 	return useQuery({
-		queryKey: repositoryKeys.lists(),
-		queryFn: fetchRepositories,
+		queryKey: repositoryKeys.list(filter || {}),
+		queryFn: () => fetchRepositories(filter),
 	});
 }
 

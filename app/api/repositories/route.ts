@@ -1,9 +1,18 @@
 import { createRepository, getRepositories } from "@/lib/services/repositories-service";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
 	try {
-		const repositories = await getRepositories();
+		// Get the search parameters from the request URL
+		const searchParams = request.nextUrl.searchParams;
+		const namesParam = searchParams.get("names");
+
+		// Parse names if provided (comma-separated list)
+		const names = namesParam ? namesParam.split(",") : undefined;
+
+		// Pass the filter parameters to getRepositories
+		const repositories = await getRepositories(names && names.length > 0 ? { names } : undefined);
+
 		return NextResponse.json(repositories);
 	} catch (error) {
 		console.error("Error fetching repositories:", error);

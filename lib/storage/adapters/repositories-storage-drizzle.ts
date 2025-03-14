@@ -2,7 +2,7 @@ import { dbFactory } from "@/lib/drizzle";
 import { repositories } from "@/lib/drizzle/schema/repositories";
 import { Repository } from "@/lib/services/repositories-service";
 import { RepositoriesStorage } from "@/lib/storage/repositories-storage";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 
 /**
  * Drizzle ORM implementation of the RepositoriesStorage interface
@@ -36,11 +36,24 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	}
 
 	/**
-	 * Get all repositories
+	 * Get repositories with optional filtering by names
+	 * @param filter Optional filtering parameters
+	 * @param filter.names Array of repository names to filter by
+	 * @returns Array of repositories matching the filter criteria
 	 */
-	async getRepositories(): Promise<Repository[]> {
+	async getRepositories(filter?: { names?: string[] }): Promise<Repository[]> {
 		try {
-			const dbRepos = await dbFactory.getClient().select().from(repositories).orderBy(repositories.name);
+			let query = dbFactory.getClient().select().from(repositories);
+
+			// Apply filters if provided
+			if (filter?.names && filter.names.length > 0) {
+				query = query.where(inArray(repositories.name, filter.names)) as any;
+			}
+
+			// Always order by name
+			query = query.orderBy(repositories.name) as any;
+
+			const dbRepos = await query;
 			return dbRepos.map(this.transformDbToModel);
 		} catch (error) {
 			console.error("Error fetching repositories:", error);
@@ -53,7 +66,8 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	 */
 	async getRepository(id: string): Promise<Repository | undefined> {
 		try {
-			const dbRepo = await dbFactory.getClient()
+			const dbRepo = await dbFactory
+				.getClient()
 				.select()
 				.from(repositories)
 				.where(eq(repositories.id, parseInt(id)))
@@ -78,7 +92,8 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 			// Extract owner from the repository name (format: owner/repo)
 			const owner = repository.name.split("/")[0];
 
-			const created = await dbFactory.getClient()
+			const created = await dbFactory
+				.getClient()
 				.insert(repositories)
 				.values({
 					name: repository.name,
@@ -129,7 +144,8 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 				updates.owner = owner;
 			}
 
-			const updated = await dbFactory.getClient()
+			const updated = await dbFactory
+				.getClient()
 				.update(repositories)
 				.set(updates)
 				.where(eq(repositories.id, parseInt(id)))
@@ -151,7 +167,8 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	 */
 	async deleteRepository(id: string): Promise<boolean> {
 		try {
-			const deleted = await dbFactory.getClient()
+			const deleted = await dbFactory
+				.getClient()
 				.delete(repositories)
 				.where(eq(repositories.id, parseInt(id)))
 				.returning({ id: repositories.id });

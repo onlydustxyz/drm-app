@@ -59,7 +59,11 @@ export default function SegmentPage({ params }: { params: Promise<{ id: string }
 
 	return (
 		<div className="container mx-auto py-6">
-			{isRepositorySegment ? <RepositoriesList /> : <div>Not a repository segment</div>}
+			{isRepositorySegment ? (
+				<RepositoriesList names={["onlydust/contracts", "onlydust/marketplace-api"]} />
+			) : (
+				<div>Not a repository segment</div>
+			)}
 		</div>
 	);
 }

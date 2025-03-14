@@ -5,7 +5,7 @@ import { DrizzleRepositoriesStorage } from "@/lib/storage/adapters/repositories-
  * Interface for accessing repository data from storage
  */
 export interface RepositoriesStorage {
-	getRepositories(): Promise<Repository[]>;
+	getRepositories(filter?: { names?: string[] }): Promise<Repository[]>;
 	getRepository(id: string): Promise<Repository | undefined>;
 	createRepository(repository: Omit<Repository, "id">): Promise<Repository>;
 	updateRepository(id: string, repository: Partial<Omit<Repository, "id">>): Promise<Repository | undefined>;
