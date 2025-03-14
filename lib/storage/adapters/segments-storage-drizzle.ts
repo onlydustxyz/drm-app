@@ -82,7 +82,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             description: dbSegment.description || "",
             created_at: dbSegment.created_at?.toISOString() || new Date().toISOString(),
             updated_at: dbSegment.updated_at?.toISOString() || new Date().toISOString(),
-            contributors: contributors.map(c => c.contributor_github_login),
+            github_user_logins: contributors.map(c => c.contributor_github_login),
             repositories: repositories.map(r => r.repository_url)
         };
     }
@@ -153,12 +153,12 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
 
             const newSegment = created[0];
             
-            // Add relationships for contributors if provided
-            if (segment.contributors && segment.contributors.length > 0) {
-                for (const contributorGithubLogin of segment.contributors) {
-                    await this.addContributorToSegment(
+            // Add relationships for github user logins if provided
+            if (segment.github_user_logins && segment.github_user_logins.length > 0) {
+                for (const githubUserLogin of segment.github_user_logins) {
+                    await this.addGithubUserLoginToSegment(
                         newSegment.id.toString(), 
-                        contributorGithubLogin
+                        githubUserLogin
                     );
                 }
             }
@@ -203,16 +203,16 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                 return undefined;
             }
 
-            // Update contributors if provided
-            if (segment.contributors) {
+            // Update github user logins if provided
+            if (segment.github_user_logins) {
                 // First remove all existing contributors
                 await dbFactory.getClient()
                     .delete(segmentsContributors)
                     .where(eq(segmentsContributors.segment_id, parseInt(id)));
 
-                // Then add the new contributors
-                for (const contributorGithubLogin of segment.contributors) {
-                    await this.addContributorToSegment(id, contributorGithubLogin);
+                // Then add the new github user logins
+                for (const githubUserLogin of segment.github_user_logins) {
+                    await this.addGithubUserLoginToSegment(id, githubUserLogin);
                 }
             }
 
@@ -255,9 +255,9 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     }
 
     /**
-     * Add a contributor to a segment
+     * Add a GitHub user login to a segment
      */
-    async addContributorToSegment(segmentId: string, contributorGithubLogin: string): Promise<boolean> {
+    async addGithubUserLoginToSegment(segmentId: string, githubUserLogin: string): Promise<boolean> {
         try {
             // Check if the segment exists
             const segmentExists = await dbFactory.getClient()
@@ -277,7 +277,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                 .where(
                     and(
                         eq(segmentsContributors.segment_id, parseInt(segmentId)),
-                        eq(segmentsContributors.contributor_github_login, contributorGithubLogin)
+                        eq(segmentsContributors.contributor_github_login, githubUserLogin)
                     )
                 )
                 .limit(1);
@@ -290,7 +290,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             // Create the relationship
             await dbFactory.getClient().insert(segmentsContributors).values({
                 segment_id: parseInt(segmentId),
-                contributor_github_login: contributorGithubLogin,
+                contributor_github_login: githubUserLogin,
                 created_at: new Date()
             });
 
@@ -302,15 +302,15 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
 
             return true;
         } catch (error) {
-            console.error(`Error adding contributor ${contributorGithubLogin} to segment ${segmentId}:`, error);
-            throw new Error(`Failed to add contributor to segment`);
+            console.error(`Error adding GitHub user login ${githubUserLogin} to segment ${segmentId}:`, error);
+            throw new Error(`Failed to add GitHub user login to segment`);
         }
     }
 
     /**
-     * Remove a contributor from a segment
+     * Remove a GitHub user login from a segment
      */
-    async removeContributorFromSegment(segmentId: string, contributorGithubLogin: string): Promise<boolean> {
+    async removeGithubUserLoginFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean> {
         try {
             // Check if the relationship exists
             const existing = await dbFactory.getClient()
@@ -319,7 +319,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                 .where(
                     and(
                         eq(segmentsContributors.segment_id, parseInt(segmentId)),
-                        eq(segmentsContributors.contributor_github_login, contributorGithubLogin)
+                        eq(segmentsContributors.contributor_github_login, githubUserLogin)
                     )
                 )
                 .limit(1);
@@ -331,7 +331,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                     .where(
                         and(
                             eq(segmentsContributors.segment_id, parseInt(segmentId)),
-                            eq(segmentsContributors.contributor_github_login, contributorGithubLogin)
+                            eq(segmentsContributors.contributor_github_login, githubUserLogin)
                         )
                     );
 
@@ -346,8 +346,8 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
 
             return false;
         } catch (error) {
-            console.error(`Error removing contributor ${contributorGithubLogin} from segment ${segmentId}:`, error);
-            throw new Error(`Failed to remove contributor from segment`);
+            console.error(`Error removing GitHub user login ${githubUserLogin} from segment ${segmentId}:`, error);
+            throw new Error(`Failed to remove GitHub user login from segment`);
         }
     }
 

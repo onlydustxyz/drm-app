@@ -10,8 +10,8 @@ export interface SegmentsStorage {
     createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at">): Promise<Segment>;
     updateSegment(id: string, segment: Partial<Omit<Segment, "id" | "created_at" | "updated_at">>): Promise<Segment | undefined>;
     deleteSegment(id: string): Promise<boolean>;
-    addContributorToSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
-    removeContributorFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
+    addGithubUserLoginToSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
+    removeGithubUserLoginFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
     addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
     removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
 }
