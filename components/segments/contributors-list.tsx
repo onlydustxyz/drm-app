@@ -6,20 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useContributors } from "@/lib/react-query/contributors";
 import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-
-// API fetch functions
-const fetchContributors = async (): Promise<Contributor[]> => {
-	const response = await fetch("/api/contributors");
-	if (!response.ok) {
-		throw new Error("Failed to fetch contributors");
-	}
-	return response.json();
-};
 
 export default function ContributorsPage() {
 	const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
@@ -29,15 +20,8 @@ export default function ContributorsPage() {
 		direction: "ascending" | "descending";
 	}>({ key: null, direction: "descending" });
 
-	// Use React Query for data fetching
-	const {
-		data: contributors = [],
-		isLoading: isLoadingContributors,
-		error: contributorsError,
-	} = useQuery({
-		queryKey: ["contributors"],
-		queryFn: fetchContributors,
-	});
+	// Use the custom React Query hook
+	const { data: contributors = [], isLoading: isLoadingContributors, error: contributorsError } = useContributors();
 
 	// Apply search filter
 	useEffect(() => {
