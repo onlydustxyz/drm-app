@@ -2,7 +2,7 @@ import { dbFactory } from "@/lib/drizzle";
 import { contributors } from "@/lib/drizzle/schema/contributors";
 import { Contributor } from "@/lib/services/contributors-service";
 import { ContributorsStorage } from "@/lib/storage/contributors-storage";
-import { asc, desc, eq, ilike, or } from "drizzle-orm";
+import { asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 
 /**
  * Drizzle ORM implementation of the ContributorsStorage interface
@@ -51,21 +51,19 @@ export class DrizzleContributorsStorage implements ContributorsStorage {
 		sortOrder?: "asc" | "desc";
 	}): Promise<Contributor[]> {
 		try {
-			let query = dbFactory.getClient().select().from(contributors);
+			const db = dbFactory.getClient();
 
-			// Add search filter if provided
-			if (options?.search) {
-				const searchTerm = `%${options.search}%`;
-				query = query.where(
-					or(
-						ilike(contributors.name, searchTerm),
-						ilike(contributors.handle, searchTerm),
-						ilike(contributors.description, searchTerm)
-					)
-				);
-			}
+			// Build the where condition if search is provided
+			const whereCondition = options?.search
+				? or(
+						ilike(contributors.name, `%${options.search}%`),
+						ilike(contributors.handle, `%${options.search}%`),
+						ilike(contributors.description, `%${options.search}%`)
+				  )
+				: undefined;
 
-			// Add sorting if provided
+			// Determine column to sort by
+			let orderByColumn;
 			if (options?.sortBy) {
 				const sortDirection = options.sortOrder === "asc" ? asc : desc;
 
@@ -83,14 +81,21 @@ export class DrizzleContributorsStorage implements ContributorsStorage {
 
 				const column = columnMapping[options.sortBy as string];
 				if (column) {
-					query = query.orderBy(sortDirection(column));
+					orderByColumn = sortDirection(column);
+				} else {
+					orderByColumn = desc(contributors.stars);
 				}
 			} else {
-				// Default sort by stars descending
-				query = query.orderBy(desc(contributors.stars));
+				orderByColumn = desc(contributors.stars);
 			}
 
-			const result = await query;
+			// Execute query with all the built conditions
+			let result;
+			if (whereCondition) {
+				result = await db.select().from(contributors).where(whereCondition).orderBy(orderByColumn);
+			} else {
+				result = await db.select().from(contributors).orderBy(orderByColumn);
+			}
 
 			return result.map(this.transformDbToModel);
 		} catch (error) {
@@ -142,7 +147,7 @@ export class DrizzleContributorsStorage implements ContributorsStorage {
 					issues_opened: contributor.issuesOpened,
 					issues_closed: contributor.issuesClosed,
 					commits: contributor.commits,
-					last_active: new Date(contributor.lastActive),
+					last_active: sql`${new Date(contributor.lastActive)}::timestamp`,
 					latest_commit: contributor.latestCommit,
 					social_links: contributor.socialLinks,
 					activity_score: contributor.activityScore,
@@ -150,8 +155,8 @@ export class DrizzleContributorsStorage implements ContributorsStorage {
 					reputation_score: contributor.reputationScore,
 					stars: contributor.stars,
 					followers: contributor.followers,
-					created_at: now,
-					updated_at: now,
+					created_at: sql`${now}::timestamp`,
+					updated_at: sql`${now}::timestamp`,
 				})
 				.returning();
 
