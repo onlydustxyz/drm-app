@@ -1,5 +1,6 @@
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { CommitsByDevTypeSection } from "@/components/dashboard/sections/commits-by-dev-type";
+import { ContributorsByCountrySection } from "@/components/dashboard/sections/contributors-by-country";
 import { DevActivitySection } from "@/components/dashboard/sections/dev-activity";
 import { DeveloperActivitySection } from "@/components/dashboard/sections/developer-activity";
 import { KPICards } from "@/components/dashboard/sections/kpi-cards";
@@ -23,6 +24,7 @@ export default function DashboardPage() {
 
 			<div className="grid gap-4 md:grid-cols-2 w-full">
 				<MonthlyPRsMergedSection />
+				<ContributorsByCountrySection />
 			</div>
 		</DashboardLayout>
 	);

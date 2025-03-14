@@ -335,3 +335,47 @@ export function DevActivityChart({ data }: { data: DevActivity[] }) {
 		</ResponsiveContainer>
 	);
 }
+
+// Contributors By Country Chart
+export function ContributorsByCountryChart({ data }: { data: DeveloperLocation[] }) {
+	// Sort data by count in descending order and take top 10 countries
+	const sortedData = [...data]
+		.sort((a, b) => b.count - a.count)
+		.slice(0, 10);
+
+	return (
+		<ResponsiveContainer width="100%" height="100%">
+			<BarChart
+				data={sortedData}
+				margin={{
+					top: 10,
+					right: 30,
+					left: 60,
+					bottom: 60,
+				}}
+				layout="vertical"
+			>
+				<CartesianGrid strokeDasharray="3 3" />
+				<XAxis type="number" />
+				<YAxis 
+					type="category" 
+					dataKey="country"
+					tick={{ fontSize: 12 }}
+					width={100}
+				/>
+				<Tooltip
+					formatter={(value) => [`${value} contributors`, "Contributors"]}
+					labelFormatter={(label) => `Country: ${label}`}
+				/>
+				<Legend />
+				<Bar 
+					dataKey="count" 
+					name="Contributors" 
+					fill="#3b82f6" 
+					barSize={20}
+					radius={[0, 4, 4, 0]}
+				/>
+			</BarChart>
+		</ResponsiveContainer>
+	);
+}

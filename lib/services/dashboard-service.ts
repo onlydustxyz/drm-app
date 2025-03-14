@@ -64,6 +64,7 @@ export interface DashboardService {
 	getMonthlyCommits(repoIds?: number[]): Promise<MonthlyCommits[]>;
 	getMonthlyPRsMerged(repoIds?: number[]): Promise<MonthlyPRsMerged[]>;
 	getDevActivity(repoIds?: string[]): Promise<DevActivity[]>;
+	getDevelopersByCountry(repoIds?: number[]): Promise<DeveloperLocation[]>;
 }
 
 export async function getDashboardKPIs(repoIds: number[] = []): Promise<DashboardKPI> {
@@ -88,4 +89,8 @@ export async function getMonthlyPRsMerged(repoIds: number[] = []): Promise<Month
 
 export async function getDevActivity(repoIds?: string[]): Promise<DevActivity[]> {
 	return getDashboardStorage().getDevActivity(repoIds);
+}
+
+export async function getDevelopersByCountry(repoIds: number[] = []): Promise<DeveloperLocation[]> {
+	return getDashboardStorage().getDevelopersByCountry(repoIds);
 }

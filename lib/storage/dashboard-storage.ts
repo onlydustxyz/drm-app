@@ -3,6 +3,7 @@ import {
 	DashboardKPI,
 	DevActivity,
 	DeveloperActivity,
+	DeveloperLocation,
 	MonthlyCommits,
 	MonthlyPRsMerged,
 } from "@/lib/services/dashboard-service";
@@ -18,6 +19,7 @@ export interface DashboardStorage {
 	getMonthlyCommits(repoIds?: number[]): Promise<MonthlyCommits[]>;
 	getMonthlyPRsMerged(repoIds?: number[]): Promise<MonthlyPRsMerged[]>;
 	getDevActivity(repoIds?: string[]): Promise<DevActivity[]>;
+	getDevelopersByCountry(repoIds?: number[]): Promise<DeveloperLocation[]>;
 }
 
 // Create a singleton instance using Drizzle implementation

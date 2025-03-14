@@ -4,6 +4,7 @@ import {
 	DashboardKPI,
 	DevActivity,
 	DeveloperActivity,
+	DeveloperLocation,
 	MonthlyCommits,
 	MonthlyPRsMerged,
 } from "@/lib/services/dashboard-service";
@@ -267,7 +268,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 		}
 	}
 
-	async getDevActivity(repoIds?: string[]): Promise<DevActivity[]> {
+	async getDevActivity(repoIds: string[] = []): Promise<DevActivity[]> {
 		try {
 			const query = `
 				WITH all_months AS (SELECT generate_series(date_trunc('month', now() - interval '1 year'), now(), interval '1 month') as month),
@@ -329,6 +330,35 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 		} catch (error) {
 			console.error("Error fetching dev activity:", error);
 			throw new Error("Failed to fetch dev activity");
+		}
+	}
+
+	async getDevelopersByCountry(repoIds: number[] = []): Promise<DeveloperLocation[]> {
+		try {
+			const query = `
+				SELECT ug.country_code      AS country_code,
+				       count(distinct u.id) as dev_count
+				FROM indexer_exp.github_accounts u
+				         JOIN indexer_exp.github_commits c ON u.id = c.author_id
+				         LEFT JOIN indexer_exp.user_geolocations ug on u.id = ug.user_id
+				WHERE u."type" = 'USER'
+				  and (cardinality(:repoIds) = 0 or c.repo_id = any (:repoIds))
+				  and c.created_at > now() - interval '1 year'
+				GROUP BY 1
+				order by 1;
+			`;
+
+			const result = await dbFactory.getClient().execute(query);
+			
+			return result.map((item: any) => ({
+				country: String(item.country || ''),
+				count: Number(item.contributor_count || 0),
+				latitude: Number(item.latitude || 0),
+				longitude: Number(item.longitude || 0),
+			}));
+		} catch (error) {
+			console.error("Error fetching developers by country:", error);
+			throw new Error("Failed to fetch developers by country");
 		}
 	}
 }

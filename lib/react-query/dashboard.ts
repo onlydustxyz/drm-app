@@ -4,6 +4,7 @@ import {
     DashboardKPI,
     DevActivity,
     DeveloperActivity,
+    DeveloperLocation,
     MonthlyCommits,
     MonthlyPRsMerged
 } from "@/lib/services/dashboard-service";
@@ -17,6 +18,7 @@ export const dashboardKeys = {
     commitsByDevType: () => [...dashboardKeys.all, "commitsByDevType"] as const,
     monthlyCommits: () => [...dashboardKeys.all, "monthlyCommits"] as const,
     monthlyPRsMerged: () => [...dashboardKeys.all, "monthlyPRsMerged"] as const,
+    developersByCountry: () => [...dashboardKeys.all, "developersByCountry"] as const,
 };
 
 async function fetchDashboardKPIs(): Promise<DashboardKPI> {
@@ -67,6 +69,14 @@ async function fetchMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]> {
     return response.json();
 }
 
+async function fetchDevelopersByCountry(): Promise<DeveloperLocation[]> {
+    const response = await fetch("/api/dashboard/developers-by-country");
+    if (!response.ok) {
+        throw new Error("Failed to fetch developers by country");
+    }
+    return response.json();
+}
+
 export function useDashboardKPIs() {
     return useQuery({
         queryKey: dashboardKeys.kpis(),
@@ -106,5 +116,12 @@ export function useMonthlyPRsMerged() {
     return useQuery({
         queryKey: dashboardKeys.monthlyPRsMerged(),
         queryFn: fetchMonthlyPRsMerged,
+    });
+}
+
+export function useDevelopersByCountry() {
+    return useQuery({
+        queryKey: dashboardKeys.developersByCountry(),
+        queryFn: fetchDevelopersByCountry,
     });
 }

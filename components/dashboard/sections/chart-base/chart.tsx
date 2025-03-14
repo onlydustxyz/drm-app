@@ -1,5 +1,6 @@
 import {
     CommitsByDevTypeChart,
+    ContributorsByCountryChart,
     DevActivityChart,
     DevTypeDistributionChart,
     MonthlyCommitsChart,
@@ -9,6 +10,7 @@ import {
     CommitsByDevType,
     DevActivity,
     DeveloperActivity,
+    DeveloperLocation,
     MonthlyCommits,
     MonthlyPRsMerged,
 } from "@/lib/services/dashboard-service";
@@ -31,6 +33,8 @@ export function Chart({data, chartType}: ChartProps) {
             return <MonthlyPRsMergedChart data={data as MonthlyPRsMerged[]}/>;
         case "DevActivity":
             return <DevActivityChart data={data as DevActivity[]}/>;
+        case "ContributorsByCountry":
+            return <ContributorsByCountryChart data={data as DeveloperLocation[]}/>;
         default:
             return <div>Chart type not recognized</div>;
     }
