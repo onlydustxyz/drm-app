@@ -223,18 +223,52 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	 */
 	async getRepository(id: string): Promise<Repository | undefined> {
 		try {
-			const dbRepo = await dbFactory
-				.getClient()
-				.select()
-				.from(repositories)
-				.where(eq(repositories.id, parseInt(id)))
-				.limit(1);
+			const query = `
+				select gr.id,
+					   gr.name,
+					   gr.html_url,
+					   gr.forks_count,
+					   gr.stars_count
+				from indexer_exp.github_repos gr
+				where gr.id = ${parseInt(id)}
+			`;
 
-			if (dbRepo.length === 0) {
+			// Define an interface for the expected query result
+			interface RepositoryResult {
+				id: number;
+				name: string;
+				html_url: string;
+				forks_count: number;
+				stars_count: number;
+			}
+
+			const result = await dbFactory.getClient().execute(query);
+
+			if (result.length === 0) {
 				return undefined;
 			}
 
-			return this.transformDbToModel(dbRepo[0]);
+			// Safely access the properties with proper type assertions for each property
+			const repo = result[0] as Record<string, unknown>;
+
+			return {
+				id: String(repo.id),
+				name: String(repo.name),
+				url: String(repo.html_url),
+				forks: Number(repo.forks_count),
+				stars: Number(repo.stars_count),
+				description: '',
+				watchers: 0,
+				languages: [],
+				last_updated_at: '',
+				prMerged: 0,
+				prOpened: 0,
+				issuesOpened: 0,
+				issuesClosed: 0,
+				commits: 0,
+				contributors: 0,
+				indexingStatus: 'PENDING'
+			};
 		} catch (error) {
 			console.error(`Error fetching repository with ID ${id}:`, error);
 			throw new Error(`Failed to fetch repository with ID ${id}`);
