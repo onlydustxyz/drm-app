@@ -1,5 +1,7 @@
+"use client";
+
 import { Card, CardContent } from "@/components/ui/card";
-import { getDashboardKPIs } from "@/lib/services/dashboard-service";
+import { useDashboardKPIs } from "@/lib/react-query/dashboard";
 import { ArrowDown, ArrowUp } from "lucide-react";
 
 interface KPICardProps {
@@ -35,8 +37,11 @@ function KPICard({ title, value, growth }: KPICardProps) {
 	);
 }
 
-export async function KPICards() {
-	const kpis = await getDashboardKPIs();
+export function KPICards() {
+	const { data: kpis, isLoading, error } = useDashboardKPIs();
+
+	if (isLoading) return <KPICardsSkeleton />;
+	if (error || !kpis) return <div>Error loading KPI data</div>;
 
 	return (
 		<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

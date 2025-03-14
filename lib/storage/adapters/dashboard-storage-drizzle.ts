@@ -4,7 +4,6 @@ import {
 	dashboardKpis,
 	devActivity,
 	developerActivity,
-	developerLocations,
 	monthlyCommits,
 	monthlyPRsMerged,
 } from "@/lib/drizzle/schema/dashboard";
@@ -53,7 +52,6 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 		const [
 			kpis,
 			developerActivityData,
-			developerLocationsData,
 			commitsByDevTypeData,
 			monthlyCommitsData,
 			monthlyPRsMergedData,
@@ -61,7 +59,6 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 		] = await Promise.all([
 			this.getDashboardKPIs(),
 			this.getDeveloperActivity(),
-			this.getDeveloperLocations(),
 			this.getCommitsByDevType(),
 			this.getMonthlyCommits(),
 			this.getMonthlyPRsMerged(),
@@ -71,7 +68,6 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 		return {
 			kpis,
 			developerActivity: developerActivityData,
-			developerLocations: developerLocationsData,
 			commitsByDevType: commitsByDevTypeData,
 			monthlyCommits: monthlyCommitsData,
 			monthlyPRsMerged: monthlyPRsMergedData,
@@ -86,7 +82,18 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 			const data = result[0];
 
 			if (!data) {
-				throw new Error("No dashboard KPIs found");
+				return {
+					fullTimeDevs: 0,
+					fullTimeDevsGrowth: 0,
+					monthlyActiveDevs: 0,
+					monthlyActiveDevsGrowth: 0,
+					totalRepos: 0,
+					totalReposGrowth: 0,
+					totalCommits: 0,
+					totalCommitsGrowth: 0,
+					totalProjects: 0,
+					totalProjectsGrowth: 0
+				};
 			}
 
 			return {
@@ -120,22 +127,6 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 		} catch (error) {
 			console.error("Error fetching developer activity:", error);
 			throw new Error("Failed to fetch developer activity");
-		}
-	}
-
-	async getDeveloperLocations(): Promise<DeveloperLocation[]> {
-		try {
-			const data = await dbFactory.getClient().select().from(developerLocations).orderBy(desc(developerLocations.count));
-
-			return data.map((item: typeof developerLocations.$inferSelect) => ({
-				country: item.country,
-				count: item.count,
-				latitude: Number(item.latitude),
-				longitude: Number(item.longitude),
-			}));
-		} catch (error) {
-			console.error("Error fetching developer locations:", error);
-			throw new Error("Failed to fetch developer locations");
 		}
 	}
 

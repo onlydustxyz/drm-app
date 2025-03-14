@@ -163,37 +163,6 @@ export function DevTypeDistributionChart({ data }: { data: DeveloperActivity[] }
 	);
 }
 
-// Developer Locations Map (placeholder - would need a proper map library)
-export function DeveloperLocationsMap({ data }: { data: DeveloperLocation[] }) {
-	// This is a placeholder - in a real implementation, you would use a map library
-	// like react-simple-maps, mapbox, or leaflet to render a proper map
-
-	// For now, we'll just show a bar chart of top countries
-	const sortedData = [...data].sort((a, b) => b.count - a.count).slice(0, 10);
-
-	return (
-		<ResponsiveContainer width="100%" height="100%">
-			<BarChart
-				data={sortedData}
-				layout="vertical"
-				margin={{
-					top: 20,
-					right: 30,
-					left: 100,
-					bottom: 5,
-				}}
-			>
-				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis type="number" />
-				<YAxis dataKey="country" type="category" tick={{ fontSize: 12 }} width={100} />
-				<Tooltip />
-				<Legend />
-				<Bar dataKey="count" name="Developers" fill="#3b82f6" />
-			</BarChart>
-		</ResponsiveContainer>
-	);
-}
-
 // Commits by Developer Type Chart
 export function CommitsByDevTypeChart({ data }: { data: CommitsByDevType[] }) {
 	return (

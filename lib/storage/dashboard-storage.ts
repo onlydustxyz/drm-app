@@ -17,7 +17,6 @@ export interface DashboardStorage {
 	getDashboardData(): Promise<DashboardData>;
 	getDashboardKPIs(): Promise<DashboardKPI>;
 	getDeveloperActivity(): Promise<DeveloperActivity[]>;
-	getDeveloperLocations(): Promise<DeveloperLocation[]>;
 	getCommitsByDevType(): Promise<CommitsByDevType[]>;
 	getMonthlyCommits(): Promise<MonthlyCommits[]>;
 	getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]>;

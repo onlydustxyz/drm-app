@@ -28,27 +28,6 @@ CREATE TABLE IF NOT EXISTS developer_activity (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
 );
 
--- Developers by Chain table
-CREATE TABLE IF NOT EXISTS developers_by_chain (
-    id SERIAL PRIMARY KEY,
-    date DATE NOT NULL,
-    single_chain INTEGER NOT NULL,
-    multi_chain INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
-);
-
--- Developer Locations table
-CREATE TABLE IF NOT EXISTS developer_locations (
-    id SERIAL PRIMARY KEY,
-    country VARCHAR(100) NOT NULL,
-    count INTEGER NOT NULL,
-    latitude DECIMAL(9,6) NOT NULL,
-    longitude DECIMAL(9,6) NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL
-);
-
 -- Commits by Developer Type table
 CREATE TABLE IF NOT EXISTS commits_by_dev_type (
     id SERIAL PRIMARY KEY,
@@ -90,19 +69,9 @@ CREATE TABLE IF NOT EXISTS dev_activity (
 );
 
 -- Create indexes
-CREATE INDEX idx_developers_by_chain_date ON developers_by_chain(date);
 CREATE INDEX idx_monthly_commits_date ON monthly_commits(date);
 CREATE INDEX idx_monthly_prs_merged_date ON monthly_prs_merged(date);
 CREATE INDEX idx_dev_activity_date ON dev_activity(date);
-
--- Create triggers to automatically update the updated_at timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER update_dashboard_kpis_updated_at
 BEFORE UPDATE ON dashboard_kpis
@@ -110,14 +79,6 @@ FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 CREATE TRIGGER update_developer_activity_updated_at
 BEFORE UPDATE ON developer_activity
-FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
-
-CREATE TRIGGER update_developers_by_chain_updated_at
-BEFORE UPDATE ON developers_by_chain
-FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
-
-CREATE TRIGGER update_developer_locations_updated_at
-BEFORE UPDATE ON developer_locations
 FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 
 CREATE TRIGGER update_commits_by_dev_type_updated_at

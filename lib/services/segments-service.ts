@@ -73,8 +73,7 @@ export class SegmentsService implements SegmentsService {
 }
 
 // Create a singleton instance of the service
-const segmentsService: SegmentsService =
-    process.env.NODE_ENV === "production" ? new SegmentsService() : new SegmentsService();
+const segmentsService: SegmentsService = new SegmentsService();
 
 // Export functions that use the service
 export async function getSegments(): Promise<Segment[]> {
