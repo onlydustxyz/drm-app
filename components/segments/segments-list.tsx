@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDeleteSegment, useSegments } from "@/lib/react-query/segments";
 import { Segment } from "@/lib/services/segments-service";
-import { Edit, Eye, Trash } from "lucide-react";
+import { Edit, Eye, Loader2, Trash } from "lucide-react";
 import Link from "next/link";
 
 export function SegmentsList() {
@@ -60,7 +60,12 @@ export function SegmentsList() {
 	return (
 		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 			{segments.map((segment: Segment) => (
-				<SegmentCard key={segment.id} segment={segment} onDelete={() => handleDeleteSegment(segment.id)} />
+				<SegmentCard
+					key={segment.id}
+					segment={segment}
+					onDelete={() => handleDeleteSegment(segment.id)}
+					isDeleting={deleteSegmentMutation.isPending && deleteSegmentMutation.variables === segment.id}
+				/>
 			))}
 		</div>
 	);
@@ -69,9 +74,10 @@ export function SegmentsList() {
 interface SegmentCardProps {
 	segment: Segment;
 	onDelete: () => void;
+	isDeleting: boolean;
 }
 
-function SegmentCard({ segment, onDelete }: SegmentCardProps) {
+function SegmentCard({ segment, onDelete, isDeleting }: SegmentCardProps) {
 	const contributorsCount = segment.github_user_logins?.length || 0;
 	const repositoriesCount = segment.repositories?.length || 0;
 
@@ -108,9 +114,13 @@ function SegmentCard({ segment, onDelete }: SegmentCardProps) {
 					</Button>
 				</EditSegmentDialog>
 
-				<Button variant="outline" size="sm" onClick={onDelete}>
-					<Trash className="h-4 w-4 mr-2" />
-					Delete
+				<Button variant="outline" size="sm" onClick={onDelete} disabled={isDeleting}>
+					{isDeleting ? (
+						<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+					) : (
+						<Trash className="h-4 w-4 mr-2" />
+					)}
+					{isDeleting ? "Deleting..." : "Delete"}
 				</Button>
 			</CardFooter>
 		</Card>
