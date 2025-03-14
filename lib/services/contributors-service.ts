@@ -215,18 +215,53 @@ const mockContributors: Contributor[] = [
 
 // Contributors service interface
 export interface ContributorsService {
-	getContributors(): Promise<Contributor[]>;
+	getContributors(options?: {
+		search?: string;
+		sortBy?: keyof Contributor;
+		sortOrder?: "asc" | "desc";
+	}): Promise<Contributor[]>;
 	getContributor(id: string): Promise<Contributor | undefined>;
 }
 
+// Import the storage layer
+import { getContributorsStorage } from "@/lib/storage/contributors-storage";
+
 // Mock implementation of the contributors service
 export class MockContributorsService implements ContributorsService {
-	async getContributors(): Promise<Contributor[]> {
+	async getContributors(options?: {
+		search?: string;
+		sortBy?: keyof Contributor;
+		sortOrder?: "asc" | "desc";
+	}): Promise<Contributor[]> {
 		// Simulate API delay
 		await new Promise((resolve) => setTimeout(resolve, 500));
 
-		// Return mock data for now
-		return mockContributors;
+		// Apply search filter if provided
+		let filteredContributors = [...mockContributors];
+		if (options?.search) {
+			const searchTerm = options.search.toLowerCase();
+			filteredContributors = filteredContributors.filter(
+				(contributor) =>
+					contributor.name.toLowerCase().includes(searchTerm) ||
+					contributor.handle.toLowerCase().includes(searchTerm) ||
+					contributor.description.toLowerCase().includes(searchTerm)
+			);
+		}
+
+		// Apply sorting if provided
+		if (options?.sortBy) {
+			const direction = options.sortOrder === "asc" ? 1 : -1;
+			filteredContributors.sort((a, b) => {
+				if (a[options.sortBy!] < b[options.sortBy!]) return -1 * direction;
+				if (a[options.sortBy!] > b[options.sortBy!]) return 1 * direction;
+				return 0;
+			});
+		} else {
+			// Default sort by stars descending
+			filteredContributors.sort((a, b) => b.stars - a.stars);
+		}
+
+		return filteredContributors;
 	}
 
 	async getContributor(id: string): Promise<Contributor | undefined> {
@@ -239,11 +274,30 @@ export class MockContributorsService implements ContributorsService {
 }
 
 // Create an instance of the service
-const contributorsService = new MockContributorsService();
+// We'll use the mock service in development, but production would use the real database
+const contributorsService =
+	process.env.NODE_ENV === "production"
+		? {
+				async getContributors(options?: {
+					search?: string;
+					sortBy?: keyof Contributor;
+					sortOrder?: "asc" | "desc";
+				}) {
+					return getContributorsStorage().getContributors(options);
+				},
+				async getContributor(id: string) {
+					return getContributorsStorage().getContributor(id);
+				},
+		  }
+		: new MockContributorsService();
 
 // Export functions that use the service
-export async function getContributors(): Promise<Contributor[]> {
-	return contributorsService.getContributors();
+export async function getContributors(options?: {
+	search?: string;
+	sortBy?: keyof Contributor;
+	sortOrder?: "asc" | "desc";
+}): Promise<Contributor[]> {
+	return contributorsService.getContributors(options);
 }
 
 export async function getContributor(id: string): Promise<Contributor | undefined> {

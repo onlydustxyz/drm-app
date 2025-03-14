@@ -13,30 +13,31 @@ import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function ContributorsPage() {
-	const [filteredContributors, setFilteredContributors] = useState<Contributor[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
+	const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
 	const [sortConfig, setSortConfig] = useState<{
 		key: keyof Contributor | null;
 		direction: "ascending" | "descending";
 	}>({ key: null, direction: "descending" });
 
-	// Use the custom React Query hook
-	const { data: contributors = [], isLoading: isLoadingContributors, error: contributorsError } = useContributors();
-
-	// Apply search filter
+	// Debounce search query to avoid too many API calls
 	useEffect(() => {
-		if (!contributors.length) return;
+		const timer = setTimeout(() => {
+			setDebouncedSearchQuery(searchQuery);
+		}, 300);
 
-		let filtered = [...contributors];
+		return () => clearTimeout(timer);
+	}, [searchQuery]);
 
-		// Apply search filter
-		if (searchQuery.trim() !== "") {
-			const lowercaseQuery = searchQuery.toLowerCase();
-			filtered = filtered.filter((contributor) => contributor.name.toLowerCase().includes(lowercaseQuery));
-		}
+	// Map the component sort direction format to the API format
+	const apiSortOrder = sortConfig.direction === "ascending" ? "asc" : "desc";
 
-		setFilteredContributors(filtered);
-	}, [searchQuery, contributors]);
+	// Use the updated React Query hook with search and sort parameters
+	const {
+		data: contributors = [],
+		isLoading: isLoadingContributors,
+		error: contributorsError,
+	} = useContributors(debouncedSearchQuery || undefined, sortConfig.key || undefined, apiSortOrder);
 
 	// Handle sorting
 	const requestSort = (key: keyof Contributor) => {
@@ -47,18 +48,6 @@ export default function ContributorsPage() {
 		}
 
 		setSortConfig({ key, direction });
-
-		const sortedData = [...filteredContributors].sort((a, b) => {
-			if (a[key] < b[key]) {
-				return direction === "ascending" ? -1 : 1;
-			}
-			if (a[key] > b[key]) {
-				return direction === "ascending" ? 1 : -1;
-			}
-			return 0;
-		});
-
-		setFilteredContributors(sortedData);
 	};
 
 	// Get sort direction indicator
@@ -183,14 +172,14 @@ export default function ContributorsPage() {
 								</TableRow>
 							</TableHeader>
 							<TableBody>
-								{filteredContributors.length === 0 ? (
+								{contributors.length === 0 ? (
 									<TableRow>
 										<TableCell colSpan={8} className="h-24 text-center">
 											No contributors found.
 										</TableCell>
 									</TableRow>
 								) : (
-									filteredContributors.map((contributor) => (
+									contributors.map((contributor) => (
 										<TableRow key={contributor.id}>
 											<TableCell>
 												<div className="flex items-center gap-2">
