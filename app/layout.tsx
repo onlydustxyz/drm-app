@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { TanstackQueryProvider } from "./providers";
+import { AuthProvider } from "@/hooks/use-auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,8 +17,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 		<html lang="en">
 			<body className={inter.className}>
 				<TanstackQueryProvider>
-					<main className="min-h-screen bg-gray-50">{children}</main>
-					<Toaster />
+					<AuthProvider>
+						<main className="min-h-screen bg-gray-50">{children}</main>
+						<Toaster />
+					</AuthProvider>
 				</TanstackQueryProvider>
 			</body>
 		</html>

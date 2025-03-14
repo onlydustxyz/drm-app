@@ -59,7 +59,18 @@ beforeAll(async () => {
 	container = new PostgreSqlContainer("postgres:16.4")
 		.withDatabase("test_db")
 		.withUsername("test_user")
-		.withPassword("test_password");
+		.withPassword("test_password")
+		.withCopyDirectoriesToContainer([
+			{
+				source: path.join(__dirname, "..", "postgres", "indexer"),
+				target: "/docker-entrypoint-initdb.d"
+			}
+		])
+		.withLogConsumer(consumer => {
+			consumer.on("data", (line) => {
+				console.log(line);
+			});
+		});
 
 	startedContainer = await container.start();
 	// Set timeout for container startup

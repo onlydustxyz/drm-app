@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { Boxes, LayoutDashboard, LogOut } from "lucide-react";
 import Link from "next/link";
@@ -12,6 +13,7 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLElement> {
 
 export function AppSidebar({ className, setIsOpen, ...props }: SidebarNavProps) {
 	const pathname = usePathname();
+	const { signOut, user } = useAuth();
 
 	const navItems = [
 		{
@@ -31,6 +33,10 @@ export function AppSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 			setIsOpen(false);
 		}
 	};
+
+	const handleSignOut = async () => {
+		await signOut();
+	}
 
 	return (
 		<div className="flex h-full w-full flex-col space-y-2 p-4">
@@ -80,21 +86,37 @@ export function AppSidebar({ className, setIsOpen, ...props }: SidebarNavProps) 
 				</div>
 			</div>
 			<div className="mt-auto px-3 py-2">
+				{user && (
+					<div className="mb-4 flex items-center gap-2 px-2">
+						<div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden">
+							{user.user_metadata?.avatar_url ? (
+								<img 
+									src={user.user_metadata.avatar_url} 
+									alt={user.user_metadata?.name || user.email || "User"} 
+									className="h-full w-full object-cover"
+								/>
+							) : (
+								<div className="h-full w-full flex items-center justify-center bg-primary/10 text-primary/80">
+									{(user.user_metadata?.name?.[0] || user.email?.[0] || "U").toUpperCase()}
+								</div>
+							)}
+						</div>
+						<div className="truncate text-sm">
+							<div className="font-medium">{user.user_metadata?.name || user.email}</div>
+							{user.email && <div className="text-xs text-muted-foreground">{user.email}</div>}
+						</div>
+					</div>
+				)}
 				<Button
 					variant="ghost"
 					className="w-full justify-start hover:bg-destructive/10"
-					asChild
-					onClick={handleClick}
+					onClick={() => {
+						handleSignOut();
+						handleClick();
+					}}
 				>
-					<button
-						onClick={async () => {
-							await fetch("/auth/signout", { method: "POST" });
-							window.location.href = "/login";
-						}}
-					>
-						<LogOut className="mr-2 h-4 w-4" />
-						Logout
-					</button>
+					<LogOut className="mr-2 h-4 w-4" />
+					Logout
 				</Button>
 			</div>
 		</div>

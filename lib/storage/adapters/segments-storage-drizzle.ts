@@ -133,7 +133,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     /**
      * Create a new segment
      */
-    async createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at">): Promise<Segment> {
+    async createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at"> & { user_id: number }): Promise<Segment> {
         try {
             const now = new Date();
             
@@ -142,6 +142,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                 .values({
                     name: segment.name,
                     description: segment.description,
+                    user_id: segment.user_id,
                     created_at: now,
                     updated_at: now
                 })

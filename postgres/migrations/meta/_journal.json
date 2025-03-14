@@ -19,22 +19,8 @@
     {
       "idx": 2,
       "version": "1",
-      "when": 1710399600000,
-      "tag": "00002_index_repo_event_jobs_table",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "1",
-      "when": 1710399660000,
-      "tag": "00003_create_dashboard_tables",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "1",
       "when": 1710399720000,
-      "tag": "00004_create_repositories_table",
+      "tag": "00002_create_repositories_table",
       "breakpoints": true
     }
   ]

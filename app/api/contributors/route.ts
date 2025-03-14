@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
 import { getContributor, getContributors } from "@/lib/services/contributors-service";
+import { getAuthenticatedUser } from "@/lib/services/authentication-service";
 
 export async function GET(request: Request) {
 	try {
+		// Get the authenticated user
+		const user = await getAuthenticatedUser();
+		
+		if (!user) {
+			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+		}
+		
 		// Get the URL object from the request
 		const url = new URL(request.url);
 		// Check if an ID was provided in the query params

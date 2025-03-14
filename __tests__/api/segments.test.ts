@@ -2,10 +2,51 @@ import request from "supertest";
 import {createTestServer} from "@/__tests__/setup";
 import {dbFactory} from "@/lib/drizzle";
 import { NextRequest } from "next/server";
+import dotenv from "dotenv";
+
+// Mock the authentication service
+jest.mock("@/lib/services/authentication-service", () => ({
+  getAuthenticatedUser: jest.fn().mockResolvedValue({
+    id: "1",
+    name: "Test User",
+    email: "test@example.com",
+    role: "admin",
+    createdAt: new Date().toISOString()
+  })
+}));
+
+dotenv.config({ path: ".env.test" });
+
+// Helper to ensure test user exists in database
+async function ensureTestUserExists() {
+  try {
+    // Check if user already exists
+    const existingUser = await dbFactory.getClient().execute(
+      `SELECT * FROM users WHERE id = '1'`
+    );
+
+    if (existingUser.length === 0) {
+      // Create test user if not exists
+      await dbFactory.getClient().execute(`
+        INSERT INTO users (id, name, email, role, created_at)
+        VALUES ('1', 'Test User', 'test@example.com', 'admin', NOW())
+      `);
+      console.log("Created test user");
+    }
+  } catch (error) {
+    console.error("Error setting up test user:", error);
+  }
+}
 
 describe("Segments API", () => {
+    beforeEach(async () => {
+        // Ensure test user exists before each test
+        await ensureTestUserExists();
+    });
+
     describe("POST /api/segments", () => {
         it("should create a new segment with repository URLs and GitHub user logins", async () => {
+
             const newSegment = {
                 name: "Test Segment",
                 description: "Test Description",
