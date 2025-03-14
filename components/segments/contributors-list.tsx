@@ -40,9 +40,6 @@ export default function ContributorsPage() {
 	const [showActiveOnly, setShowActiveOnly] = useState(false);
 	const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
-	// Selection states
-	const [selectedContributors, setSelectedContributors] = useState<string[]>([]);
-
 	// Use React Query for data fetching
 	const {
 		data: contributors = [],
@@ -129,22 +126,6 @@ export default function ContributorsPage() {
 		setMinPRs("");
 		setMinCommits("");
 		setShowActiveOnly(false);
-	};
-
-	// Handle contributor selection
-	const toggleContributorSelection = (contributorId: string) => {
-		setSelectedContributors((prev) =>
-			prev.includes(contributorId) ? prev.filter((id) => id !== contributorId) : [...prev, contributorId]
-		);
-	};
-
-	// Handle select all contributors
-	const toggleSelectAll = () => {
-		if (selectedContributors.length === filteredContributors.length) {
-			setSelectedContributors([]);
-		} else {
-			setSelectedContributors(filteredContributors.map((c) => c.id));
-		}
 	};
 
 	// Check for loading and error states
@@ -238,7 +219,7 @@ export default function ContributorsPage() {
 										<Checkbox
 											id="active-only"
 											checked={showActiveOnly}
-											onCheckedChange={(checked) => setShowActiveOnly(checked === true)}
+											onCheckedChange={(checked: boolean) => setShowActiveOnly(checked === true)}
 										/>
 										<Label htmlFor="active-only">
 											Show active contributors only (last 30 days)
@@ -261,16 +242,6 @@ export default function ContributorsPage() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead className="w-[50px]">
-										<Checkbox
-											checked={
-												selectedContributors.length === filteredContributors.length &&
-												filteredContributors.length > 0
-											}
-											onCheckedChange={toggleSelectAll}
-											aria-label="Select all"
-										/>
-									</TableHead>
 									<TableHead>
 										<button
 											className="flex items-center font-medium text-left"
@@ -340,25 +311,13 @@ export default function ContributorsPage() {
 							<TableBody>
 								{filteredContributors.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={12} className="h-24 text-center">
+										<TableCell colSpan={8} className="h-24 text-center">
 											No contributors found.
 										</TableCell>
 									</TableRow>
 								) : (
 									filteredContributors.map((contributor) => (
-										<TableRow
-											key={contributor.id}
-											className={
-												selectedContributors.includes(contributor.id) ? "bg-muted/50" : ""
-											}
-										>
-											<TableCell>
-												<Checkbox
-													checked={selectedContributors.includes(contributor.id)}
-													onCheckedChange={() => toggleContributorSelection(contributor.id)}
-													aria-label={`Select ${contributor.name}`}
-												/>
-											</TableCell>
+										<TableRow key={contributor.id}>
 											<TableCell>
 												<div className="flex items-center gap-2">
 													<Avatar className="h-8 w-8">
