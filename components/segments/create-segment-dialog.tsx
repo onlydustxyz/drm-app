@@ -91,8 +91,8 @@ export function CreateSegmentDialog() {
 		createSegmentMutation.mutate({
 			name: newSegmentName,
 			description: newSegmentDescription,
-			contributors: contributors,
-			repositories: repositories,
+			github_user_logins: contributors,
+			repositories,
 		});
 	};
 
