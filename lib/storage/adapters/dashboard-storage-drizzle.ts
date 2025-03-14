@@ -18,7 +18,7 @@ import {
 	MonthlyPRsMerged,
 } from "@/lib/services/dashboard-service";
 import { DashboardStorage } from "@/lib/storage/dashboard-storage";
-import { desc } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 
 // Helper function to format dates to YYYY-MM-DD
 function formatDateToYYYYMMDD(date: any): string {
@@ -33,7 +33,7 @@ function formatDateToYYYYMM(date: any): string {
 	if (date instanceof Date) {
 		return date.toISOString().slice(0, 7);
 	}
-	if (typeof date === "string") {
+	if (typeof date === 'string' && date.includes('T')) {
 		return date.slice(0, 7);
 	}
 	return String(date);
@@ -114,15 +114,44 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 		}
 	}
 
-	async getDeveloperActivity(): Promise<DeveloperActivity[]> {
+	async getDeveloperActivity(repoIds: number[] = []): Promise<DeveloperActivity[]> {
 		try {
-			const data = await dbFactory.getClient().select().from(developerActivity).orderBy(developerActivity.name);
 
-			return data.map((item: typeof developerActivity.$inferSelect) => ({
-				name: item.name,
-				fullTime: item.full_time,
-				partTime: item.part_time,
-				onTime: item.on_time,
+			// Use the new SQL query with repository filters
+			let query = `
+				with monthly_user_types as materialized (
+					SELECT 
+						u.id AS user_id,
+						date_trunc('month', c.created_at) AS month,
+						case
+							when count(DISTINCT date_trunc('day', c.created_at)) = 1 THEN 'ONE_TIME'::user_type
+							when count(DISTINCT date_trunc('day', c.created_at)) < 10 THEN 'PART_TIME'::user_type
+							ELSE 'FULL_TIME'::user_type
+						end AS type
+					FROM indexer_exp.github_accounts u
+						JOIN indexer_exp.github_commits c ON u.id = c.author_id
+					WHERE u."type" = 'USER'
+						and (c.repo_id = ANY(ARRAY[${repoIds.join(',')}]))
+					GROUP BY 1, 2
+				)
+				select 
+					mut.month as name,
+					count(distinct mut.user_id) filter ( where mut.type = 'FULL_TIME') as full_time,
+					count(distinct mut.user_id) filter ( where mut.type = 'PART_TIME') as part_time,
+					count(distinct mut.user_id) filter ( where mut.type = 'ONE_TIME') as on_time
+				from monthly_user_types mut
+				where mut.month > now() - interval '1 year'
+				group by mut.month
+				order by mut.month
+			`;
+
+			const result = await dbFactory.getClient().execute(query);
+
+			return result.map((item: any) => ({
+				name: formatDateToYYYYMM(item.name),
+				fullTime: Number(item.full_time || 0),
+				partTime: Number(item.part_time || 0),
+				onTime: Number(item.on_time || 0),
 			}));
 		} catch (error) {
 			console.error("Error fetching developer activity:", error);

@@ -16,7 +16,7 @@ import { DrizzleDashboardStorage } from "@/lib/storage/adapters/dashboard-storag
 export interface DashboardStorage {
 	getDashboardData(): Promise<DashboardData>;
 	getDashboardKPIs(): Promise<DashboardKPI>;
-	getDeveloperActivity(): Promise<DeveloperActivity[]>;
+	getDeveloperActivity(repoIds?: number[]): Promise<DeveloperActivity[]>;
 	getCommitsByDevType(): Promise<CommitsByDevType[]>;
 	getMonthlyCommits(): Promise<MonthlyCommits[]>;
 	getMonthlyPRsMerged(): Promise<MonthlyPRsMerged[]>;
