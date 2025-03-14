@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -19,7 +18,6 @@ export function RepositoriesList() {
 
 	const [filteredRepositories, setFilteredRepositories] = useState<Repository[]>([]);
 	const [searchQuery, setSearchQuery] = useState("");
-	const [selectedRepositories, setSelectedRepositories] = useState<string[]>([]);
 	const [sortConfig, setSortConfig] = useState<{
 		key: keyof Repository | null;
 		direction: "ascending" | "descending";
@@ -135,22 +133,6 @@ export function RepositoriesList() {
 		setMinPRs("");
 		setMinCommits("");
 		setSelectedLanguage("");
-	};
-
-	// Handle repository selection
-	const toggleRepositorySelection = (repositoryId: string) => {
-		setSelectedRepositories((prev) =>
-			prev.includes(repositoryId) ? prev.filter((id) => id !== repositoryId) : [...prev, repositoryId]
-		);
-	};
-
-	// Handle select all repositories
-	const toggleSelectAll = () => {
-		if (selectedRepositories.length === filteredRepositories.length) {
-			setSelectedRepositories([]);
-		} else {
-			setSelectedRepositories(filteredRepositories.map((c) => c.id));
-		}
 	};
 
 	return (
@@ -272,16 +254,6 @@ export function RepositoriesList() {
 						<Table>
 							<TableHeader>
 								<TableRow>
-									<TableHead className="w-[50px]">
-										<Checkbox
-											checked={
-												selectedRepositories.length === filteredRepositories.length &&
-												filteredRepositories.length > 0
-											}
-											onCheckedChange={toggleSelectAll}
-											aria-label="Select all"
-										/>
-									</TableHead>
 									<TableHead>
 										<button
 											className="flex items-center font-medium text-left"
@@ -359,20 +331,13 @@ export function RepositoriesList() {
 							<TableBody>
 								{filteredRepositories.length === 0 ? (
 									<TableRow>
-										<TableCell colSpan={9} className="h-24 text-center">
+										<TableCell colSpan={8} className="h-24 text-center">
 											No repositories found.
 										</TableCell>
 									</TableRow>
 								) : (
 									filteredRepositories.map((repo) => (
 										<TableRow key={repo.id}>
-											<TableCell>
-												<Checkbox
-													checked={selectedRepositories.includes(repo.id)}
-													onCheckedChange={() => toggleRepositorySelection(repo.id)}
-													aria-label={`Select ${repo.name}`}
-												/>
-											</TableCell>
 											<TableCell className="font-medium">
 												<div className="flex flex-col">
 													<a
