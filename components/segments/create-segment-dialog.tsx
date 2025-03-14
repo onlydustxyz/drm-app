@@ -154,7 +154,7 @@ export function CreateSegmentDialog() {
 							<div className="grid grid-cols-4 gap-4">
 								<div className="col-start-2 col-span-3">
 									<Textarea
-										placeholder="Enter contributor IDs separated by commas, spaces, or new lines"
+										placeholder="Enter GitHub usernames separated by commas, spaces, or new lines"
 										value={githubHandles}
 										onChange={(e) => setGithubHandles(e.target.value)}
 										className="mb-2 h-24"

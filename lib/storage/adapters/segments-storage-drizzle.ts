@@ -66,7 +66,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     private async transformDbToModel(dbSegment: any): Promise<Segment> {
         // Fetch associated contributors
         const contributors = await db
-            .select({ contributor_id: segmentsContributors.contributor_id })
+            .select({ contributor_github_login: segmentsContributors.contributor_github_login })
             .from(segmentsContributors)
             .where(eq(segmentsContributors.segment_id, dbSegment.id));
 
@@ -82,7 +82,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             description: dbSegment.description || "",
             created_at: dbSegment.created_at?.toISOString() || new Date().toISOString(),
             updated_at: dbSegment.updated_at?.toISOString() || new Date().toISOString(),
-            contributors: contributors.map(c => c.contributor_id.toString()),
+            contributors: contributors.map(c => c.contributor_github_login),
             repositories: repositories.map(r => r.repository_url)
         };
     }
@@ -155,10 +155,10 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             
             // Add relationships for contributors if provided
             if (segment.contributors && segment.contributors.length > 0) {
-                for (const contributorId of segment.contributors) {
+                for (const contributorGithubLogin of segment.contributors) {
                     await this.addContributorToSegment(
                         newSegment.id.toString(), 
-                        contributorId
+                        contributorGithubLogin
                     );
                 }
             }
@@ -211,8 +211,8 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                     .where(eq(segmentsContributors.segment_id, parseInt(id)));
 
                 // Then add the new contributors
-                for (const contributorId of segment.contributors) {
-                    await this.addContributorToSegment(id, contributorId);
+                for (const contributorGithubLogin of segment.contributors) {
+                    await this.addContributorToSegment(id, contributorGithubLogin);
                 }
             }
 
@@ -257,7 +257,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     /**
      * Add a contributor to a segment
      */
-    async addContributorToSegment(segmentId: string, contributorId: string): Promise<boolean> {
+    async addContributorToSegment(segmentId: string, contributorGithubLogin: string): Promise<boolean> {
         try {
             // Check if the segment exists
             const segmentExists = await db
@@ -277,7 +277,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                 .where(
                     and(
                         eq(segmentsContributors.segment_id, parseInt(segmentId)),
-                        eq(segmentsContributors.contributor_id, parseInt(contributorId))
+                        eq(segmentsContributors.contributor_github_login, contributorGithubLogin)
                     )
                 )
                 .limit(1);
@@ -290,7 +290,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             // Create the relationship
             await db.insert(segmentsContributors).values({
                 segment_id: parseInt(segmentId),
-                contributor_id: parseInt(contributorId),
+                contributor_github_login: contributorGithubLogin,
                 created_at: new Date()
             });
 
@@ -302,7 +302,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
 
             return true;
         } catch (error) {
-            console.error(`Error adding contributor ${contributorId} to segment ${segmentId}:`, error);
+            console.error(`Error adding contributor ${contributorGithubLogin} to segment ${segmentId}:`, error);
             throw new Error(`Failed to add contributor to segment`);
         }
     }
@@ -310,19 +310,31 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     /**
      * Remove a contributor from a segment
      */
-    async removeContributorFromSegment(segmentId: string, contributorId: string): Promise<boolean> {
+    async removeContributorFromSegment(segmentId: string, contributorGithubLogin: string): Promise<boolean> {
         try {
-            const deleted = await db
-                .delete(segmentsContributors)
+            // Check if the relationship exists
+            const existing = await db
+                .select({ id: segmentsContributors.id })
+                .from(segmentsContributors)
                 .where(
                     and(
                         eq(segmentsContributors.segment_id, parseInt(segmentId)),
-                        eq(segmentsContributors.contributor_id, parseInt(contributorId))
+                        eq(segmentsContributors.contributor_github_login, contributorGithubLogin)
                     )
                 )
-                .returning({ id: segmentsContributors.id });
+                .limit(1);
 
-            if (deleted.length > 0) {
+            if (existing.length > 0) {
+                // Delete the relationship
+                await db
+                    .delete(segmentsContributors)
+                    .where(
+                        and(
+                            eq(segmentsContributors.segment_id, parseInt(segmentId)),
+                            eq(segmentsContributors.contributor_github_login, contributorGithubLogin)
+                        )
+                    );
+
                 // Update the segment's updated_at timestamp
                 await db
                     .update(segments)
@@ -334,7 +346,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
 
             return false;
         } catch (error) {
-            console.error(`Error removing contributor ${contributorId} from segment ${segmentId}:`, error);
+            console.error(`Error removing contributor ${contributorGithubLogin} from segment ${segmentId}:`, error);
             throw new Error(`Failed to remove contributor from segment`);
         }
     }

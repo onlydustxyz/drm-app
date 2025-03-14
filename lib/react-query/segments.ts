@@ -73,13 +73,13 @@ async function deleteSegmentMutation(id: string): Promise<boolean> {
 	return true;
 }
 
-async function addContributorToSegmentMutation({ segmentId, contributorId }: { segmentId: string; contributorId: string }): Promise<boolean> {
+async function addContributorToSegmentMutation({ segmentId, contributorGithubLogin }: { segmentId: string; contributorGithubLogin: string }): Promise<boolean> {
 	const response = await fetch(`/api/segments/${segmentId}/contributors`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 		},
-		body: JSON.stringify({ contributorId }),
+		body: JSON.stringify({ contributorGithubLogin }),
 	});
 
 	if (!response.ok) {
@@ -89,9 +89,13 @@ async function addContributorToSegmentMutation({ segmentId, contributorId }: { s
 	return true;
 }
 
-async function removeContributorFromSegmentMutation({ segmentId, contributorId }: { segmentId: string; contributorId: string }): Promise<boolean> {
-	const response = await fetch(`/api/segments/${segmentId}/contributors?contributorId=${contributorId}`, {
+async function removeContributorFromSegmentMutation({ segmentId, contributorGithubLogin }: { segmentId: string; contributorGithubLogin: string }): Promise<boolean> {
+	const response = await fetch(`/api/segments/${segmentId}/contributors`, {
 		method: "DELETE",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({ contributorGithubLogin }),
 	});
 
 	if (!response.ok) {
@@ -194,30 +198,22 @@ export function useDeleteSegment() {
 
 export function useAddContributorToSegment() {
 	const queryClient = useQueryClient();
-	const { toast } = useToast();
-
+	
 	return useMutation({
 		mutationFn: addContributorToSegmentMutation,
 		onSuccess: (_, variables) => {
-			toast({
-				title: "Contributor added to segment",
-			});
-			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(variables.segmentId) });
+			queryClient.invalidateQueries({ queryKey: ["segment", variables.segmentId] });
 		},
 	});
 }
 
 export function useRemoveContributorFromSegment() {
 	const queryClient = useQueryClient();
-	const { toast } = useToast();
-
+	
 	return useMutation({
 		mutationFn: removeContributorFromSegmentMutation,
 		onSuccess: (_, variables) => {
-			toast({
-				title: "Contributor removed from segment",
-			});
-			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(variables.segmentId) });
+			queryClient.invalidateQueries({ queryKey: ["segment", variables.segmentId] });
 		},
 	});
 }

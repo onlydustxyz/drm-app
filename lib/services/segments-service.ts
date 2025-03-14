@@ -18,8 +18,8 @@ export interface SegmentsService {
     createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at">): Promise<Segment>;
     updateSegment(id: string, segment: Partial<Omit<Segment, "id" | "created_at" | "updated_at">>): Promise<Segment | undefined>;
     deleteSegment(id: string): Promise<boolean>;
-    addContributorToSegment(segmentId: string, contributorId: string): Promise<boolean>;
-    removeContributorFromSegment(segmentId: string, contributorId: string): Promise<boolean>;
+    addContributorToSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
+    removeContributorFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
     addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
     removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
 }
@@ -51,14 +51,14 @@ export class SegmentsService implements SegmentsService {
         return storage.deleteSegment(id);
     }
 
-    async addContributorToSegment(segmentId: string, contributorId: string): Promise<boolean> {
+    async addContributorToSegment(segmentId: string, githubUserLogin: string): Promise<boolean> {
         const storage = getSegmentsStorage();
-        return storage.addContributorToSegment(segmentId, contributorId);
+        return storage.addContributorToSegment(segmentId, githubUserLogin);
     }
 
-    async removeContributorFromSegment(segmentId: string, contributorId: string): Promise<boolean> {
+    async removeContributorFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean> {
         const storage = getSegmentsStorage();
-        return storage.removeContributorFromSegment(segmentId, contributorId);
+        return storage.removeContributorFromSegment(segmentId, githubUserLogin);
     }
 
     async addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
@@ -100,12 +100,12 @@ export async function deleteSegment(id: string): Promise<boolean> {
     return segmentsService.deleteSegment(id);
 }
 
-export async function addContributorToSegment(segmentId: string, contributorId: string): Promise<boolean> {
-    return segmentsService.addContributorToSegment(segmentId, contributorId);
+export async function addContributorToSegment(segmentId: string, githubUserLogin: string): Promise<boolean> {
+    return segmentsService.addContributorToSegment(segmentId, githubUserLogin);
 }
 
-export async function removeContributorFromSegment(segmentId: string, contributorId: string): Promise<boolean> {
-    return segmentsService.removeContributorFromSegment(segmentId, contributorId);
+export async function removeContributorFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean> {
+    return segmentsService.removeContributorFromSegment(segmentId, githubUserLogin);
 }
 
 export async function addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {

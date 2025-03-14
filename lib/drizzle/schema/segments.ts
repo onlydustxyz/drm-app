@@ -26,14 +26,14 @@ export const segmentsContributors = pgTable(
         segment_id: integer("segment_id")
             .notNull()
             .references(() => segments.id, { onDelete: "cascade" }),
-        contributor_id: integer("contributor_id").notNull(),
+        contributor_github_login: varchar("contributor_github_login", { length: 255 }).notNull(),
         created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     },
     (table) => {
         return {
             segmentIdIdx: index("idx_segments_contributors_segment_id").on(table.segment_id),
-            contributorIdIdx: index("idx_segments_contributors_contributor_id").on(table.contributor_id),
-            uniqueIdx: unique("idx_segments_contributors_unique").on(table.segment_id, table.contributor_id),
+            contributorGithubLoginIdx: index("idx_segments_contributors_github_login").on(table.contributor_github_login),
+            uniqueIdx: unique("idx_segments_contributors_unique").on(table.segment_id, table.contributor_github_login),
         };
     }
 );

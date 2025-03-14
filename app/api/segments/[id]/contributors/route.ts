@@ -13,13 +13,13 @@ interface RouteParams {
 export async function POST(request: NextRequest, { params }: RouteParams) {
     try {
         const segmentId = params.id;
-        const { contributorId } = await request.json();
+        const { contributorGithubLogin } = await request.json();
 
-        if (!contributorId) {
-            return NextResponse.json({ error: "Contributor ID is required" }, { status: 400 });
+        if (!contributorGithubLogin) {
+            return NextResponse.json({ error: "Contributor GitHub login is required" }, { status: 400 });
         }
 
-        const success = await addContributorToSegment(segmentId, contributorId);
+        const success = await addContributorToSegment(segmentId, contributorGithubLogin);
 
         if (!success) {
             return NextResponse.json({ error: "Failed to add contributor to segment" }, { status: 404 });
@@ -35,15 +35,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
     try {
         const segmentId = params.id;
-        // Use URL search params to get the contributorId
-        const { searchParams } = new URL(request.url);
-        const contributorId = searchParams.get("contributorId");
+        const { contributorGithubLogin } = await request.json();
 
-        if (!contributorId) {
-            return NextResponse.json({ error: "Contributor ID is required" }, { status: 400 });
+        if (!contributorGithubLogin) {
+            return NextResponse.json({ error: "Contributor GitHub login is required" }, { status: 400 });
         }
 
-        const success = await removeContributorFromSegment(segmentId, contributorId);
+        const success = await removeContributorFromSegment(segmentId, contributorGithubLogin);
 
         if (!success) {
             return NextResponse.json({ error: "Failed to remove contributor from segment" }, { status: 404 });

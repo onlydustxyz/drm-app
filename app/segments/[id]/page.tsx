@@ -77,8 +77,22 @@ export default function SegmentPage({ params }: { params: { id: string } }) {
 								<h3 className="text-lg font-semibold mb-2">Contributors</h3>
 								{segment.contributors && segment.contributors.length > 0 ? (
 									<ul className="list-disc pl-5">
-										{segment.contributors.map((contributorId: string) => (
-											<li key={contributorId}>Contributor ID: {contributorId}</li>
+										{segment.contributors.map((githubLogin: string) => (
+											<li key={githubLogin}>
+												<a 
+													href={`https://github.com/${githubLogin}`} 
+													target="_blank" 
+													rel="noopener noreferrer"
+													className="text-blue-600 hover:underline flex items-center"
+												>
+													<img 
+														src={`https://github.com/${githubLogin}.png`} 
+														alt={`${githubLogin}'s avatar`}
+														className="w-6 h-6 rounded-full mr-2"
+													/>
+													@{githubLogin}
+												</a>
+											</li>
 										))}
 									</ul>
 								) : (
