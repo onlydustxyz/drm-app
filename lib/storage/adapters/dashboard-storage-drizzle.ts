@@ -58,7 +58,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 	async getDashboardKPIs(repoIds: number[] = []): Promise<DashboardKPI> {
 		try {
 			const query = `
-				with monthly_user_types as materialized (SELECT u.id                              AS user_id,
+				with monthly_user_types as materialized (SELECT u.id                              AS user_id,										
                                                 date_trunc('month', c.created_at) AS month,
                                                 case
                                                     when count(DISTINCT date_trunc('day', c.created_at)) = 1 THEN 'ONE_TIME'::user_type
@@ -104,15 +104,31 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 				Number(data.last_month_active_dev_count || 0)
 			);
 
+			// Get total commits data
+			const commitsQuery = `
+				select count(gc.sha) filter ( where date_trunc('month', gc.created_at) = date_trunc('month', now())) as total_commits,
+					   count(gc.sha) filter ( where date_trunc('month', gc.created_at) = date_trunc('month', now() - interval '1 month')) as total_commits_last_month
+				from indexer_exp.github_commits gc
+				where gc.repo_id = any(array[${repoIds.join(',')}])
+			`;
+			
+			const commitsResult = await dbFactory.getClient().execute(commitsQuery);
+			const commitsData = commitsResult[0];
+
+			const totalCommitsGrowth = calculateGrowthPercentage(
+				Number(commitsData.total_commits || 0),
+				Number(commitsData.total_commits_last_month || 0)
+			);
+
 			return {
 				fullTimeDevs: Number(data.current_month_full_time_dev_count || 0),
 				fullTimeDevsGrowth: fullTimeDevsGrowth,
 				monthlyActiveDevs: Number(data.current_month_active_dev_count || 0),
 				monthlyActiveDevsGrowth: monthlyActiveDevsGrowth,
-				totalRepos: Number(data.total_repos || 0),
+				totalRepos: repoIds.length,
 				totalReposGrowth: Number(data.total_repos_growth || 0),
-				totalCommits: Number(data.total_commits || 0),
-				totalCommitsGrowth: Number(data.total_commits_growth),
+				totalCommits: Number(commitsData.total_commits || 0),
+				totalCommitsGrowth: totalCommitsGrowth,
 			};
 		} catch (error) {
 			console.error("Error fetching dashboard KPIs:", error);
@@ -342,7 +358,7 @@ export class DrizzleDashboardStorage implements DashboardStorage {
 				         JOIN indexer_exp.github_commits c ON u.id = c.author_id
 				         LEFT JOIN indexer_exp.user_geolocations ug on u.id = ug.user_id
 				WHERE u."type" = 'USER'
-				  and (cardinality(:repoIds) = 0 or c.repo_id = any (:repoIds))
+				  AND (${repoIds?.length ? `c.repo_id = ANY(ARRAY[${repoIds.join(',')}])` : 'true'})
 				  and c.created_at > now() - interval '1 year'
 				GROUP BY 1
 				order by 1;

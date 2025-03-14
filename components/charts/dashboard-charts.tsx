@@ -350,22 +350,25 @@ export function ContributorsByCountryChart({ data }: { data: DeveloperLocation[]
 				margin={{
 					top: 10,
 					right: 30,
-					left: 60,
-					bottom: 60,
+					left: 0,
+					bottom: 0,
 				}}
 				layout="vertical"
 			>
 				<CartesianGrid strokeDasharray="3 3" />
-				<XAxis type="number" />
+				<XAxis 
+					type="number" 
+					tick={{ fontSize: 10 }}
+				/>
 				<YAxis 
 					type="category" 
 					dataKey="country"
-					tick={{ fontSize: 12 }}
-					width={100}
+					tick={{ fontSize: 10 }}
+					width={80}
 				/>
 				<Tooltip
 					formatter={(value) => [`${value} contributors`, "Contributors"]}
-					labelFormatter={(label) => `Country: ${label}`}
+					labelFormatter={(label) => `${label}`}
 				/>
 				<Legend />
 				<Bar 

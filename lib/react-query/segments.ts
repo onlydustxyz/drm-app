@@ -122,21 +122,21 @@ async function removeContributorFromSegmentMutation({
 
 async function addRepositoryToSegmentMutation({
 	segmentId,
-	repositoryUrl,
+	repositoryUrls,
 }: {
 	segmentId: string;
-	repositoryUrl: string;
+	repositoryUrls: string[];
 }): Promise<boolean> {
 	const response = await fetch(`/api/segments/${segmentId}/repositories`, {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
 		},
-		body: JSON.stringify({ repositoryUrl }),
+		body: JSON.stringify({ repositoryUrls }),
 	});
 
 	if (!response.ok) {
-		throw new Error(`Failed to add repository to segment`);
+		throw new Error(`Failed to add repositories to segment`);
 	}
 
 	return true;
@@ -307,7 +307,7 @@ export function useRemoveContributorFromSegment(
 
 export function useAddRepositoryToSegment(
 	options: Omit<
-		UseMutationOptions<boolean, Error, { segmentId: string; repositoryUrl: string }, unknown>,
+		UseMutationOptions<boolean, Error, { segmentId: string; repositoryUrls: string[] }, unknown>,
 		"mutationFn"
 	> = {}
 ) {
@@ -319,7 +319,7 @@ export function useAddRepositoryToSegment(
 		mutationFn: addRepositoryToSegmentMutation,
 		onSuccess: (data, variables, context) => {
 			toast({
-				title: "Repository added to segment",
+				title: "Repositories added to segment",
 			});
 			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(variables.segmentId) });
 

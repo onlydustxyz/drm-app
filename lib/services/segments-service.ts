@@ -20,7 +20,7 @@ export interface SegmentsService {
     deleteSegment(id: string): Promise<boolean>;
     addGithubUserLoginToSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
     removeGithubUserLoginFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
-    addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
+    addRepositoryToSegment(segmentId: string, repositoryUrls: string[]): Promise<boolean>;
     removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
 }
 
@@ -61,9 +61,9 @@ export class SegmentsService implements SegmentsService {
         return storage.removeGithubUserLoginFromSegment(segmentId, githubUserLogin);
     }
 
-    async addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
+    async addRepositoryToSegment(segmentId: string, repositoryUrls: string[]): Promise<boolean> {
         const storage = getSegmentsStorage();
-        return storage.addRepositoryToSegment(segmentId, repositoryUrl);
+        return storage.addRepositoryToSegment(segmentId, repositoryUrls);
     }
 
     async removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
@@ -107,8 +107,8 @@ export async function removeGithubUserLoginFromSegment(segmentId: string, github
     return segmentsService.removeGithubUserLoginFromSegment(segmentId, githubUserLogin);
 }
 
-export async function addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
-    return segmentsService.addRepositoryToSegment(segmentId, repositoryUrl);
+export async function addRepositoryToSegment(segmentId: string, repositoryUrls: string[]): Promise<boolean> {
+    return segmentsService.addRepositoryToSegment(segmentId, repositoryUrls);
 }
 
 export async function removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {

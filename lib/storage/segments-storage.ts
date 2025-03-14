@@ -12,7 +12,7 @@ export interface SegmentsStorage {
     deleteSegment(id: string): Promise<boolean>;
     addGithubUserLoginToSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
     removeGithubUserLoginFromSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
-    addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
+    addRepositoryToSegment(segmentId: string, repositoryUrls: string[]): Promise<boolean>;
     removeRepositoryFromSegment(segmentId: string, repositoryUrl: string): Promise<boolean>;
 }
 

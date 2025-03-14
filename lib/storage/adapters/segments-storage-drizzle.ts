@@ -1,5 +1,5 @@
 import { dbFactory } from "@/lib/drizzle";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, inArray } from "drizzle-orm";
 import { Segment } from "@/lib/services/segments-service";
 import { SegmentsStorage } from "@/lib/storage/segments-storage";
 import { segmentRepositories, segments, segmentsContributors } from "@/lib/drizzle/schema/segments";
@@ -32,24 +32,40 @@ function parseRepositoryUrl(repositoryUrl: string): { owner: string; name: strin
 }
 
 /**
- * Creates a repository indexing job for the public events
+ * Creates repository indexing jobs for the public events in bulk
+ * @param repositories Array of tuples with repository owner and name
+ */
+async function createRepositoryIndexingJobs(repositories: Array<{owner: string, name: string}>): Promise<void> {
+    if (repositories.length === 0) {
+        return;
+    }
+    
+    try {
+        // Prepare the values for the SQL query
+        const values = repositories.map(repo => `('${repo.owner}', '${repo.name}', 'PENDING')`).join(', ');
+        
+        // Execute a bulk insert with raw SQL
+        await dbFactory.getClient().execute(sql`
+            INSERT INTO indexer.repo_public_events_indexing_jobs 
+            (repo_owner, repo_name, status) 
+            VALUES ${sql.raw(values)}
+            ON CONFLICT (repo_owner, repo_name) DO NOTHING
+        `);
+        
+        const repoList = repositories.map(repo => `${repo.owner}/${repo.name}`).join(', ');
+        console.log(`Created indexing jobs for repositories: ${repoList}`);
+    } catch (error) {
+        console.error(`Failed to create indexing jobs:`, error);
+    }
+}
+
+/**
+ * Creates a repository indexing job for the public events (deprecated - use createRepositoryIndexingJobs instead)
  * @param owner Repository owner
  * @param name Repository name
  */
 async function createRepositoryIndexingJob(owner: string, name: string): Promise<void> {
-    try {
-        // Insert into the indexer.repo_public_events_indexing_jobs table
-        // Using raw SQL here since we don't have a Drizzle schema for this table
-        await dbFactory.getClient().execute(sql`
-            INSERT INTO indexer.repo_public_events_indexing_jobs 
-            (repo_owner, repo_name, status) 
-            VALUES (${owner}, ${name}, 'PENDING')
-            ON CONFLICT (repo_owner, repo_name) DO NOTHING
-        `);
-        console.log(`Created indexing job for ${owner}/${name}`);
-    } catch (error) {
-        console.error(`Failed to create indexing job for ${owner}/${name}:`, error);
-    }
+    return createRepositoryIndexingJobs([{owner, name}]);
 }
 
 /**
@@ -166,12 +182,10 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
             
             // Add relationships for repositories if provided
             if (segment.repositories && segment.repositories.length > 0) {
-                for (const repositoryUrl of segment.repositories) {
-                    await this.addRepositoryToSegment(
-                        newSegment.id.toString(), 
-                        repositoryUrl
-                    );
-                }
+                await this.addRepositoryToSegment(
+                    newSegment.id.toString(), 
+                    segment.repositories
+                );
             }
             
             return this.transformDbToModel(newSegment);
@@ -225,8 +239,8 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                     .where(eq(segmentRepositories.segment_id, parseInt(id)));
 
                 // Then add the new repositories
-                for (const repositoryUrl of segment.repositories) {
-                    await this.addRepositoryToSegment(id, repositoryUrl);
+                if (segment.repositories && segment.repositories.length > 0) {
+                    await this.addRepositoryToSegment(id, segment.repositories);
                 }
             }
 
@@ -355,7 +369,7 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
     /**
      * Add a repository to a segment
      */
-    async addRepositoryToSegment(segmentId: string, repositoryUrl: string): Promise<boolean> {
+    async addRepositoryToSegment(segmentId: string, repositoryUrls: string[]): Promise<boolean> {
         try {
             // Check if the segment exists
             const segmentExists = await dbFactory.getClient()
@@ -368,29 +382,39 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                 return false;
             }
 
-            // Check if the relationship already exists
+            if (repositoryUrls.length === 0) {
+                return true; // No repositories to add
+            }
+
+            // Check which relationships already exist
             const existing = await dbFactory.getClient()
-                .select({ id: segmentRepositories.id })
+                .select({ repository_url: segmentRepositories.repository_url })
                 .from(segmentRepositories)
                 .where(
                     and(
                         eq(segmentRepositories.segment_id, parseInt(segmentId)),
-                        eq(segmentRepositories.repository_url, repositoryUrl)
+                        inArray(segmentRepositories.repository_url, repositoryUrls)
                     )
-                )
-                .limit(1);
+                );
 
-            // If relationship already exists, consider it a success
-            if (existing.length > 0) {
-                return true;
+            // Get existing repository URLs as a Set for quick lookup
+            const existingUrls = new Set(existing.map(e => e.repository_url));
+            
+            // Filter out repositories that already exist in the segment
+            const newRepositoryUrls = repositoryUrls.filter(url => !existingUrls.has(url));
+            
+            if (newRepositoryUrls.length === 0) {
+                return true; // All repositories already exist in the segment
             }
 
-            // Create the relationship
-            await dbFactory.getClient().insert(segmentRepositories).values({
-                segment_id: parseInt(segmentId),
-                repository_url: repositoryUrl,
-                created_at: new Date()
-            });
+            // Create the relationships with bulk insert
+            await dbFactory.getClient().insert(segmentRepositories).values(
+                newRepositoryUrls.map(url => ({
+                    segment_id: parseInt(segmentId),
+                    repository_url: url,
+                    created_at: new Date()
+                }))
+            );
 
             // Update the segment's updated_at timestamp
             await dbFactory.getClient()
@@ -398,16 +422,24 @@ export class DrizzleSegmentsStorage implements SegmentsStorage {
                 .set({ updated_at: new Date() })
                 .where(eq(segments.id, parseInt(segmentId)));
 
-            // Parse repository URL to extract owner and name, then create indexing job
-            const parsedRepo = parseRepositoryUrl(repositoryUrl);
-            if (parsedRepo) {
-                await createRepositoryIndexingJob(parsedRepo.owner, parsedRepo.name);
+            // Parse repository URLs and collect repositories for bulk indexing
+            const repositories: Array<{owner: string, name: string}> = [];
+            for (const repositoryUrl of newRepositoryUrls) {
+                const parsedRepo = parseRepositoryUrl(repositoryUrl);
+                if (parsedRepo) {
+                    repositories.push(parsedRepo);
+                }
+            }
+            
+            // Create indexing jobs in bulk
+            if (repositories.length > 0) {
+                await createRepositoryIndexingJobs(repositories);
             }
 
             return true;
         } catch (error) {
-            console.error(`Error adding repository ${repositoryUrl} to segment ${segmentId}:`, error);
-            throw new Error(`Failed to add repository to segment`);
+            console.error(`Error adding repositories to segment ${segmentId}:`, error);
+            throw new Error(`Failed to add repositories to segment`);
         }
     }
 
