@@ -3,9 +3,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSegment } from "@/lib/react-query/segments";
+import { use } from "react";
 
-export default function RetentionPage({ params }: { params: { id: string } }) {
-	const { data: segment, isLoading, error } = useSegment(params.id);
+export default function RetentionPage({ params }: { params: Promise<{ id: string }> }) {
+	const resolvedParams = use(params);
+	const { data: segment, isLoading, error } = useSegment(resolvedParams.id);
 
 	if (isLoading) {
 		return (
