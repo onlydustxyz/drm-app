@@ -1,7 +1,6 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useRepository } from "@/lib/react-query/repositories";
 import { formatDate } from "@/lib/utils";
@@ -92,42 +91,30 @@ export function RepositoryDetailPanel({ repositoryId, isOpen, onOpenChange }: Re
 							{/* Additional Metrics */}
 							<div>
 								<h3 className="text-md font-medium mb-3">Repository Metrics</h3>
-								<div className="space-y-4">
-									<div>
-										<div className="flex justify-between text-sm mb-1">
-											<span className="text-muted-foreground">Stars</span>
-											<span className="font-medium flex items-center">
+								<div className="grid grid-cols-3 gap-3">
+									<div className="bg-muted/30 rounded-lg p-3">
+										<div className="flex flex-col">
+											<span className="text-sm text-muted-foreground mb-1">Stars</span>
+											<span className="font-medium flex items-center text-sm">
 												<Star className="h-4 w-4 mr-1 text-amber-500" />
 												{selectedRepository.stars}
 											</span>
 										</div>
-										<Progress
-											value={Math.min((selectedRepository.stars / 100) * 10, 100)}
-											className="h-2"
-										/>
 									</div>
-									<div>
-										<div className="flex justify-between text-sm mb-1">
-											<span className="text-muted-foreground">Forks</span>
-											<span className="font-medium flex items-center">
+									<div className="bg-muted/30 rounded-lg p-3">
+										<div className="flex flex-col">
+											<span className="text-sm text-muted-foreground mb-1">Forks</span>
+											<span className="font-medium flex items-center text-sm">
 												<GitBranch className="h-4 w-4 mr-1 text-blue-500" />
 												{selectedRepository.forks}
 											</span>
 										</div>
-										<Progress
-											value={Math.min((selectedRepository.forks / 50) * 10, 100)}
-											className="h-2"
-										/>
 									</div>
-									<div>
-										<div className="flex justify-between text-sm mb-1">
-											<span className="text-muted-foreground">Watchers</span>
-											<span className="font-medium">{selectedRepository.watchers}</span>
+									<div className="bg-muted/30 rounded-lg p-3">
+										<div className="flex flex-col">
+											<span className="text-sm text-muted-foreground mb-1">Watchers</span>
+											<span className="font-medium text-sm">{selectedRepository.watchers}</span>
 										</div>
-										<Progress
-											value={Math.min((selectedRepository.watchers / 30) * 10, 100)}
-											className="h-2"
-										/>
 									</div>
 								</div>
 							</div>
