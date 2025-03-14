@@ -20,10 +20,6 @@ export class DrizzleUsersStorage implements UsersStorage {
       id: dbUser.id.toString(),
       name: dbUser.name,
       email: dbUser.email,
-      github: {
-        login: dbUser.github_login,
-        avatarUrl: dbUser.github_avatar_url || '',
-      },
       role: dbUser.role as 'admin' | 'user',
       createdAt: dbUser.created_at?.toISOString() || new Date().toISOString(),
     };
@@ -37,7 +33,7 @@ export class DrizzleUsersStorage implements UsersStorage {
       const result = await dbFactory.getClient()
         .select()
         .from(users);
-      
+
       return result.map(this.transformDbToModel);
     } catch (error) {
       console.error("Error fetching users:", error);
@@ -55,7 +51,7 @@ export class DrizzleUsersStorage implements UsersStorage {
         .from(users)
         .where(eq(users.id, parseInt(id)))
         .limit(1);
-      
+
       return result.length > 0 ? this.transformDbToModel(result[0]) : undefined;
     } catch (error) {
       console.error(`Error fetching user with ID ${id}:`, error);
@@ -73,29 +69,11 @@ export class DrizzleUsersStorage implements UsersStorage {
         .from(users)
         .where(eq(users.email, email))
         .limit(1);
-      
+
       return result.length > 0 ? this.transformDbToModel(result[0]) : undefined;
     } catch (error) {
       console.error(`Error fetching user with email ${email}:`, error);
       throw new Error(`Failed to fetch user with email ${email}`);
-    }
-  }
-
-  /**
-   * Get a user by GitHub login
-   */
-  async getUserByGithubLogin(githubLogin: string): Promise<User | undefined> {
-    try {
-      const result = await dbFactory.getClient()
-        .select()
-        .from(users)
-        .where(eq(users.github_login, githubLogin))
-        .limit(1);
-      
-      return result.length > 0 ? this.transformDbToModel(result[0]) : undefined;
-    } catch (error) {
-      console.error(`Error fetching user with GitHub login ${githubLogin}:`, error);
-      throw new Error(`Failed to fetch user with GitHub login ${githubLogin}`);
     }
   }
 
@@ -105,24 +83,22 @@ export class DrizzleUsersStorage implements UsersStorage {
   async createUser(user: Omit<User, "id" | "createdAt">): Promise<User> {
     try {
       const now = new Date();
-      
+
       const result = await dbFactory.getClient()
         .insert(users)
         .values({
           name: user.name,
           email: user.email,
-          github_login: user.github.login,
-          github_avatar_url: user.github.avatarUrl,
           role: user.role,
           created_at: now,
           updated_at: now,
         })
         .returning();
-      
+
       if (!result[0]) {
         throw new Error("Failed to create user");
       }
-      
+
       return this.transformDbToModel(result[0]);
     } catch (error) {
       console.error("Error creating user:", error);
@@ -136,22 +112,20 @@ export class DrizzleUsersStorage implements UsersStorage {
   async updateUser(id: string, user: Partial<Omit<User, "id" | "createdAt">>): Promise<User | undefined> {
     try {
       const updates: any = {};
-      
+
       if (user.name !== undefined) updates.name = user.name;
       if (user.email !== undefined) updates.email = user.email;
-      if (user.github?.login !== undefined) updates.github_login = user.github.login;
-      if (user.github?.avatarUrl !== undefined) updates.github_avatar_url = user.github.avatarUrl;
       if (user.role !== undefined) updates.role = user.role;
-      
+
       // Always update the updated_at timestamp
       updates.updated_at = new Date();
-      
+
       const result = await dbFactory.getClient()
         .update(users)
         .set(updates)
         .where(eq(users.id, parseInt(id)))
         .returning();
-      
+
       return result.length > 0 ? this.transformDbToModel(result[0]) : undefined;
     } catch (error) {
       console.error(`Error updating user with ID ${id}:`, error);
@@ -168,11 +142,11 @@ export class DrizzleUsersStorage implements UsersStorage {
         .delete(users)
         .where(eq(users.id, parseInt(id)))
         .returning();
-      
+
       return result.length > 0;
     } catch (error) {
       console.error(`Error deleting user with ID ${id}:`, error);
       throw new Error(`Failed to delete user with ID ${id}`);
     }
   }
-} 
+}

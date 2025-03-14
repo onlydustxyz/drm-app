@@ -8,7 +8,6 @@ export interface UsersStorage {
   getUsers(): Promise<User[]>;
   getUserById(id: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  getUserByGithubLogin(githubLogin: string): Promise<User | undefined>;
   createUser(user: Omit<User, "id" | "createdAt">): Promise<User>;
   updateUser(id: string, user: Partial<Omit<User, "id" | "createdAt">>): Promise<User | undefined>;
   deleteUser(id: string): Promise<boolean>;
@@ -17,4 +16,4 @@ export interface UsersStorage {
 // Factory function to get the appropriate storage implementation
 export function getUsersStorage(): UsersStorage {
   return new DrizzleUsersStorage();
-} 
+}
