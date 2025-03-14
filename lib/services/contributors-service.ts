@@ -31,6 +31,12 @@ export interface Contributor {
 	reputationScore: number; // Reputation score (0-100)
 	stars: number; // Number of stars received
 	followers: number; // Number of followers
+	repositories?: Array<{
+		id: string;
+		name: string;
+		url: string;
+		contributions: number;
+	}>; // Repositories the contributor has contributed to
 }
 
 // Mock data implementation
@@ -70,6 +76,26 @@ const mockContributors: Contributor[] = [
 		reputationScore: 92,
 		stars: 145,
 		followers: 78,
+		repositories: [
+			{
+				id: "repo1",
+				name: "api-service",
+				url: "https://github.com/org/api-service",
+				contributions: 45,
+			},
+			{
+				id: "repo2",
+				name: "data-processor",
+				url: "https://github.com/org/data-processor",
+				contributions: 32,
+			},
+			{
+				id: "repo3",
+				name: "dashboard",
+				url: "https://github.com/org/dashboard",
+				contributions: 18,
+			},
+		],
 	},
 	{
 		id: "2",
@@ -105,6 +131,20 @@ const mockContributors: Contributor[] = [
 		reputationScore: 78,
 		stars: 87,
 		followers: 42,
+		repositories: [
+			{
+				id: "repo4",
+				name: "ui-components",
+				url: "https://github.com/org/ui-components",
+				contributions: 27,
+			},
+			{
+				id: "repo5",
+				name: "web-dashboard",
+				url: "https://github.com/org/web-dashboard",
+				contributions: 19,
+			},
+		],
 	},
 	{
 		id: "3",
@@ -251,9 +291,14 @@ export class MockContributorsService implements ContributorsService {
 		// Apply sorting if provided
 		if (options?.sortBy) {
 			const direction = options.sortOrder === "asc" ? 1 : -1;
+			const sortKey = options.sortBy;
 			filteredContributors.sort((a, b) => {
-				if (a[options.sortBy!] < b[options.sortBy!]) return -1 * direction;
-				if (a[options.sortBy!] > b[options.sortBy!]) return 1 * direction;
+				// Use type assertion with unknown as intermediate step for type safety
+				const aValue = a[sortKey] as unknown as string | number;
+				const bValue = b[sortKey] as unknown as string | number;
+
+				if (aValue < bValue) return -1 * direction;
+				if (aValue > bValue) return 1 * direction;
 				return 0;
 			});
 		} else {
