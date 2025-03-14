@@ -1,5 +1,6 @@
 "use client";
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useRepository } from "@/lib/react-query/repositories";
@@ -17,6 +18,45 @@ export function RepositoryDetailPanel({ repositoryId, isOpen, onOpenChange }: Re
 	const { data: selectedRepository, isLoading: isLoadingDetails } = useRepository(repositoryId ?? "", {
 		enabled: !!repositoryId && isOpen,
 	});
+
+	// Mock contributors data
+	const mockContributors = [
+		{
+			id: 1,
+			username: "alexdev",
+			name: "Alex Johnson",
+			avatar: "https://github.com/identicons/jasonlong.png",
+			profileUrl: "https://github.com/alexdev",
+		},
+		{
+			id: 2,
+			username: "sarahcodes",
+			name: "Sarah Chen",
+			avatar: "https://github.com/identicons/octocat.png",
+			profileUrl: "https://github.com/sarahcodes",
+		},
+		{
+			id: 3,
+			username: "mikeprog",
+			name: "Mike Rodriguez",
+			avatar: "https://github.com/identicons/ghost.png",
+			profileUrl: "https://github.com/mikeprog",
+		},
+		{
+			id: 4,
+			username: "emilyhacker",
+			name: "Emily Taylor",
+			avatar: "https://github.com/identicons/torvalds.png",
+			profileUrl: "https://github.com/emilyhacker",
+		},
+		{
+			id: 5,
+			username: "devjones",
+			name: "David Jones",
+			avatar: "https://github.com/identicons/defunkt.png",
+			profileUrl: "https://github.com/devjones",
+		},
+	];
 
 	return (
 		<Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -133,48 +173,27 @@ export function RepositoryDetailPanel({ repositoryId, isOpen, onOpenChange }: Re
 								</div>
 							)}
 
-							{/* Contributing Activity */}
+							{/* Contributors List */}
 							<div>
-								<h3 className="text-md font-medium mb-3">Contribution Metrics</h3>
-								<div className="space-y-3">
-									<div className="flex justify-between items-center">
-										<span className="text-sm text-muted-foreground">PR Acceptance Rate</span>
-										<span className="font-medium">
-											{selectedRepository.prMerged > 0
-												? Math.round(
-														(selectedRepository.prMerged /
-															(selectedRepository.prMerged +
-																selectedRepository.prOpened)) *
-															100
-												  )
-												: 0}
-											%
-										</span>
-									</div>
-									<div className="flex justify-between items-center">
-										<span className="text-sm text-muted-foreground">Issue Close Rate</span>
-										<span className="font-medium">
-											{selectedRepository.issuesClosed > 0
-												? Math.round(
-														(selectedRepository.issuesClosed /
-															(selectedRepository.issuesClosed +
-																selectedRepository.issuesOpened)) *
-															100
-												  )
-												: 0}
-											%
-										</span>
-									</div>
-									<div className="flex justify-between items-center">
-										<span className="text-sm text-muted-foreground">Commits per Contributor</span>
-										<span className="font-medium">
-											{selectedRepository.contributors > 0
-												? Math.round(
-														selectedRepository.commits / selectedRepository.contributors
-												  )
-												: 0}
-										</span>
-									</div>
+								<h3 className="text-md font-medium mb-3">Contributors</h3>
+								<div className="space-y-3 bg-muted/30 rounded-lg p-4">
+									{mockContributors.map((contributor) => (
+										<a
+											key={contributor.id}
+											href={contributor.profileUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+										>
+											<Avatar className="h-8 w-8">
+												<AvatarImage src={contributor.avatar} alt={contributor.name} />
+												<AvatarFallback>
+													{contributor.username.slice(0, 2).toUpperCase()}
+												</AvatarFallback>
+											</Avatar>
+											<div className="font-medium text-sm">{contributor.username}</div>
+										</a>
+									))}
 								</div>
 							</div>
 
