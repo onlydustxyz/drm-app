@@ -3,18 +3,13 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Loader2, Search, SlidersHorizontal } from "lucide-react";
+import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 
 // API fetch functions
@@ -34,12 +29,6 @@ export default function ContributorsPage() {
 		direction: "ascending" | "descending";
 	}>({ key: null, direction: "descending" });
 
-	// Filter states
-	const [minPRs, setMinPRs] = useState<number | "">("");
-	const [minCommits, setMinCommits] = useState<number | "">("");
-	const [showActiveOnly, setShowActiveOnly] = useState(false);
-	const [activeFiltersCount, setActiveFiltersCount] = useState(0);
-
 	// Use React Query for data fetching
 	const {
 		data: contributors = [],
@@ -50,12 +39,11 @@ export default function ContributorsPage() {
 		queryFn: fetchContributors,
 	});
 
-	// Apply all filters
+	// Apply search filter
 	useEffect(() => {
 		if (!contributors.length) return;
 
 		let filtered = [...contributors];
-		let activeFilters = 0;
 
 		// Apply search filter
 		if (searchQuery.trim() !== "") {
@@ -63,34 +51,8 @@ export default function ContributorsPage() {
 			filtered = filtered.filter((contributor) => contributor.name.toLowerCase().includes(lowercaseQuery));
 		}
 
-		// Apply minimum PRs filter
-		if (minPRs !== "") {
-			filtered = filtered.filter((contributor) => contributor.prMerged + contributor.prOpened >= Number(minPRs));
-			activeFilters++;
-		}
-
-		// Apply minimum commits filter
-		if (minCommits !== "") {
-			filtered = filtered.filter((contributor) => contributor.commits >= Number(minCommits));
-			activeFilters++;
-		}
-
-		// Apply active only filter
-		if (showActiveOnly) {
-			// Consider contributors active if they have activity in the last 30 days
-			const thirtyDaysAgo = new Date();
-			thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-			filtered = filtered.filter((contributor) => {
-				const lastActiveDate = new Date(contributor.lastActive);
-				return lastActiveDate >= thirtyDaysAgo;
-			});
-			activeFilters++;
-		}
-
-		setActiveFiltersCount(activeFilters);
 		setFilteredContributors(filtered);
-	}, [searchQuery, contributors, minPRs, minCommits, showActiveOnly]);
+	}, [searchQuery, contributors]);
 
 	// Handle sorting
 	const requestSort = (key: keyof Contributor) => {
@@ -121,13 +83,6 @@ export default function ContributorsPage() {
 		return sortConfig.direction === "ascending" ? " ↑" : " ↓";
 	};
 
-	// Reset all filters
-	const resetFilters = () => {
-		setMinPRs("");
-		setMinCommits("");
-		setShowActiveOnly(false);
-	};
-
 	// Check for loading and error states
 	const isLoading = isLoadingContributors;
 	const error = contributorsError;
@@ -155,79 +110,14 @@ export default function ContributorsPage() {
 							Detailed metrics for all contributors including PRs, issues, and commits.
 						</CardDescription>
 					</div>
-					<div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-						<div className="relative w-full md:w-64">
-							<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-							<Input
-								placeholder="Search contributors..."
-								className="pl-8"
-								value={searchQuery}
-								onChange={(e) => setSearchQuery(e.target.value)}
-							/>
-						</div>
-						<Popover>
-							<PopoverTrigger asChild>
-								<Button variant="outline" size="icon" className="shrink-0 relative">
-									<SlidersHorizontal className="h-4 w-4" />
-									{activeFiltersCount > 0 && (
-										<span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-											{activeFiltersCount}
-										</span>
-									)}
-									<span className="sr-only">Filters</span>
-								</Button>
-							</PopoverTrigger>
-							<PopoverContent className="w-80">
-								<div className="space-y-4">
-									<div className="flex items-center justify-between">
-										<h4 className="font-medium">Filters</h4>
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={resetFilters}
-											disabled={!minPRs && !minCommits && !showActiveOnly}
-										>
-											Reset
-										</Button>
-									</div>
-									<Separator />
-									<div className="space-y-2">
-										<Label htmlFor="min-prs">Minimum PRs (opened + merged)</Label>
-										<Input
-											id="min-prs"
-											type="number"
-											min="0"
-											placeholder="Enter minimum PRs"
-											value={minPRs}
-											onChange={(e) => setMinPRs(e.target.value ? Number(e.target.value) : "")}
-										/>
-									</div>
-									<div className="space-y-2">
-										<Label htmlFor="min-commits">Minimum Commits</Label>
-										<Input
-											id="min-commits"
-											type="number"
-											min="0"
-											placeholder="Enter minimum commits"
-											value={minCommits}
-											onChange={(e) =>
-												setMinCommits(e.target.value ? Number(e.target.value) : "")
-											}
-										/>
-									</div>
-									<div className="flex items-center space-x-2">
-										<Checkbox
-											id="active-only"
-											checked={showActiveOnly}
-											onCheckedChange={(checked: boolean) => setShowActiveOnly(checked === true)}
-										/>
-										<Label htmlFor="active-only">
-											Show active contributors only (last 30 days)
-										</Label>
-									</div>
-								</div>
-							</PopoverContent>
-						</Popover>
+					<div className="relative w-full md:w-64">
+						<Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+						<Input
+							placeholder="Search contributors..."
+							className="pl-8"
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+						/>
 					</div>
 				</div>
 			</CardHeader>
