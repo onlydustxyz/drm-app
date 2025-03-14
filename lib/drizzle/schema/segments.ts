@@ -1,10 +1,14 @@
 import {index, integer, pgTable, serial, text, timestamp, unique, varchar} from "drizzle-orm/pg-core";
+import { users } from "./users";
 
 // Define the segments table schema
 export const segments = pgTable(
     "segments",
     {
         id: serial("id").primaryKey(),
+        user_id: integer("user_id")
+            .notNull()
+            .references(() => users.id),
         name: varchar("name", { length: 255 }).notNull(),
         description: text("description"),
         created_at: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -13,6 +17,7 @@ export const segments = pgTable(
     (table) => {
         return {
             nameIdx: index("idx_segments_name").on(table.name),
+            userIdIdx: index("idx_segments_user_id").on(table.user_id),
         };
     }
 );

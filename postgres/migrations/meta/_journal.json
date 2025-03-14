@@ -22,13 +22,6 @@
       "when": 1710399720000,
       "tag": "00002_create_repositories_table",
       "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "1",
-      "when": 1710399780000,
-      "tag": "00003_create_users_table",
-      "breakpoints": true
     }
   ]
 }

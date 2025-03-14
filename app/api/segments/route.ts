@@ -29,7 +29,14 @@ export async function POST(request: NextRequest) {
         }
         
         const body = await request.json();
-        const segment = await createSegment(body);
+        
+        // Add the authenticated user's ID to the segment data
+        const segmentData = {
+            ...body,
+            user_id: Number(user.id)
+        };
+        
+        const segment = await createSegment(segmentData);
         return NextResponse.json(segment, { status: 201 });
     } catch (error) {
         console.error("Error creating segment:", error);

@@ -15,7 +15,7 @@ export interface Segment {
 export interface SegmentsService {
     getSegments(): Promise<Segment[]>;
     getSegment(id: string): Promise<Segment | undefined>;
-    createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at">): Promise<Segment>;
+    createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at"> & { user_id: number }): Promise<Segment>;
     updateSegment(id: string, segment: Partial<Omit<Segment, "id" | "created_at" | "updated_at">>): Promise<Segment | undefined>;
     deleteSegment(id: string): Promise<boolean>;
     addGithubUserLoginToSegment(segmentId: string, githubUserLogin: string): Promise<boolean>;
@@ -36,7 +36,7 @@ export class SegmentsService implements SegmentsService {
         return storage.getSegment(id);
     }
 
-    async createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at">): Promise<Segment> {
+    async createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at"> & { user_id: number }): Promise<Segment> {
         const storage = getSegmentsStorage();
         return storage.createSegment(segment);
     }
@@ -84,7 +84,7 @@ export async function getSegment(id: string): Promise<Segment | undefined> {
     return segmentsService.getSegment(id);
 }
 
-export async function createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at">): Promise<Segment> {
+export async function createSegment(segment: Omit<Segment, "id" | "created_at" | "updated_at"> & { user_id: number }): Promise<Segment> {
     return segmentsService.createSegment(segment);
 }
 
