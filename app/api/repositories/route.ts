@@ -1,4 +1,4 @@
-import { createRepository, getRepositories } from "@/lib/services/repositories-service";
+import { createRepository, getRepositories, RepositorySort, RepositoryFilter } from "@/lib/services/repositories-service";
 import { getAuthenticatedUser } from "@/lib/services/authentication-service";
 import { NextRequest, NextResponse } from "next/server";
 
