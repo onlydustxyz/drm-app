@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useContributor } from "@/lib/react-query/contributors";
 import { formatDate } from "@/lib/utils";
 import { Calendar, ExternalLink, GitBranch, GitCommit, GitPullRequest, Star } from "lucide-react";
@@ -47,7 +47,7 @@ export function ContributorDetailPanel({ contributorId, isOpen, onOpenChange }: 
 								</Avatar>
 								<div>
 									<SheetTitle className="text-xl flex items-center gap-2 mb-1">
-										{selectedContributor.name}
+										{selectedContributor.handle}
 										<a
 											href={`https://github.com/${selectedContributor.handle}`}
 											target="_blank"
@@ -57,7 +57,6 @@ export function ContributorDetailPanel({ contributorId, isOpen, onOpenChange }: 
 											<ExternalLink size={18} />
 										</a>
 									</SheetTitle>
-									<SheetDescription>@{selectedContributor.handle}</SheetDescription>
 								</div>
 							</div>
 						</SheetHeader>
