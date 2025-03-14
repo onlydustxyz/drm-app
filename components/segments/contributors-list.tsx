@@ -11,7 +11,7 @@ import { Contributor } from "@/lib/services/contributors-service";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle, Loader2, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ContributorDetailPanel } from "./contributor-detail-panel";
+import { ContributorDetailPanel } from "../contributors/contributor-detail-panel";
 
 export default function ContributorsPage() {
 	const [searchQuery, setSearchQuery] = useState("");
