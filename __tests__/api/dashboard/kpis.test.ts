@@ -45,15 +45,26 @@ describe("Dashboard KPIs API", () => {
             });
         });
 
-        it("should return 500 when no KPIs data exists", async () => {
+        it("should return default values when no KPIs data exists", async () => {
             // Delete all KPIs data
             await dbFactory.getClient().delete(dashboardKpis);
 
             const response = await request(createTestServer(require("@/app/api/dashboard/kpis/route").GET))
                 .get("/api/dashboard/kpis");
 
-            expect(response.status).toBe(500);
-            expect(response.body).toEqual({ error: "Failed to fetch dashboard KPIs" });
+            expect(response.status).toBe(200);
+            expect(response.body).toMatchObject({
+                fullTimeDevs: 0,
+                fullTimeDevsGrowth: 0,
+                monthlyActiveDevs: 0,
+                monthlyActiveDevsGrowth: 0,
+                totalRepos: 0,
+                totalReposGrowth: 0,
+                totalCommits: 0,
+                totalCommitsGrowth: 0,
+                totalProjects: 0,
+                totalProjectsGrowth: 0
+            });
         });
     });
 }); 
