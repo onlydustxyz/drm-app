@@ -26,18 +26,18 @@ import { useState } from "react";
  */
 function parseRepositoryUrl(url: string): string {
 	// Trim the URL and remove any trailing .git
-	const trimmedUrl = url.trim().replace(/\.git$/, '');
-	
+	const trimmedUrl = url.trim().replace(/\.git$/, "");
+
 	// If it's already a GitHub URL, return it as is
 	if (trimmedUrl.match(/^https?:\/\/github\.com\/[^\/]+\/[^\/]+/i)) {
 		return trimmedUrl;
 	}
-	
+
 	// If it's in the format "owner/repo", convert to a GitHub URL
 	if (/^[^\/]+\/[^\/]+$/.test(trimmedUrl)) {
 		return `https://github.com/${trimmedUrl}`;
 	}
-	
+
 	// Return the original string if it doesn't match any pattern
 	return trimmedUrl;
 }
@@ -48,40 +48,65 @@ export function CreateSegmentDialog() {
 	const [segmentType, setSegmentType] = useState<"repositories" | "contributors">("repositories");
 	const [githubHandles, setGithubHandles] = useState("");
 	const [repoUrls, setRepoUrls] = useState("");
+	const [open, setOpen] = useState(false);
 
-	const createSegmentMutation = useCreateSegment();
+	const createSegmentMutation = useCreateSegment({
+		onSuccess() {
+			setOpen(false);
+			resetForm();
+		},
+	});
+
+	const resetForm = () => {
+		setNewSegmentName("");
+		setNewSegmentDescription("");
+		setGithubHandles("");
+		setRepoUrls("");
+		setSegmentType("repositories");
+	};
 
 	const handleCreateSegment = () => {
 		if (!newSegmentName.trim()) return;
 
 		// Parse contributors from text input if any
-		const contributors = segmentType === "contributors" && githubHandles.trim() 
-			? githubHandles
-				.split(/[\s,]+/)
-				.map(handle => handle.trim().replace('@', ''))
-				.filter(Boolean)
-			: [];
+		const contributors =
+			segmentType === "contributors" && githubHandles.trim()
+				? githubHandles
+						.split(/[\s,]+/)
+						.map((handle) => handle.trim().replace("@", ""))
+						.filter(Boolean)
+				: [];
 
 		// Parse repositories from text input if any
-		const repositories = segmentType === "repositories" && repoUrls.trim()
-			? repoUrls
-				.split(/[\s,]+/)
-				.map(url => url.trim())
-				.filter(Boolean)
-				.map(parseRepositoryUrl)  // Use our repository parsing function
-				.filter(Boolean)
-			: [];
+		const repositories =
+			segmentType === "repositories" && repoUrls.trim()
+				? repoUrls
+						.split(/[\s,]+/)
+						.map((url) => url.trim())
+						.filter(Boolean)
+						.map(parseRepositoryUrl) // Use our repository parsing function
+						.filter(Boolean)
+				: [];
 
 		createSegmentMutation.mutate({
 			name: newSegmentName,
 			description: newSegmentDescription,
 			contributors: contributors,
-			repositories: repositories
+			repositories: repositories,
 		});
 	};
 
 	return (
-		<Dialog>
+		<Dialog
+			open={open}
+			onOpenChange={(newOpen) => {
+				setOpen(newOpen);
+				// Reset form when dialog is closed
+				if (!newOpen) {
+					resetForm();
+				}
+			}}
+		>
 			<DialogTrigger asChild>
 				<Button>
 					<Plus className="mr-2 h-4 w-4" />

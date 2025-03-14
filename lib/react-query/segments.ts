@@ -1,6 +1,6 @@
 import { useToast } from "@/components/ui/use-toast";
 import { Segment } from "@/lib/services/segments-service";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, UseMutationOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Query keys for segments
 export const segmentKeys = {
@@ -45,7 +45,10 @@ async function createSegmentMutation(segment: Omit<Segment, "id" | "created_at" 
 	return response.json();
 }
 
-async function updateSegmentMutation({ id, ...segment }: { id: string; } & Partial<Omit<Segment, "id" | "created_at" | "updated_at">>): Promise<Segment> {
+async function updateSegmentMutation({
+	id,
+	...segment
+}: { id: string } & Partial<Omit<Segment, "id" | "created_at" | "updated_at">>): Promise<Segment> {
 	const response = await fetch(`/api/segments/${id}`, {
 		method: "PUT",
 		headers: {
@@ -73,7 +76,13 @@ async function deleteSegmentMutation(id: string): Promise<boolean> {
 	return true;
 }
 
-async function addContributorToSegmentMutation({ segmentId, contributorGithubLogin }: { segmentId: string; contributorGithubLogin: string }): Promise<boolean> {
+async function addContributorToSegmentMutation({
+	segmentId,
+	contributorGithubLogin,
+}: {
+	segmentId: string;
+	contributorGithubLogin: string;
+}): Promise<boolean> {
 	const response = await fetch(`/api/segments/${segmentId}/contributors`, {
 		method: "POST",
 		headers: {
@@ -89,7 +98,13 @@ async function addContributorToSegmentMutation({ segmentId, contributorGithubLog
 	return true;
 }
 
-async function removeContributorFromSegmentMutation({ segmentId, contributorGithubLogin }: { segmentId: string; contributorGithubLogin: string }): Promise<boolean> {
+async function removeContributorFromSegmentMutation({
+	segmentId,
+	contributorGithubLogin,
+}: {
+	segmentId: string;
+	contributorGithubLogin: string;
+}): Promise<boolean> {
 	const response = await fetch(`/api/segments/${segmentId}/contributors`, {
 		method: "DELETE",
 		headers: {
@@ -105,7 +120,13 @@ async function removeContributorFromSegmentMutation({ segmentId, contributorGith
 	return true;
 }
 
-async function addRepositoryToSegmentMutation({ segmentId, repositoryUrl }: { segmentId: string; repositoryUrl: string }): Promise<boolean> {
+async function addRepositoryToSegmentMutation({
+	segmentId,
+	repositoryUrl,
+}: {
+	segmentId: string;
+	repositoryUrl: string;
+}): Promise<boolean> {
 	const response = await fetch(`/api/segments/${segmentId}/repositories`, {
 		method: "POST",
 		headers: {
@@ -121,10 +142,19 @@ async function addRepositoryToSegmentMutation({ segmentId, repositoryUrl }: { se
 	return true;
 }
 
-async function removeRepositoryFromSegmentMutation({ segmentId, repositoryUrl }: { segmentId: string; repositoryUrl: string }): Promise<boolean> {
-	const response = await fetch(`/api/segments/${segmentId}/repositories?repositoryUrl=${encodeURIComponent(repositoryUrl)}`, {
-		method: "DELETE",
-	});
+async function removeRepositoryFromSegmentMutation({
+	segmentId,
+	repositoryUrl,
+}: {
+	segmentId: string;
+	repositoryUrl: string;
+}): Promise<boolean> {
+	const response = await fetch(
+		`/api/segments/${segmentId}/repositories?repositoryUrl=${encodeURIComponent(repositoryUrl)}`,
+		{
+			method: "DELETE",
+		}
+	);
 
 	if (!response.ok) {
 		throw new Error(`Failed to remove repository from segment`);
@@ -149,101 +179,180 @@ export function useSegment(id: string) {
 	});
 }
 
-export function useCreateSegment() {
+export function useCreateSegment(
+	options: Omit<
+		UseMutationOptions<Segment, Error, Omit<Segment, "id" | "created_at" | "updated_at">, unknown>,
+		"mutationFn"
+	> = {}
+) {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const { onSuccess, ...restOptions } = options;
 
 	return useMutation({
 		mutationFn: createSegmentMutation,
-		onSuccess: () => {
+		onSuccess: (data, variables, context) => {
 			toast({
 				title: "Segment created successfully",
 			});
 			queryClient.invalidateQueries({ queryKey: segmentKeys.lists() });
+
+			if (onSuccess) {
+				onSuccess(data, variables, context);
+			}
 		},
+		...restOptions,
 	});
 }
 
-export function useUpdateSegment() {
+export function useUpdateSegment(
+	options: Omit<
+		UseMutationOptions<
+			Segment,
+			Error,
+			{ id: string } & Partial<Omit<Segment, "id" | "created_at" | "updated_at">>,
+			unknown
+		>,
+		"mutationFn"
+	> = {}
+) {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const { onSuccess, ...restOptions } = options;
 
 	return useMutation({
 		mutationFn: updateSegmentMutation,
-		onSuccess: (data) => {
+		onSuccess: (data, variables, context) => {
 			toast({
 				title: "Segment updated successfully",
 			});
 			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(data.id) });
 			queryClient.invalidateQueries({ queryKey: segmentKeys.lists() });
+
+			if (onSuccess) {
+				onSuccess(data, variables, context);
+			}
 		},
+		...restOptions,
 	});
 }
 
-export function useDeleteSegment() {
+export function useDeleteSegment(
+	options: Omit<UseMutationOptions<boolean, Error, string, unknown>, "mutationFn"> = {}
+) {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const { onSuccess, ...restOptions } = options;
 
 	return useMutation({
 		mutationFn: deleteSegmentMutation,
-		onSuccess: (_, variables) => {
+		onSuccess: (data, variables, context) => {
 			toast({
 				title: "Segment deleted successfully",
 			});
 			queryClient.invalidateQueries({ queryKey: segmentKeys.lists() });
 			queryClient.removeQueries({ queryKey: segmentKeys.detail(variables) });
+
+			if (onSuccess) {
+				onSuccess(data, variables, context);
+			}
 		},
+		...restOptions,
 	});
 }
 
-export function useAddContributorToSegment() {
+export function useAddContributorToSegment(
+	options: Omit<
+		UseMutationOptions<boolean, Error, { segmentId: string; contributorGithubLogin: string }, unknown>,
+		"mutationFn"
+	> = {}
+) {
 	const queryClient = useQueryClient();
-	
+	const { onSuccess, ...restOptions } = options;
+
 	return useMutation({
 		mutationFn: addContributorToSegmentMutation,
-		onSuccess: (_, variables) => {
-			queryClient.invalidateQueries({ queryKey: ["segment", variables.segmentId] });
+		onSuccess: (data, variables, context) => {
+			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(variables.segmentId) });
+
+			if (onSuccess) {
+				onSuccess(data, variables, context);
+			}
 		},
+		...restOptions,
 	});
 }
 
-export function useRemoveContributorFromSegment() {
+export function useRemoveContributorFromSegment(
+	options: Omit<
+		UseMutationOptions<boolean, Error, { segmentId: string; contributorGithubLogin: string }, unknown>,
+		"mutationFn"
+	> = {}
+) {
 	const queryClient = useQueryClient();
-	
+	const { onSuccess, ...restOptions } = options;
+
 	return useMutation({
 		mutationFn: removeContributorFromSegmentMutation,
-		onSuccess: (_, variables) => {
-			queryClient.invalidateQueries({ queryKey: ["segment", variables.segmentId] });
+		onSuccess: (data, variables, context) => {
+			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(variables.segmentId) });
+
+			if (onSuccess) {
+				onSuccess(data, variables, context);
+			}
 		},
+		...restOptions,
 	});
 }
 
-export function useAddRepositoryToSegment() {
+export function useAddRepositoryToSegment(
+	options: Omit<
+		UseMutationOptions<boolean, Error, { segmentId: string; repositoryUrl: string }, unknown>,
+		"mutationFn"
+	> = {}
+) {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const { onSuccess, ...restOptions } = options;
 
 	return useMutation({
 		mutationFn: addRepositoryToSegmentMutation,
-		onSuccess: (_, variables) => {
+		onSuccess: (data, variables, context) => {
 			toast({
 				title: "Repository added to segment",
 			});
 			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(variables.segmentId) });
+
+			if (onSuccess) {
+				onSuccess(data, variables, context);
+			}
 		},
+		...restOptions,
 	});
 }
 
-export function useRemoveRepositoryFromSegment() {
+export function useRemoveRepositoryFromSegment(
+	options: Omit<
+		UseMutationOptions<boolean, Error, { segmentId: string; repositoryUrl: string }, unknown>,
+		"mutationFn"
+	> = {}
+) {
 	const queryClient = useQueryClient();
 	const { toast } = useToast();
+	const { onSuccess, ...restOptions } = options;
 
 	return useMutation({
 		mutationFn: removeRepositoryFromSegmentMutation,
-		onSuccess: (_, variables) => {
+		onSuccess: (data, variables, context) => {
 			toast({
 				title: "Repository removed from segment",
 			});
 			queryClient.invalidateQueries({ queryKey: segmentKeys.detail(variables.segmentId) });
+
+			if (onSuccess) {
+				onSuccess(data, variables, context);
+			}
 		},
+		...restOptions,
 	});
 }
