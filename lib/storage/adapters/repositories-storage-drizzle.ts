@@ -2,7 +2,7 @@ import { dbFactory } from "@/lib/drizzle";
 import { repositories } from "@/lib/drizzle/schema/repositories";
 import { Repository, RepositoryFilter, RepositorySort } from "@/lib/services/repositories-service";
 import { RepositoriesStorage } from "@/lib/storage/repositories-storage";
-import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 
 /**
  * Drizzle ORM implementation of the RepositoriesStorage interface
@@ -17,21 +17,47 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 	 */
 	private transformDbToModel(dbRepo: any): Repository {
 		return {
-			id: dbRepo.id.toString(),
-			name: dbRepo.name,
-			description: dbRepo.description || "",
-			url: dbRepo.url,
+			id: dbRepo.id?.toString() || dbRepo.repo_id?.toString(),
+			name: dbRepo.name || `${dbRepo.owner_login}/${dbRepo.repo_name}`,
+			description: dbRepo.description || dbRepo.repo_description || "",
+			url: dbRepo.url || `https://github.com/${dbRepo.owner_login}/${dbRepo.repo_name}`,
 			stars: dbRepo.stars || 0,
 			forks: dbRepo.forks || 0,
 			watchers: dbRepo.watchers || 0,
 			languages: dbRepo.language ? [{ name: dbRepo.language }] : [],
-			last_updated_at: dbRepo.updated_at?.toISOString() || new Date().toISOString(),
-			prMerged: 0, // These fields need to be populated from other tables or GitHub API
-			prOpened: 0,
-			issuesOpened: dbRepo.open_issues || 0,
-			issuesClosed: 0,
-			commits: 0,
-			contributors: 0,
+			last_updated_at: (dbRepo.updated_at || dbRepo.last_updated_at)?.toISOString() || new Date().toISOString(),
+			prMerged: dbRepo.merged_pr_count || 0,
+			prOpened: dbRepo.open_pr_count || 0,
+			issuesOpened: dbRepo.open_issue_count || dbRepo.open_issues || 0,
+			issuesClosed: dbRepo.closed_issue_count || 0,
+			commits: dbRepo.commit_count || 0,
+			contributors: dbRepo.contributor_count || 0,
+			indexingStatus: dbRepo.indexing_status || "PENDING",
+		};
+	}
+
+	/**
+	 * Transform database records from the segment query to our service model
+	 */
+	private transformSegmentDbToModel(dbRepo: any): Repository {
+		console.log(dbRepo);
+		return {
+			id: dbRepo.repo_id.toString(),
+			name: `${dbRepo.owner_login}/${dbRepo.repo_name}`,
+			description: dbRepo.repo_description || "",
+			url: `https://github.com/${dbRepo.owner_login}/${dbRepo.repo_name}`,
+			stars: 0, // Not included in the segment query
+			forks: 0, // Not included in the segment query
+			watchers: 0, // Not included in the segment query
+			languages: [], // Not included in the segment query
+			last_updated_at: dbRepo.last_updated_at ? new Date(dbRepo.last_updated_at).toISOString() : new Date().toISOString(),
+			prMerged: dbRepo.merged_pr_count || 0,
+			prOpened: dbRepo.open_pr_count || 0,
+			issuesOpened: dbRepo.open_issue_count || 0,
+			issuesClosed: dbRepo.closed_issue_count || 0,
+			commits: dbRepo.commit_count || 0,
+			contributors: dbRepo.contributor_count || 0,
+			indexingStatus: dbRepo.indexing_status || "PENDING",
 		};
 	}
 
@@ -106,10 +132,89 @@ export class DrizzleRepositoriesStorage implements RepositoriesStorage {
 			}
 
 			const dbRepos = await query;
-			return dbRepos.map(this.transformDbToModel);
+			return dbRepos.map((repo) => this.transformDbToModel(repo));
 		} catch (error) {
 			console.error("Error fetching repositories:", error);
 			throw new Error("Failed to fetch repositories");
+		}
+	}
+
+	/**
+	 * Get repositories for a specific segment
+	 * @param segmentId The segment ID to fetch repositories for
+	 * @param sort Optional sorting parameters
+	 * @returns Array of repositories belonging to the segment
+	 */
+	async getRepositoriesBySegmentId(segmentId: string, sort?: RepositorySort): Promise<Repository[]> {
+		try {
+			// Build the SQL query parts
+			let baseQuery = `
+				with pr_stats as (select repo_id                                     as repo_id,
+									 count(*) filter ( where status = 'MERGED' ) as merged_count,
+									 count(*) filter ( where status = 'OPEN' )   as open_count
+							  from indexer_exp.github_pull_requests
+							  group by repo_id),
+				 issue_stats as (select repo_id                                        as repo_id,
+										count(*) filter ( where status = 'COMPLETED' ) as closed_count,
+										count(*) filter ( where status = 'OPEN' )      as open_count
+							 from indexer_exp.github_issues
+							 group by repo_id),
+				 commits_stats as (select repo_id                   as repo_id,
+									  count(distinct sha)       as commit_count,
+									  count(distinct author_id) as contributor_count
+							   from indexer_exp.github_commits
+										join indexer_exp.github_accounts u on u.id = author_id and u."type" = 'USER'
+							   group by repo_id)
+				select r.id                              as repo_id,
+					   r.owner_login                     as owner_login,
+					   r.name                            as repo_name,
+					   r.description                     as repo_description,
+					   coalesce(j.status, 'PENDING')     as indexing_status,
+					   coalesce(ps.merged_count, 0)      as merged_pr_count,
+					   coalesce(ps.open_count, 0)        as open_pr_count,
+					   coalesce(iss.closed_count, 0)     as closed_issue_count,
+					   coalesce(iss.open_count, 0)       as open_issue_count,
+					   coalesce(cs.commit_count, 0)      as commit_count,
+					   coalesce(cs.contributor_count, 0) as contributor_count,
+					   r.updated_at                      as last_updated_at
+				from segment_repositories sr
+				join indexer_exp.github_repos r on r.html_url = sr.repository_url
+						 left join indexer.repo_public_events_indexing_jobs j on j.repo_owner = r.owner_login and j.repo_name = r.name
+						 left join pr_stats ps on ps.repo_id = r.id
+						 left join issue_stats iss on iss.repo_id = r.id
+						 left join commits_stats cs on cs.repo_id = r.id
+				where sr.segment_id = ${parseInt(segmentId)}
+			`;
+
+			// Add sorting
+			let orderByClause = " ORDER BY r.name ASC"; // Default sorting
+			
+			if (sort) {
+				// Map the sort field to the column names in the query
+				switch (sort.field) {
+					case "name":
+						orderByClause = ` ORDER BY r.name ${sort.direction === "asc" ? "ASC" : "DESC"}`;
+						break;
+					case "updated_at":
+						orderByClause = ` ORDER BY r.updated_at ${sort.direction === "asc" ? "ASC" : "DESC"}`;
+						break;
+					// Add more cases as needed for other sortable fields
+				}
+			}
+
+			// Combine the query parts
+			const fullQuery = baseQuery + orderByClause;
+
+			// Execute the query (without parameters)
+			const results = await dbFactory.getClient().execute(
+				sql.raw(fullQuery)
+			);
+
+			// Transform the results to our service model
+			return results.map((row) => this.transformSegmentDbToModel(row));
+		} catch (error) {
+			console.error(`Error fetching repositories for segment ${segmentId}:`, error);
+			throw new Error(`Failed to fetch repositories for segment ${segmentId}`);
 		}
 	}
 

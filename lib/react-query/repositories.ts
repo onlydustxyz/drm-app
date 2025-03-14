@@ -14,6 +14,7 @@ const repositoryKeys = {
 	lists: () => [...repositoryKeys.all, "list"] as const,
 	list: (filters: RepositoryFilter) => [...repositoryKeys.lists(), filters] as const,
 	details: (repositoryId: string) => [...repositoryKeys.all, "detail", repositoryId] as const,
+	segment: (segmentId: string) => [...repositoryKeys.all, "segment", segmentId] as const,
 };
 
 // Query keys for repository sublists
@@ -47,6 +48,28 @@ async function fetchRepositories(filter: RepositoryFilter = {}, sort?: Repositor
 	const response = await fetch(url.toString());
 	if (!response.ok) {
 		throw new Error("Failed to fetch repositories");
+	}
+	return response.json();
+}
+
+// Fetch repositories by segment ID
+async function fetchRepositoriesBySegmentId(segmentId: string, sort?: RepositorySort): Promise<Repository[]> {
+	if (!segmentId) {
+		return [];
+	}
+	
+	// Build URL with query parameters
+	const url = new URL(`/api/segments/${segmentId}/repositories`, window.location.origin);
+
+	// Add sort parameters
+	if (sort) {
+		url.searchParams.append("sortBy", sort.field);
+		url.searchParams.append("sortDirection", sort.direction);
+	}
+
+	const response = await fetch(url.toString());
+	if (!response.ok) {
+		throw new Error(`Failed to fetch repositories for segment ${segmentId}`);
 	}
 	return response.json();
 }
@@ -149,6 +172,14 @@ export function useRepositories(filter?: RepositoryFilter, sort?: RepositorySort
 	return useQuery({
 		queryKey: [...repositoryKeys.lists(), filter, sort],
 		queryFn: () => fetchRepositories(filter, sort),
+	});
+}
+
+export function useRepositoriesBySegmentId(segmentId: string, sort?: RepositorySort) {
+	return useQuery({
+		queryKey: [...repositoryKeys.segment(segmentId), sort],
+		queryFn: () => fetchRepositoriesBySegmentId(segmentId, sort),
+		enabled: !!segmentId,
 	});
 }
 

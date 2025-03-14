@@ -16,18 +16,6 @@ export default function SegmentPage({ params }: { params: Promise<{ id: string }
 
 	const isRepositorySegment = segment?.repositories && segment.repositories.length > 0;
 
-	const names = segment?.repositories
-		?.map((repositoryUrl) => {
-			try {
-				const url = new URL(repositoryUrl);
-				return url.pathname;
-			} catch (error) {
-				console.error("Invalid URL format:", repositoryUrl, error);
-				return "";
-			}
-		})
-		.filter(Boolean);
-
 	if (isLoading) {
 		return (
 			<div className="container mx-auto py-6">
@@ -72,7 +60,11 @@ export default function SegmentPage({ params }: { params: Promise<{ id: string }
 
 	return (
 		<div className="container mx-auto py-6">
-			{isRepositorySegment ? <RepositoriesList names={names} /> : <ContributorsList />}
+			{isRepositorySegment ? (
+				<RepositoriesList segmentId={resolvedParams.id} />
+			) : (
+				<ContributorsList />
+			)}
 		</div>
 	);
 }

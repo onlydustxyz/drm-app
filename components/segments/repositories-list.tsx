@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { RepositoryFilter, useRepositories } from "@/lib/react-query/repositories";
+import { RepositoryFilter, useRepositories, useRepositoriesBySegmentId } from "@/lib/react-query/repositories";
 import { Repository, RepositorySort } from "@/lib/services/repositories-service";
 import { formatDate } from "@/lib/utils";
 import { Search } from "lucide-react";
@@ -14,36 +14,28 @@ import { useEffect, useState } from "react";
 // Define types for repository status
 export type RepositoryStatus = "PENDING" | "RUNNING" | "SUCCESS" | "FAILED";
 
-// Status badge component with appropriate colors
-interface StatusBadgeProps {
-	status: RepositoryStatus;
-}
+// Map colors based on indexing status
+export const statusColors: Record<string, string> = {
+	PENDING: "bg-yellow-500 dark:bg-yellow-500",
+	RUNNING: "bg-blue-500 dark:bg-blue-500",
+	SUCCESS: "bg-green-500 dark:bg-green-500",
+	FAILED: "bg-red-500 dark:bg-red-500"
+};
 
-function StatusBadge({ status }: StatusBadgeProps) {
-	const statusConfig: Record<
-		RepositoryStatus,
-		{ variant: "secondary" | "blue" | "success" | "destructive"; label: string }
-	> = {
-		PENDING: { variant: "secondary", label: "Pending" },
-		RUNNING: { variant: "blue", label: "Running" },
-		SUCCESS: { variant: "success", label: "Success" },
-		FAILED: { variant: "destructive", label: "Failed" },
-	};
-
-	const config = statusConfig[status];
-
-	return (
-		<Badge variant={config.variant} className="text-xs font-medium">
-			{config.label}
-		</Badge>
-	);
-}
+// Map text based on status
+export const statusText: Record<string, string> = {
+	PENDING: "Pending",
+	RUNNING: "Running",
+	SUCCESS: "Success",
+	FAILED: "Failed"
+};
 
 interface RepositoriesListProps {
 	names?: string[];
+	segmentId?: string;
 }
 
-export function RepositoriesList({ names }: RepositoriesListProps) {
+export function RepositoriesList({ names, segmentId }: RepositoriesListProps) {
 	// State for search and sort
 	const [searchQuery, setSearchQuery] = useState("");
 	const [sort, setSort] = useState<RepositorySort | undefined>();
@@ -67,18 +59,24 @@ export function RepositoriesList({ names }: RepositoriesListProps) {
 	if (names && names.length > 0) filter.names = names;
 	if (debouncedSearchQuery) filter.search = debouncedSearchQuery;
 
-	// Fetch repositories with API-based filtering and sorting
-	const { data: repositories = [], isLoading, error } = useRepositories(filter, sort);
+	// Fetch repositories - either by segment ID if provided, or with regular filtering
+	const segmentRepositoriesQuery = useRepositoriesBySegmentId(segmentId ?? "", sort);
+	const regularRepositoriesQuery = useRepositories(filter, sort);
+	
+	// Use the appropriate query result based on whether segmentId is provided
+	const { 
+		data: repositories = [], 
+		isLoading, 
+		error 
+	} = segmentId ? segmentRepositoriesQuery : regularRepositoriesQuery;
 
-	// Mock repository status data
-	const mockStatus = (repoId: string): RepositoryStatus => {
-		// Deterministic but random-looking status based on repository ID
-		const statuses: RepositoryStatus[] = ["PENDING", "RUNNING", "SUCCESS", "FAILED"];
-		const hash = repoId.split("").reduce((a, b) => {
-			return a + b.charCodeAt(0);
-		}, 0);
-		return statuses[hash % statuses.length];
-	};
+	// If using segment repositories and we have a search query, filter client-side
+	const filteredRepositories = debouncedSearchQuery && segmentId 
+		? repositories.filter(repo => 
+			repo.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+			(repo.description && repo.description.toLowerCase().includes(debouncedSearchQuery.toLowerCase()))
+		)
+		: repositories;
 
 	// Handle row click to open details panel
 	const handleRowClick = (repo: Repository) => {
@@ -86,71 +84,53 @@ export function RepositoriesList({ names }: RepositoriesListProps) {
 		setIsDetailPanelOpen(true);
 	};
 
-	// Handle sorting
-	const requestSort = (key: keyof Repository | "status") => {
-		// Map component sort fields to API sort fields
-		const apiSortFieldMap: Record<string, any> = {
-			name: "name",
-			stars: "stars",
-			forks: "forks",
-			last_updated_at: "updated_at",
-		};
-
-		// For status column, we don't do API sorting since it's mocked data
-		if (key === "status") {
-			// We could add client-side sorting here if needed
-			return;
-		}
-
-		// Only use sortable fields that the API supports
-		if (!apiSortFieldMap[key as keyof Repository]) {
-			// For fields not supported by the API, we won't do anything
-			// Fields like prMerged, prOpened, etc. are not sortable via API
-			return;
-		}
-
-		const apiSortField = apiSortFieldMap[key as keyof Repository] as
-			| "name"
-			| "stars"
-			| "forks"
-			| "updated_at"
-			| "created_at";
-
-		// Toggle sort direction or set initial sort
-		if (sort && sort.field === apiSortField) {
-			// Toggle direction if same field
+	// Handle sort requests
+	const requestSort = (field: string) => {
+		if (!sort || sort.field !== field) {
+			// Initial sort by this field in ascending order
 			setSort({
-				field: apiSortField,
-				direction: sort.direction === "asc" ? "desc" : "asc",
+				field: field as any,
+				direction: "asc",
 			});
-		} else {
-			// Default to descending for new sort field
+		} else if (sort.field === field && sort.direction === "asc") {
+			// Switch to descending order
 			setSort({
-				field: apiSortField,
+				...sort,
 				direction: "desc",
 			});
+		} else {
+			// Remove sort
+			setSort(undefined);
 		}
 	};
 
-	// Get sort direction indicator
-	const getSortDirectionIndicator = (key: keyof Repository | "status") => {
-		// Status column has no sorting indicator since it's client-side
-		if (key === "status") {
+	// Visual indicator for sort direction
+	const getSortDirectionIndicator = (field: string) => {
+		if (!sort || sort.field !== field) {
 			return null;
 		}
-
-		// Map component fields to API fields
-		const apiFieldMap: Record<string, any> = {
-			name: "name",
-			stars: "stars",
-			forks: "forks",
-			last_updated_at: "updated_at",
-		};
-
-		const apiField = apiFieldMap[key as keyof Repository];
-
-		if (!apiField || !sort || sort.field !== apiField) return null;
 		return sort.direction === "asc" ? " ↑" : " ↓";
+	};
+
+	// Display repository status badge
+	const getStatusBadge = (status: string) => {
+		return (
+			<div className="flex justify-center">
+				<Badge variant="outline" className="gap-1 px-2 py-1">
+					<div className={`w-2 h-2 rounded-full ${statusColors[status] || statusColors.PENDING}`} />
+					<div className={`w-2 h-2 rounded-full ${statusColors[status]}`} />
+					<span>{statusText[status]}</span>
+				</Badge>
+			</div>
+		);
+	};
+
+	// Check if the value is already a Date, if not, convert it
+	const formatRepoDate = (dateValue: string | Date) => {
+		if (typeof dateValue === 'string') {
+			return formatDate(dateValue);
+		}
+		return formatDate(dateValue.toISOString());
 	};
 
 	return (
@@ -250,78 +230,43 @@ export function RepositoriesList({ names }: RepositoriesListProps) {
 										<TableHead className="text-center">
 											<button
 												className="flex items-center justify-center gap-1 w-full"
-												onClick={() => requestSort("contributors")}
+												onClick={() => requestSort("updated_at")}
 											>
-												<span>Contributors{getSortDirectionIndicator("contributors")}</span>
-											</button>
-										</TableHead>
-										<TableHead className="text-center">
-											<button
-												className="flex items-center justify-center gap-1 w-full"
-												onClick={() => requestSort("stars")}
-											>
-												<span>Stars{getSortDirectionIndicator("stars")}</span>
-											</button>
-										</TableHead>
-										<TableHead className="text-right">
-											<button
-												className="flex items-center justify-end w-full"
-												onClick={() => requestSort("last_updated_at")}
-											>
-												Last Updated{getSortDirectionIndicator("last_updated_at")}
+												<span>Last Updated{getSortDirectionIndicator("updated_at")}</span>
 											</button>
 										</TableHead>
 									</TableRow>
 								</TableHeader>
 								<TableBody>
-									{repositories.length === 0 ? (
+									{filteredRepositories.length === 0 ? (
 										<TableRow>
-											<TableCell colSpan={10} className="h-24 text-center">
+											<TableCell colSpan={8} className="text-center py-8">
 												No repositories found.
 											</TableCell>
 										</TableRow>
 									) : (
-										repositories.map((repo) => (
-											<TableRow
-												key={repo.id}
-												onClick={() => handleRowClick(repo)}
-												className="cursor-pointer hover:bg-muted/50"
-											>
-												<TableCell className="font-medium">
-													<div className="flex flex-col">
-														<a
-															href={repo.url || ""}
-															className="hover:underline text-primary"
-															target="_blank"
-															rel="noopener noreferrer"
-															onClick={(e) => e.stopPropagation()} // Prevent row click when clicking the link
-														>
-															{repo.name}
-														</a>
-														<span className="text-xs text-muted-foreground mt-1">
-															{repo.description}
-														</span>
-													</div>
-												</TableCell>
-												<TableCell className="text-center">
-													<div className="flex justify-center">
-														<StatusBadge status={mockStatus(repo.id)} />
-													</div>
-												</TableCell>
-												<TableCell className="text-center">{repo.prMerged}</TableCell>
-												<TableCell className="text-center">{repo.prOpened}</TableCell>
-												<TableCell className="text-center">{repo.issuesOpened}</TableCell>
-												<TableCell className="text-center">{repo.issuesClosed}</TableCell>
-												<TableCell className="text-center">{repo.commits}</TableCell>
-												<TableCell className="text-center">{repo.contributors}</TableCell>
-												<TableCell className="text-center">
-													<span>{repo.stars}</span>
-												</TableCell>
-												<TableCell className="text-right">
-													{formatDate(repo.last_updated_at)}
-												</TableCell>
-											</TableRow>
-										))
+										filteredRepositories.map((repo) => {
+											return (
+												<TableRow
+													key={repo.id}
+													className="cursor-pointer hover:bg-muted"
+													onClick={() => handleRowClick(repo)}
+												>
+													<TableCell className="font-medium">{repo.name}</TableCell>
+													<TableCell className="text-center">
+														{getStatusBadge(repo.indexingStatus || "PENDING")}
+													</TableCell>
+													<TableCell className="text-center">{repo.prMerged}</TableCell>
+													<TableCell className="text-center">{repo.prOpened}</TableCell>
+													<TableCell className="text-center">{repo.issuesOpened}</TableCell>
+													<TableCell className="text-center">{repo.issuesClosed}</TableCell>
+													<TableCell className="text-center">{repo.commits}</TableCell>
+													<TableCell className="text-center">
+														{formatRepoDate(repo.last_updated_at)}
+													</TableCell>
+												</TableRow>
+											);
+										})
 									)}
 								</TableBody>
 							</Table>

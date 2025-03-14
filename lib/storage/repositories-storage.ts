@@ -5,7 +5,9 @@ import { DrizzleRepositoriesStorage } from "@/lib/storage/adapters/repositories-
  * Interface for accessing repository data from storage
  */
 export interface RepositoriesStorage {
+	// Split into two different methods: one for regular filtering and one for segment-based fetching
 	getRepositories(filter?: RepositoryFilter, sort?: RepositorySort): Promise<Repository[]>;
+	getRepositoriesBySegmentId(segmentId: string, sort?: RepositorySort): Promise<Repository[]>;
 	getRepository(id: string): Promise<Repository | undefined>;
 	createRepository(repository: Omit<Repository, "id">): Promise<Repository>;
 	updateRepository(id: string, repository: Partial<Omit<Repository, "id">>): Promise<Repository | undefined>;

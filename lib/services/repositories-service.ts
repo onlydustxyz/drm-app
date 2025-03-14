@@ -17,6 +17,7 @@ export interface Repository {
 	issuesClosed: number;
 	commits: number;
 	contributors: number;
+	indexingStatus?: string;
 }
 
 // Filter and sort parameters interface

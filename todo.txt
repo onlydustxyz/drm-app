@@ -1,5 +1,3 @@
-Minor updates:
-- On create segment, close the modal.
-
-Features:
-- Modify the segment overview page to add indexation status and last update date on repo
+- bulk insert on repoIds on create/update segment
+- fix dashboard trends
+- 
