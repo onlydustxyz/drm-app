@@ -172,6 +172,7 @@ Mes suppositions:
 - l'uniformisation du code et des pratiques augmentent la pertinence des résultats de l'AI => on a intérêt à standardiser un maximum comme on a pu le faire jusqu'à maintenant
 - la puissance des AI agents et des rules sont clefs
 - un bon niveau de qualité est primordial pour produire le minimum de code bien rangé/organisé => des bonnes pratiques de prompts / rules pour gérer ça
+- les pratiques qui permettent de developper vite en local (les tests qui nous disent tout de suite si le code est ok, un setup de docker pour iterer sur la DB, etc) sont utilisables par les AI agents pour iterer au même titre que les humains : cela devient encore plus puissant
 
 ## Conclusion
 
