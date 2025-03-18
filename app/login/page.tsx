@@ -24,6 +24,12 @@ export default async function LoginPage({
 					</div>
 				)}
 
+				{error === "password_too_short" && (
+					<div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+						Password should be at least 6 characters.
+					</div>
+				)}
+
 				<form className="space-y-4">
 					<div className="space-y-2">
 						<label htmlFor="email" className="block text-sm font-medium">

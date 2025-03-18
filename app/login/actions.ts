@@ -42,6 +42,10 @@ export async function signup(formData: FormData) {
 	const { data: test, error } = await supabase.auth.signUp(data);
 
 	if (error) {
+		// Redirect with the error code to show the appropriate error message
+		if (error.message.includes("Password should be at least")) {
+			redirect("/login?error=password_too_short");
+		}
 		redirect("/error");
 	}
 
