@@ -1,6 +1,10 @@
 import { login, signup } from "./actions";
 
-export default async function LoginPage({ searchParams }: { searchParams: { confirmed?: string; error?: string } }) {
+export default async function LoginPage({
+	searchParams,
+}: {
+	searchParams: Promise<{ confirmed?: string; error?: string }>;
+}) {
 	const { confirmed, error } = await searchParams;
 
 	return (
