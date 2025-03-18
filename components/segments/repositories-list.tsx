@@ -118,7 +118,6 @@ export function RepositoriesList({ names, segmentId }: RepositoriesListProps) {
 			<div className="flex justify-center">
 				<Badge variant="outline" className="gap-1 px-2 py-1">
 					<div className={`w-2 h-2 rounded-full ${statusColors[status] || statusColors.PENDING}`} />
-					<div className={`w-2 h-2 rounded-full ${statusColors[status]}`} />
 					<span>{statusText[status]}</span>
 				</Badge>
 			</div>
